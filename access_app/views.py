@@ -159,7 +159,8 @@ def transactions(request):
     date_from = request.GET.get("date_from", "").strip()
     date_to = request.GET.get("date_to", "").strip()
     year = request.GET.get("year", "").strip()
-    month = request.GET.get("month", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
 
     if q:
         qs = qs.filter(
@@ -178,8 +179,10 @@ def transactions(request):
         qs = qs.filter(date__lte=date_to)
     if year:
         qs = qs.filter(date__year=year)
-    if month:
-        qs = qs.filter(date__month=month)
+    if month_from:
+        qs = qs.filter(date__month__gte=month_from)
+    if month_to:
+        qs = qs.filter(date__month__lte=month_to)
 
     agg = qs.aggregate(
         total_egp=Sum("transfered_amount"),
@@ -199,7 +202,8 @@ def transactions(request):
         "date_from": date_from,
         "date_to": date_to,
         "selected_year": year,
-        "selected_month": month,
+        "selected_month_from": month_from,
+        "selected_month_to": month_to,
         "total_egp": total_egp_val,
         "total_lyd": total_lyd_val,
         "avg_rate": avg_rate,
@@ -305,7 +309,8 @@ def capital_list(request):
     date_to = request.GET.get("date_to", "").strip()
     client_id = request.GET.get("client", "").strip()
     year = request.GET.get("year", "").strip()
-    month = request.GET.get("month", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
 
     if q:
         qs = qs.filter(
@@ -324,8 +329,10 @@ def capital_list(request):
         qs = qs.filter(client_id=client_id)
     if year:
         qs = qs.filter(date__year=year)
-    if month:
-        qs = qs.filter(date__month=month)
+    if month_from:
+        qs = qs.filter(date__month__gte=month_from)
+    if month_to:
+        qs = qs.filter(date__month__lte=month_to)
 
     agg = qs.aggregate(
         total_egp=Sum("cash_in"),
@@ -347,7 +354,8 @@ def capital_list(request):
         "date_to": date_to,
         "selected_client": client_id,
         "selected_year": year,
-        "selected_month": month,
+        "selected_month_from": month_from,
+        "selected_month_to": month_to,
         "total_egp": total_egp_val,
         "total_lyd": total_lyd_val,
         "avg_rate": avg_rate,

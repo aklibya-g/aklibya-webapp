@@ -29,10 +29,16 @@
             <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
-        <select name="month" class="form-select form-select-sm" style="width:auto;">
-            <option value="">كل الشهور</option>
+        <select name="month_from" class="form-select form-select-sm" style="width:auto;">
+            <option value="">من شهر</option>
             {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
-            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>شهر {{ m }}</option>
+            <option value="{{ m }}" {% if selected_month_from == m %}selected{% endif %}>شهر {{ m }}</option>
+            {% endfor %}
+        </select>
+        <select name="month_to" class="form-select form-select-sm" style="width:auto;">
+            <option value="">إلى شهر</option>
+            {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
+            <option value="{{ m }}" {% if selected_month_to == m %}selected{% endif %}>شهر {{ m }}</option>
             {% endfor %}
         </select>
         <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
