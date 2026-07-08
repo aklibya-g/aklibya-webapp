@@ -634,6 +634,8 @@ def import_whatsapp(request):
                     if created:
                         word = "حوالة" if created == 1 else "حوالات"
                         messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد أحمد ياسين.")
+                    if not created and not errors:
+                        messages.warning(request, "⚠️ لم يتم استيراد أي حوالة. تأكد من صحة البيانات.")
                     if errors:
                         ImportAlert.objects.create(
                             import_type="whatsapp",
@@ -642,8 +644,13 @@ def import_whatsapp(request):
                             failed_count=len(errors),
                             failed_details="\n".join(errors),
                         )
-                    for err in errors:
-                        messages.error(request, f"❌ {err}")
+                        messages.error(request, f"❌ فشل استيراد {len(errors)} من {len(parsed)} حوالة. السبب: {errors[0]}")
+                        if len(errors) > 1:
+                            messages.info(request, f"📋 تفاصيل الفشل ({len(errors)} رسالة):")
+                            for i, err in enumerate(errors[:5], 1):
+                                messages.warning(request, f"  {i}. {err}")
+                            if len(errors) > 5:
+                                messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
                     return redirect("import_whatsapp")
                 else:
                     results = parsed
@@ -930,6 +937,8 @@ def import_balance(request):
                     client.save()
                     if created:
                         messages.success(request, f"✅ تم استيراد {created} رصيد لحساب {client.name}.")
+                    if not created and not errors:
+                        messages.warning(request, "⚠️ لم يتم استيراد أي رصيد. تأكد من صحة البيانات.")
                     if errors:
                         ImportAlert.objects.create(
                             import_type="balance",
@@ -938,9 +947,14 @@ def import_balance(request):
                             failed_count=len(errors),
                             failed_details="\n".join(errors),
                         )
-                    for err in errors:
-                        messages.error(request, f"❌ {err}")
-                    return redirect("capital_list")
+                        messages.error(request, f"❌ فشل استيراد {len(errors)} من {len(parsed)} رصيد. السبب: {errors[0]}")
+                        if len(errors) > 1:
+                            messages.info(request, f"📋 تفاصيل الفشل ({len(errors)} سطر):")
+                            for i, err in enumerate(errors[:5], 1):
+                                messages.warning(request, f"  {i}. {err}")
+                            if len(errors) > 5:
+                                messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
+                    return redirect("import_balance")
                 else:
                     results = parsed
     balance_alerts = ImportAlert.objects.filter(import_type="balance")[:10]
