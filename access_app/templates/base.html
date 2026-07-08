@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة التحويلات{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #3730a3;
+            --primary-bg: #eef2ff;
+            --success: #059669;
+            --success-bg: #ecfdf5;
+            --warning: #d97706;
+            --warning-bg: #fffbeb;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --info: #0284c7;
+            --info-bg: #f0f9ff;
+            --bg: #f1f5f9;
+            --sidebar-bg: #ffffff;
+            --sidebar-hover: #f1f5f9;
+            --sidebar-active: #eef2ff;
+            --sidebar-text: #475569;
+            --sidebar-text-hover: #1e293b;
+            --sidebar-section: #94a3b8;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-focus: #6366f1;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
+            --sec-transfer: linear-gradient(135deg, rgba(79,70,229,0.15), rgba(99,102,241,0.08));
+            --sec-transfer-border: rgba(79,70,229,0.25);
+            --sec-balance: linear-gradient(135deg, rgba(5,150,105,0.15), rgba(52,211,153,0.08));
+            --sec-balance-border: rgba(5,150,105,0.25);
+            --sec-expense: linear-gradient(135deg, rgba(217,119,6,0.15), rgba(251,191,36,0.08));
+            --sec-expense-border: rgba(217,119,6,0.25);
+            --sec-profit: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(244,114,182,0.08));
+            --sec-profit-border: rgba(236,72,153,0.25);
+        }
+        body.soft { --primary:#5b4cc4; --primary-light:#7c6ad9; --primary-dark:#4a3aa8; --primary-bg:#ede4f3; --success:#5a8f5a; --success-bg:#e6f0e6; --warning:#b8860b; --warning-bg:#fdf0d5; --danger:#b33a3a; --danger-bg:#f5e0e0; --info:#5a8a9a; --info-bg:#e0edf2; --bg:#e6dccb; --sidebar-bg:#2d281f; --sidebar-hover:#3d372c; --sidebar-active:#554d3f; --sidebar-text:#a89a88; --sidebar-text-hover:#e8dcd0; --sidebar-section:#7a6e5e; --card-bg:#f5efe2; --card-border:#d4c8b4; --text:#3d3529; --text-muted:#7a6e5e; --input-bg:#f0e8da; --input-border:#ccc0ae; --sec-transfer:linear-gradient(135deg,rgba(91,76,196,0.18),rgba(124,106,217,0.08)); --sec-transfer-border:rgba(91,76,196,0.25); --sec-balance:linear-gradient(135deg,rgba(90,143,90,0.18),rgba(120,180,120,0.08)); --sec-balance-border:rgba(90,143,90,0.25); --sec-expense:linear-gradient(135deg,rgba(184,134,11,0.18),rgba(220,180,60,0.08)); --sec-expense-border:rgba(184,134,11,0.25); --sec-profit:linear-gradient(135deg,rgba(200,80,140,0.18),rgba(220,120,170,0.08)); --sec-profit-border:rgba(200,80,140,0.25); }
+        body.dark { --primary:#818cf8; --primary-light:#a5b4fc; --primary-dark:#6366f1; --primary-bg:#1e1b4b; --success:#34d399; --success-bg:#064e3b; --warning:#fbbf24; --warning-bg:#451a03; --danger:#f87171; --danger-bg:#450a0a; --info:#38bdf8; --info-bg:#0c4a6e; --bg:#0f172a; --card-bg:#1e293b; --card-border:#334155; --text:#e2e8f0; --text-muted:#94a3b8; --input-bg:#0f172a; --input-border:#334155; --sec-transfer:linear-gradient(135deg,rgba(129,140,248,0.12),rgba(99,102,241,0.06)); --sec-transfer-border:rgba(129,140,248,0.2); --sec-balance:linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.06)); --sec-balance-border:rgba(52,211,153,0.2); --sec-expense:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.06)); --sec-expense-border:rgba(251,191,36,0.2); --sec-profit:linear-gradient(135deg,rgba(244,114,182,0.12),rgba(236,72,153,0.06)); --sec-profit-border:rgba(244,114,182,0.2); }
+        body.green { --primary:#4a8c5a; --primary-light:#5ca06c; --primary-dark:#3a7048; --primary-bg:#e6f2e8; --success:#3a7a4a; --success-bg:#e0f0e4; --warning:#8a7a20; --warning-bg:#f0ecd0; --danger:#a04040; --danger-bg:#f0e0e0; --info:#4a7a8a; --info-bg:#e0edf2; --bg:#d4e8d4; --sidebar-bg:#1a3a22; --sidebar-hover:#244d2e; --sidebar-active:#2e603a; --sidebar-text:#8ab898; --sidebar-text-hover:#d0f0d8; --sidebar-section:#5a8a68; --card-bg:#e8f4e8; --card-border:#c0d8c0; --text:#2a3d2a; --text-muted:#5a7a5a; --input-bg:#e0f0e0; --input-border:#b8d0b8; --sec-transfer:linear-gradient(135deg,rgba(74,140,90,0.18),rgba(92,160,108,0.08)); --sec-transfer-border:rgba(74,140,90,0.25); --sec-balance:linear-gradient(135deg,rgba(58,122,74,0.18),rgba(80,160,90,0.08)); --sec-balance-border:rgba(58,122,74,0.25); --sec-expense:linear-gradient(135deg,rgba(138,122,32,0.18),rgba(180,160,60,0.08)); --sec-expense-border:rgba(138,122,32,0.25); --sec-profit:linear-gradient(135deg,rgba(160,64,64,0.18),rgba(200,100,100,0.08)); --sec-profit-border:rgba(160,64,64,0.25); }
+        body.blue { --primary:#5a7da0; --primary-light:#6e92b8; --primary-dark:#4a6680; --primary-bg:#e6eef6; --success:#3a7a7a; --success-bg:#e0f0f0; --warning:#7a7a30; --warning-bg:#f0ecd0; --danger:#a05050; --danger-bg:#f0e0e0; --info:#3a6a8a; --info-bg:#e0edf4; --bg:#dce6f2; --sidebar-bg:#1a2a3a; --sidebar-hover:#243a4d; --sidebar-active:#2e4a60; --sidebar-text:#8aa8c8; --sidebar-text-hover:#d0e0f0; --sidebar-section:#5a7a9a; --card-bg:#eef4fa; --card-border:#c0d0e0; --text:#2a3440; --text-muted:#5a6a7a; --input-bg:#e4eef8; --input-border:#b8c8d8; --sec-transfer:linear-gradient(135deg,rgba(90,125,160,0.18),rgba(110,146,184,0.08)); --sec-transfer-border:rgba(90,125,160,0.25); --sec-balance:linear-gradient(135deg,rgba(58,122,122,0.18),rgba(80,160,160,0.08)); --sec-balance-border:rgba(58,122,122,0.25); --sec-expense:linear-gradient(135deg,rgba(122,122,48,0.18),rgba(160,160,70,0.08)); --sec-expense-border:rgba(122,122,48,0.25); --sec-profit:linear-gradient(135deg,rgba(160,80,80,0.18),rgba(200,110,110,0.08)); --sec-profit-border:rgba(160,80,80,0.25); }
+        body.beige { --primary:#8a7a5a; --primary-light:#a0906e; --primary-dark:#6a5e42; --primary-bg:#f2ece0; --success:#6a8a5a; --success-bg:#ecf2e4; --warning:#a09030; --warning-bg:#f4ecd0; --danger:#a06050; --danger-bg:#f2e4e0; --info:#6a7a8a; --info-bg:#e4ecf2; --bg:#f5f0e0; --sidebar-bg:#2d2820; --sidebar-hover:#3d382e; --sidebar-active:#504a3e; --sidebar-text:#a89a7a; --sidebar-text-hover:#e8dcc8; --sidebar-section:#7a6e5a; --card-bg:#fdfaf0; --card-border:#d8d0bc; --text:#3d3529; --text-muted:#7a6e5a; --input-bg:#f0ecd8; --input-border:#ccc4ae; --sec-transfer:linear-gradient(135deg,rgba(138,122,90,0.18),rgba(160,144,110,0.08)); --sec-transfer-border:rgba(138,122,90,0.25); --sec-balance:linear-gradient(135deg,rgba(106,138,90,0.18),rgba(130,160,110,0.08)); --sec-balance-border:rgba(106,138,90,0.25); --sec-expense:linear-gradient(135deg,rgba(160,144,48,0.18),rgba(200,180,70,0.08)); --sec-expense-border:rgba(160,144,48,0.25); --sec-profit:linear-gradient(135deg,rgba(160,96,80,0.18),rgba(200,130,110,0.08)); --sec-profit-border:rgba(160,96,80,0.25); }
+        body.purple { --primary:#7a5a9a; --primary-light:#906eb0; --primary-dark:#5e4278; --primary-bg:#eee6f6; --success:#5a7a6a; --success-bg:#e6f0ea; --warning:#8a7a40; --warning-bg:#f0ecd8; --danger:#a0506a; --danger-bg:#f0e0e6; --info:#5a6a8a; --info-bg:#e4ecf4; --bg:#e8e0f0; --sidebar-bg:#221835; --sidebar-hover:#302848; --sidebar-active:#403860; --sidebar-text:#a890c8; --sidebar-text-hover:#d8c8f0; --sidebar-section:#7a5a9a; --card-bg:#f5f0fa; --card-border:#d0c8e0; --text:#2a2035; --text-muted:#6a5a7a; --input-bg:#eee8f8; --input-border:#c8c0d8; --sec-transfer:linear-gradient(135deg,rgba(122,90,154,0.18),rgba(144,110,176,0.08)); --sec-transfer-border:rgba(122,90,154,0.25); --sec-balance:linear-gradient(135deg,rgba(90,122,106,0.18),rgba(110,150,130,0.08)); --sec-balance-border:rgba(90,122,106,0.25); --sec-expense:linear-gradient(135deg,rgba(138,122,64,0.18),rgba(180,160,80,0.08)); --sec-expense-border:rgba(138,122,64,0.25); --sec-profit:linear-gradient(135deg,rgba(160,80,106,0.18),rgba(200,110,140,0.08)); --sec-profit-border:rgba(160,80,106,0.25); }
+        body.size-1 { font-size: 14px; }
+        body.size-2 { font-size: 16px; }
+        body.size-3 { font-size: 18px; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg); font-family: 'Cairo', sans-serif; color: var(--text); transition: background .3s, color .3s; margin: 0; min-height: 100vh; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; }
+        .app-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; right: 0; bottom: 0; z-index: 100; transition: transform .3s; }
+        .sidebar .brand { display: flex; align-items: center; gap: 10px; padding: 20px 22px; border-bottom: 1px solid var(--card-border); }
+        .sidebar .brand .logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #818cf8); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+        .sidebar .brand span { color: #f59e0b !important; font-size: 1rem; font-weight: 700; letter-spacing: 0.3px; text-shadow: 0 0 8px rgba(245,158,11,.4); }
+        .sidebar .nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+        .sidebar .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: var(--sidebar-text); text-decoration: none; border-radius: var(--radius-xs); transition: all .2s; font-size: 0.85rem; font-weight: 500; margin-bottom: 2px; }
+        .sidebar .nav-item i { width: 20px; text-align: center; font-size: 1rem; flex-shrink: 0; }
+        .sidebar .nav-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text-hover); }
+        .sidebar .nav-item.active { background: var(--sidebar-active); color: #fff; }
+        .sidebar .nav-section { color: var(--sidebar-section); font-size: 0.7rem; font-weight: 700; padding: 16px 14px 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar .sidebar-footer { border-top: 1px solid var(--card-border); padding: 10px; }
+        .sidebar .sidebar-footer .nav-item { margin: 0; }
+        .sec-box { border-radius:8px; margin:4px 10px 8px; padding:8px; background:var(--sec-transfer); border:1px solid var(--sec-transfer-border); }
+        .sec-box.balances { background:var(--sec-balance); border-color:var(--sec-balance-border); }
+        .sec-box.expenses { background:var(--sec-expense); border-color:var(--sec-expense-border); }
+        .sec-box.internal { background:#f0fdfa; border-color:#99f6e4; }
+        .sec-box.profits { background:var(--sec-profit); border-color:var(--sec-profit-border); }
+        .stat-card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--card-border); padding: 20px; box-shadow: var(--shadow-sm); transition: all .2s; }
+        .stat-card:hover { box-shadow: var(--shadow); }
+        .main-area { flex: 1; margin-right: 240px; min-height: 100vh; }
+        .topbar { background: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); min-height: 46px; }
+        .topbar .page-title h4 { font-size: 1rem; font-weight: 700; margin: 0; }
+        .topbar .page-title small { font-size: 0.7rem; color: var(--text-muted); }
+        .topbar .page-title:empty { display:none; }
+        .topbar .page-title h4:empty, .topbar .page-title small:empty { display:none; }
+        .topbar .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar .topbar-actions .btn-icon { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; }
+        .topbar .topbar-actions .btn-icon:hover { background: var(--primary-bg); color: var(--primary); border-color: var(--primary); }
+        .page-content { padding: 16px 24px; }
+        .card-app { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--card-border); box-shadow: var(--shadow-sm); transition: box-shadow .2s; }
+        .card-app:hover { box-shadow: var(--shadow); }
+        .card-app .card-header { padding: 16px 20px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; }
+        .card-app .card-header h5 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+        .card-app .card-body { padding: 20px; }
+        .stat-card .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .stat-card .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+        .stat-card .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1.2; }
+        .table-app { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .table-app thead th { background: var(--bg); padding: 10px 12px; font-weight: 700; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--card-border); white-space: nowrap; }
+        .table-app tbody td { padding: 10px 12px; border-bottom: 1px solid var(--card-border); vertical-align: middle; }
+        .table-app tbody tr:hover { background: var(--primary-bg); }
+        .table-app tbody tr:last-child td { border-bottom: none; }
+        .form-control, .form-select { background: var(--input-bg); border: none; color: var(--text); border-radius: var(--radius-xs); font-size: 0.92rem; padding: 10px 14px; transition: all .2s; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.07), inset -1px -1px 3px rgba(255,255,255,0.5); }
+        .form-control:focus, .form-select:focus { background: var(--card-bg); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.07), inset -1px -1px 3px rgba(255,255,255,0.5), 0 0 0 3px rgba(99,102,241,0.12); color: var(--text); }
+        .form-control-sm, .form-select-sm { font-size: 0.88rem; padding: 8px 11px; }
+        .form-label { font-weight: 700; font-size: 0.88rem; color: var(--text); margin-bottom: 5px; }
+        .btn { border-radius: var(--radius-xs); font-size: 0.85rem; padding: 0.45rem 1.2rem; font-weight: 600; transition: all .2s; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+        .btn-success { background: var(--success); border-color: var(--success); color: #fff; }
+        .btn-success:hover { background: #047857; border-color: #047857; transform: translateY(-1px); }
+        .btn-outline-primary { border-color: var(--primary); color: var(--primary); }
+        .btn-outline-primary:hover { background: var(--primary); color: #fff; }
+        .btn-sm { font-size: 0.78rem; padding: 0.3rem 0.8rem; }
+        .badge-app { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+        .badge-primary { background: var(--primary-bg); color: var(--primary); }
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger); }
+        .alert-app { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; border: none; display: flex; align-items: center; gap: 10px; animation: slideDown 0.3s ease; }
+        .alert-app i { font-size: 1.2rem; flex-shrink: 0; }
+        .alert-app .btn-close { margin-right: auto; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        h2.page-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input { padding-right: 36px; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-area { margin-right: 0; }
+            .page-content { padding: 16px; }
+            .topbar { padding: 10px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <div class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="logo"><i class="bi bi-arrow-left-right"></i></div>
+                <span>شركة اليمامة المالية</span>
+                <div style="margin-right:auto;position:relative;cursor:pointer" onclick="window.location.href='{% url 'messages_inbox' %}'" title="الرسائل">
+                    <i class="bi bi-bell-fill" style="font-size:1.1rem;color:#f59e0b;animation:none" id="bellIcon"></i>
+                    <span id="bellBadge" style="display:none;position:absolute;top:-6px;left:-8px;background:#dc2626;color:#fff;font-size:0.6rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 2px 6px rgba(220,38,38,0.5)"></span>
+                </div>
+            </div>
+            <div class="nav">
+                {% if current_user.perm_home or current_user.is_admin %}
+                <a href="{% url 'home' %}" class="nav-item {% if request.path == '/' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i> لوحة التحكم</a>
+                {% endif %}
+
+                {% if current_user.perm_transactions or current_user.perm_add_transaction or current_user.perm_import_whatsapp or current_user.is_admin %}
+                <div class="sec-box">
+                    <div class="nav-section" style="color:#818cf8;padding:4px 8px 6px;">الحوالات</div>
+                    <div style="display:flex;gap:4px;padding:0 4px;">
+                    {% if current_user.perm_add_transaction or current_user.is_admin %}
+                    <a href="{% url 'add_transaction' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/transactions/add/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-plus-circle"></i> إضافة</a>
+                    {% endif %}
+                    {% if current_user.perm_transactions or current_user.is_admin %}
+                    <a href="{% url 'transactions' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/transactions/' in request.path and '/add/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
+                    {% endif %}
+                    </div>
+                    {% if current_user.perm_import_whatsapp or current_user.is_admin %}
+                    <a href="{% url 'import_whatsapp' %}" class="nav-item" style="padding:7px 10px;{% if '/whatsapp/import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-whatsapp" style="color:#25d366;"></i> <span style="color:#25d366;">تصدير</span> <span style="color:#94a3b8;">و</span> <span style="color:#0ea5e9;">استيراد</span> <span style="color:#94a3b8;">حوالات</span></a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if current_user.perm_capital or current_user.perm_add_capital or current_user.perm_import_balance or current_user.is_admin %}
+                <div class="sec-box balances">
+                    <div class="nav-section" style="color:#34d399;padding:4px 8px 6px;">الأرصدة</div>
+                    <div style="display:flex;gap:4px;padding:0 4px;">
+                    {% if current_user.perm_add_capital or current_user.is_admin %}
+                    <a href="{% url 'add_capital' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/capital/add/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-plus-circle"></i> إضافة</a>
+                    {% endif %}
+                    {% if current_user.perm_capital or current_user.is_admin %}
+                    <a href="{% url 'capital_list' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/capital/' in request.path and '/add/' not in request.path and '/import/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
+                    {% endif %}
+                    </div>
+                    {% if current_user.perm_import_balance or current_user.is_admin %}
+                    <a href="{% url 'import_balance' %}" class="nav-item" style="padding:7px 10px;{% if '/capital/import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-upload" style="color:#059669;"></i> <span style="color:#059669;">تصدير</span> <span style="color:#94a3b8;">و</span> <span style="color:#f59e0b;">استيراد</span> <span style="color:#94a3b8;">أرصدة</span></a>
+                    {% endif %}
+                    <a href="{% url 'carryover_balance' %}" class="nav-item" style="padding:7px 10px;{% if '/carryover/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-skip-forward"></i> ترحيل الرصيد</a>
+                </div>
+                {% endif %}
+
+                {% if current_user.perm_expenses or current_user.perm_add_expense or current_user.is_admin %}
+                <div class="sec-box expenses">
+                    <div class="nav-section" style="color:#fbbf24;padding:4px 8px 6px;">المصروفات</div>
+                    <div style="display:flex;gap:4px;padding:0 4px;">
+                    {% if current_user.perm_add_expense or current_user.is_admin %}
+                    <a href="{% url 'add_expense' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/expenses/add/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-plus-circle"></i> إضافة</a>
+                    {% endif %}
+                    {% if current_user.perm_expenses or current_user.is_admin %}
+                    <a href="{% url 'expenses_list' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/expenses/' in request.path and '/add/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
+                    {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if current_user.perm_internal_transfer or current_user.is_admin %}
+                <div class="sec-box internal">
+                    <div class="nav-section" style="color:#0d9488;padding:4px 8px 6px;display:flex;align-items:center;gap:6px">
+                       حوالات داخلية
+                        <span id="transferBadge" style="display:none;background:#dc2626;color:#fff;font-size:0.6rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 2px 6px rgba(220,38,38,0.5);animation:pulseGlow 2s ease infinite"></span>
+                    </div>
+                    <div style="display:flex;gap:4px;padding:0 4px;">
+                    <a href="{% url 'add_internal_transfer' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/internal/add/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-send"></i> إرسال</a>
+                    <a href="{% url 'internal_transfer_list' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/internal/' in request.path and '/add/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if current_user.perm_profits_report or current_user.is_admin %}
+                <div class="sec-box profits">
+                    <div class="nav-section" style="color:#ec4899;padding:4px 8px 6px;">الأرباح</div>
+                    <div style="display:flex;gap:4px;padding:0 4px;">
+                    <a href="{% url 'profits_report' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/profits/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-graph-up-arrow"></i> التقرير</a>
+                    <a href="/admin/" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;"><i class="bi bi-gear"></i> الإعدادات</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if current_user.perm_users or current_user.is_admin %}
+                <div class="sec-box" style="margin-top:8px">
+                    <div class="nav-section" style="color:#8b5cf6;padding:4px 8px 6px;">إدارة النظام</div>
+                    <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
+                    <form method="POST" action="{% url 'toggle_maintenance' %}" style="margin:0">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item" style="width:100%;border:none;background:none;text-align:right;padding:7px 10px;cursor:pointer;font-family:Cairo,sans-serif;color:{% if maintenance_mode %}#dc2626{% else %}var(--sidebar-text){% endif %}">
+                            <i class="bi bi-tools" style="color:{% if maintenance_mode %}#dc2626{% else %}#94a3b8{% endif %};"></i> 
+                            {% if maintenance_mode %}إيقاف الصيانة{% else %}وضع الصيانة{% endif %}
+                            {% if maintenance_mode %}<span style="background:#dc2626;color:#fff;font-size:.6rem;padding:2px 6px;border-radius:8px;margin-right:6px;font-weight:700">مفعل</span>{% endif %}
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="sec-box" style="margin-top:8px">
+                    <div class="nav-section" style="color:#0ea5e9;padding:4px 8px 6px;">التواصل</div>
+                    <a href="{% url 'messages_inbox' %}" class="nav-item" style="padding:7px 10px;{% if '/messages/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
+                        <i class="bi bi-envelope-fill" style="color:#0ea5e9;"></i> الرسائل
+                    </a>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <a class="nav-item" data-action="toggleTheme"><i class="bi bi-palette"></i> <span id="themeLabel">السمات</span></a>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div class="topbar">
+                <div class="page-title">
+                    <h4>{% block page_title %}{% endblock %}</h4>
+                    <small>{% block breadcrumb %}{% endblock %}</small>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-icon d-md-none" data-action="toggleSidebar"><i class="bi bi-list"></i></button>
+                    <div class="btn-icon" data-action="toggleTheme" title="السمات اللونية"><i class="bi bi-palette" id="themeIcon"></i></div>
+                    <div class="btn-icon" data-action="toggleFontSize" title="حجم الخط" style="font-weight:700;font-size:0.8rem;"><span id="fontIcon">A</span><sup id="fontSizeLabel" style="font-size:0.6rem;">1</sup></div>
+                    {% if current_user %}
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-right:8px">
+                        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:800">{{ current_user.username|first }}</div>
+                        <div style="line-height:1.2">
+                            <div style="font-size:.78rem;font-weight:700;color:var(--text)">{{ current_user.username }}</div>
+                            <div style="font-size:.65rem;color:var(--text-muted)">{% if current_user.is_admin %}مدير{% else %}{{ current_user.office_name|default:"مستخدم" }}{% endif %}</div>
+                        </div>
+                        <a href="{% url 'logout' %}" style="color:var(--danger);font-size:1rem;text-decoration:none;margin-right:4px" title="تسجيل الخروج"><i class="bi bi-box-arrow-left"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="page-content">
+                {% if messages %}
+                {% for msg in messages %}
+                <div class="alert-app mb-3" style="background:{% if msg.tags == 'success' %}var(--success-bg){% elif msg.tags == 'error' %}var(--danger-bg){% elif msg.tags == 'warning' %}var(--warning-bg){% else %}var(--info-bg){% endif %};">
+                    <i class="bi {% if msg.tags == 'success' %}bi-check-circle-fill" style="color:var(--success){% elif msg.tags == 'error' %}bi-x-circle-fill" style="color:var(--danger){% elif msg.tags == 'warning' %}bi-exclamation-triangle-fill" style="color:var(--warning){% else %}bi-info-circle-fill" style="color:var(--info){% endif %}"></i>
+                    <span>{{ msg }}</span>
+                    <button type="button" class="btn-close" style="font-size:0.75rem;" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if carryover_reminder %}
+                <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3" id="carryoverAlert" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:12px;padding:12px 18px;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="background:#f59e0b;color:#fff;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700;font-size:0.9rem;color:#92400e;">⚠️ تذكير بالترحيل</div>
+                            <div style="font-size:0.82rem;color:#78350f;">{{ carryover_reminder.text }}</div>
+                            <div style="font-size:0.78rem;color:#92400e;margin-top:4px;">
+                                {% for c in carryover_reminder.clients %}
+                                <span style="background:#fff;padding:2px 8px;border-radius:6px;margin-left:6px;border:1px solid #f59e0b;font-weight:600;">
+                                    {{ c.name }}: <span style="color:{% if c.remaining_egp < 0 %}#dc2626{% else %}#059669{% endif %};">{{ c.remaining_egp|floatformat:3 }}</span> EGP
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'carryover_balance' %}?source_year={{ carryover_reminder.year }}&source_month={{ carryover_reminder.month }}" class="btn btn-sm" style="background:#f59e0b;color:#fff;border-radius:8px;font-weight:700;">
+                            <i class="bi bi-skip-forward"></i> ترحيل الآن
+                        </a>
+                        <button type="button" class="btn btn-sm" style="background:transparent;color:#92400e;border:1px solid #d97706;border-radius:8px;" onclick="dismissCarryoverReminder()">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <script>
+                function dismissCarryoverReminder() {
+                    fetch('/carryover/dismiss/{{ carryover_reminder.year }}-{{ carryover_reminder.month }}/', {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+                    }).then(function() {
+                        var el = document.getElementById('carryoverAlert');
+                        if (el) el.style.display = 'none';
+                    });
+                }
+                </script>
+                {% endif %}
+
+                {% if maintenance_mode and not current_user.is_admin %}
+                <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:2px solid #dc2626;border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+                    <div style="width:50px;height:50px;border-radius:12px;background:#dc2626;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="bi bi-tools" style="color:#fff;font-size:1.5rem"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;font-size:1rem;color:#991b1b;margin-bottom:4px">⚠️ النظام تحت الصيانة</div>
+                        <div style="font-size:.88rem;color:#b91c1c">{{ maintenance_message }}</div>
+                        <div style="font-size:.78rem;color:#dc2626;margin-top:6px;font-weight:600">يمكنك فقط عرض البيانات. التعديل غير متاح حالياً.</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" style="position:fixed;top:16px;left:16px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function(){
+        try {
+        var ls = {}; try { ls = localStorage; ls.getItem('_t'); } catch(e) { ls = {getItem:function(){return null}, setItem:function(){}}; }
+        var allThemes = ['light', 'soft', 'green', 'blue', 'beige', 'purple', 'dark'];
+        var themeLabels = {light:'نهاري', soft:'سيبيا', green:'أخضر', blue:'أزرق', beige:'بيج', purple:'بنفسجي', dark:'ليلي'};
+        var themeIcons = {light:'bi-sun', soft:'bi-cloud-sun', green:'bi-flower1', blue:'bi-droplet', beige:'bi-archive', purple:'bi-gem', dark:'bi-moon-stars'};
+        function applyTheme(t) {
+            if (t === '1') t = 'dark';
+            if (allThemes.indexOf(t) < 0) t = 'light';
+            document.body.classList.remove.apply(document.body.classList, allThemes);
+            if (t !== 'light') document.body.classList.add(t);
+            ls.setItem('darkMode', t);
+            var tl = document.getElementById('themeLabel');
+            var ti = document.getElementById('themeIcon');
+            if (tl) tl.textContent = themeLabels[t] || 'سمات';
+            if (ti) ti.className = 'bi ' + (themeIcons[t] || 'bi-palette');
+        }
+        var saved = ls.getItem('darkMode') || 'light';
+        applyTheme(saved);
+        var fs = parseInt(ls.getItem('fontSize')) || 2;
+        if (fs < 1) fs = 1; if (fs > 3) fs = 3;
+        document.body.classList.remove('size-1','size-2','size-3');
+        document.body.classList.add('size-' + fs);
+        ls.setItem('fontSize', fs);
+        var fl = document.getElementById('fontSizeLabel');
+        if (fl) fl.textContent = fs;
+        var els = document.querySelectorAll('[data-action="toggleTheme"],[data-action="toggleFontSize"],[data-action="toggleSidebar"]');
+        for (var i = 0; i < els.length; i++) {
+            (function(el) {
+                var action = el.getAttribute('data-action');
+                el.addEventListener('click', function() {
+                    if (action === 'toggleTheme') {
+                        var cur = ls.getItem('darkMode') || 'light';
+                        if (cur === '1') cur = 'dark';
+                        var idx = allThemes.indexOf(cur);
+                        if (idx < 0) idx = 0;
+                        var next = allThemes[(idx + 1) % allThemes.length];
+                        applyTheme(next);
+                    } else if (action === 'toggleFontSize') {
+                        var fs = parseInt(ls.getItem('fontSize')) || 2;
+                        fs = fs >= 3 ? 1 : fs + 1;
+                        document.body.classList.remove('size-1','size-2','size-3');
+                        document.body.classList.add('size-' + fs);
+                        ls.setItem('fontSize', fs);
+                        var fl = document.getElementById('fontSizeLabel');
+                        if (fl) fl.textContent = fs;
+                    } else if (action === 'toggleSidebar') {
+                        document.getElementById('sidebar').classList.toggle('open');
+                    }
+                });
+            })(els[i]);
+        }
+        } catch(e) {}
+    })();
+
+    // ============ SOUNDS ============
+    var SoundManager = {
+        ctx: null,
+        getCtx: function() {
+            if (!this.ctx) {
+                try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+            }
+            return this.ctx;
+        },
+        play: function(freq, type, dur, vol) {
+            var ctx = this.getCtx();
+            if (!ctx) return;
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.type = type || 'sine';
+            o.frequency.setValueAtTime(freq, ctx.currentTime);
+            g.gain.setValueAtTime(vol || 0.3, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (dur || 0.3));
+            o.connect(g); g.connect(ctx.destination);
+            o.start(); o.stop(ctx.currentTime + (dur || 0.3));
+        },
+        receive: function() {
+            this.play(880, 'sine', 0.12, 0.25);
+            var self = this;
+            setTimeout(function(){ self.play(1100, 'sine', 0.15, 0.3); }, 120);
+            setTimeout(function(){ self.play(1320, 'sine', 0.2, 0.25); }, 260);
+        },
+        send: function() {
+            this.play(660, 'sine', 0.1, 0.2);
+            var self = this;
+            setTimeout(function(){ self.play(880, 'sine', 0.15, 0.25); }, 100);
+        },
+        bell: function() {
+            this.play(1200, 'sine', 0.15, 0.3);
+            var self = this;
+            setTimeout(function(){ self.play(1500, 'sine', 0.12, 0.25); }, 150);
+            setTimeout(function(){ self.play(1800, 'triangle', 0.2, 0.2); }, 300);
+        }
+    };
+
+    // ============ TOAST NOTIFICATIONS ============
+    function showToast(sender, subject, body, time) {
+        var c = document.getElementById('toastContainer');
+        if (!c) return;
+        var t = document.createElement('div');
+        t.style.cssText = 'pointer-events:auto;background:linear-gradient(135deg,#1e293b,#334155);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.35);display:flex;align-items:flex-start;gap:12px;min-width:300px;max-width:380px;animation:toastIn .4s cubic-bezier(.16,1,.3,1);cursor:pointer;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);position:relative;overflow:hidden;';
+        t.innerHTML = '<div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem"><i class="bi bi-envelope-fill"></i></div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;margin-bottom:2px;display:flex;align-items:center;gap:6px"><span style="color:#f59e0b">رسالة جديدة</span><span style="font-size:.65rem;color:#94a3b8;margin-right:auto">' + time + '</span></div><div style="font-size:.78rem;font-weight:600;margin-bottom:2px">من: ' + sender + '</div><div style="font-size:.72rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + subject + '</div></div><button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#94a3b8;font-size:1rem;cursor:pointer;padding:0;flex-shrink:0">&times;</button>';
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:absolute;bottom:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#ef4444);width:100%;animation:toastBar 5s linear forwards;';
+        t.appendChild(bar);
+        c.appendChild(t);
+        t.addEventListener('click', function(){ window.location.href = '{% url "messages_inbox" %}'; });
+        setTimeout(function(){ t.style.animation = 'toastOut .3s ease forwards'; setTimeout(function(){ t.remove(); }, 300); }, 5000);
+    }
+
+    // ============ BELL ANIMATION ============
+    function ringBell() {
+        var bell = document.getElementById('bellIcon');
+        if (bell) { bell.style.animation = 'none'; bell.offsetHeight; bell.style.animation = 'bellRing .6s ease'; }
+    }
+
+    // ============ POLLING ============
+    var lastCount = 0;
+    function checkUnread() {
+        fetch('/api/unread-count/')
+            .then(r => r.json())
+            .then(data => {
+                // Update badge
+                var badge = document.getElementById('unreadBadge');
+                var bellBadge = document.getElementById('bellBadge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                if (bellBadge) {
+                    if (data.count > 0) {
+                        bellBadge.textContent = data.count;
+                        bellBadge.style.display = 'flex';
+                    } else {
+                        bellBadge.style.display = 'none';
+                    }
+                }
+                // New messages -> toast + sound
+                if (data.new_messages && data.new_messages.length > 0 && lastCount > 0) {
+                    SoundManager.receive();
+                    ringBell();
+                    for (var i = 0; i < data.new_messages.length; i++) {
+                        var m = data.new_messages[i];
+                        showToast(m.sender, m.subject, m.body, m.time);
+                    }
+                }
+                lastCount = data.count;
+            }).catch(() => {});
+    }
+    checkUnread();
+    setInterval(checkUnread, 5000);
+
+    // ============ TRANSFER NOTIFICATIONS ============
+    function showTransferToast(order, direction, office, sender, amount) {
+        var c = document.getElementById('toastContainer');
+        if (!c) return;
+        var t = document.createElement('div');
+        t.style.cssText = 'pointer-events:auto;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.35);display:flex;align-items:flex-start;gap:12px;min-width:300px;max-width:380px;animation:toastIn .4s cubic-bezier(.16,1,.3,1);cursor:pointer;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);position:relative;overflow:hidden;';
+        t.innerHTML = '<div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#0d9488,#14b8a6);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem"><i class="bi bi-arrow-left-right"></i></div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;margin-bottom:2px;display:flex;align-items:center;gap:6px"><span style="color:#14b8a6">حوالة جديدة</span></div><div style="font-size:.78rem;font-weight:600;margin-bottom:2px">' + direction + ' ' + office + '</div><div style="font-size:.72rem;color:#94a3b8">مرسل: ' + sender + ' — ' + amount + ' LYD</div></div><button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#94a3b8;font-size:1rem;cursor:pointer;padding:0;flex-shrink:0">&times;</button>';
+        var bar = document.createElement('div');
+        bar.style.cssText = 'position:absolute;bottom:0;right:0;height:3px;background:linear-gradient(90deg,#0d9488,#06b6d4);width:100%;animation:toastBar 5s linear forwards;';
+        t.appendChild(bar);
+        c.appendChild(t);
+        t.addEventListener('click', function(){ window.location.href = '{% url "internal_transfer_list" %}'; });
+        setTimeout(function(){ t.style.animation = 'toastOut .3s ease forwards'; setTimeout(function(){ t.remove(); }, 300); }, 5000);
+    }
+
+    var lastTransferCount = 0;
+    function checkNewTransfers() {
+        fetch('/api/new-transfers/')
+            .then(r => r.json())
+            .then(data => {
+                var badge = document.getElementById('transferBadge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                if (data.new_transfers && data.new_transfers.length > 0 && lastTransferCount > 0) {
+                    SoundManager.bell();
+                    ringBell();
+                    for (var i = 0; i < data.new_transfers.length; i++) {
+                        var t = data.new_transfers[i];
+                        showTransferToast(t.order_number, t.direction, t.office_name, t.sender_name, t.sent_amount);
+                    }
+                }
+                lastTransferCount = data.count;
+            }).catch(() => {});
+    }
+    checkNewTransfers();
+    setInterval(checkNewTransfers, 5000);
+    </script>
+
+    <style>
+    @keyframes toastIn { from { opacity:0; transform:translateX(-40px) scale(0.95); } to { opacity:1; transform:translateX(0) scale(1); } }
+    @keyframes toastOut { from { opacity:1; transform:translateX(0) scale(1); } to { opacity:0; transform:translateX(-40px) scale(0.95); } }
+    @keyframes toastBar { from { width:100%; } to { width:0%; } }
+    @keyframes bellRing { 0%{transform:rotate(0)} 15%{transform:rotate(20deg)} 30%{transform:rotate(-18deg)} 45%{transform:rotate(14deg)} 60%{transform:rotate(-10deg)} 75%{transform:rotate(6deg)} 100%{transform:rotate(0)} }
+    @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.5)} 50%{box-shadow:0 0 0 6px rgba(220,38,38,0)} }
+    #bellBadge { animation: pulseGlow 2s ease infinite; }
+    </style>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

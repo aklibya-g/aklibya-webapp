@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مرحباً بك - شركة اليمامة المالية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Cairo,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);overflow:hidden}
+        .welcome-container{text-align:center;z-index:10;animation:fadeInUp .8s ease}
+        .logo-wrapper{position:relative;margin-bottom:30px}
+        .logo-ring{width:140px;height:140px;border-radius:50%;border:3px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;margin:0 auto;animation:ringPulse 2s ease-in-out infinite;position:relative}
+        .logo-ring::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(37,99,235,.2);animation:ringPulse 2s ease-in-out infinite .3s}
+        .logo-ring::after{content:'';position:absolute;inset:-16px;border-radius:50%;border:1px solid rgba(5,150,105,.15);animation:ringPulse 2s ease-in-out infinite .6s}
+        .logo-img{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.2);box-shadow:0 8px 40px rgba(0,0,0,.4)}
+        @keyframes ringPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.05);opacity:1}}
+        .welcome-text{margin-bottom:20px}
+        .welcome-text h1{color:#f59e0b;font-size:2.2rem;font-weight:900;margin-bottom:8px;text-shadow:0 0 30px rgba(245,158,11,.4);animation:textGlow 2s ease-in-out infinite}
+        .welcome-text .name{color:#fff;font-size:1.4rem;font-weight:800;margin-bottom:12px}
+        .welcome-text .role{color:#94a3b8;font-size:.95rem;font-weight:600}
+        @keyframes textGlow{0%,100%{text-shadow:0 0 20px rgba(245,158,11,.3)}50%{text-shadow:0 0 40px rgba(245,158,11,.6)}}
+        .loading-bar{width:200px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin:24px auto 0;overflow:hidden}
+        .loading-bar::after{content:'';display:block;width:60%;height:100%;background:linear-gradient(90deg,#2563eb,#059669,#f59e0b);border-radius:2px;animation:loading 1.5s ease-in-out infinite}
+        @keyframes loading{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+        .skip-btn{margin-top:30px;padding:10px 28px;border:2px solid rgba(255,255,255,.15);border-radius:10px;background:transparent;color:#94a3b8;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-block}
+        .skip-btn:hover{border-color:#2563eb;color:#fff;background:rgba(37,99,235,.15)}
+        .floating-shapes{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+        .shape{position:absolute;border-radius:50%;opacity:.05}
+        .shape-1{width:400px;height:400px;background:#f59e0b;top:-150px;right:-150px;animation:float 12s ease-in-out infinite}
+        .shape-2{width:300px;height:300px;background:#2563eb;bottom:-100px;left:-100px;animation:float 15s ease-in-out infinite reverse}
+        .shape-3{width:200px;height:200px;background:#059669;top:40%;left:10%;animation:float 18s ease-in-out infinite}
+        @keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(180deg)}}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        .features{display:flex;gap:20px;margin-top:36px;justify-content:center;flex-wrap:wrap}
+        .feature{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 20px;min-width:120px;backdrop-filter:blur(10px);animation:fadeInUp .8s ease both}
+        .feature:nth-child(1){animation-delay:.2s}
+        .feature:nth-child(2){animation-delay:.4s}
+        .feature:nth-child(3){animation-delay:.6s}
+        .feature .icon{font-size:1.8rem;margin-bottom:6px}
+        .feature .label{color:#94a3b8;font-size:.75rem;font-weight:700}
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+    
+    <div class="welcome-container">
+        <div class="logo-wrapper">
+            <div class="logo-ring">
+                <img src="/static/images/logo.jpeg" alt="شعار شركة اليمامة المالية" class="logo-img">
+            </div>
+        </div>
+        
+        <div class="welcome-text">
+            <h1>مرحباً بك</h1>
+            <div class="name">{{ username }}</div>
+            <div class="role">{% if is_admin %}مدير النظام{% else %}شركة اليمامة المالية{% endif %}</div>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="icon">💸</div>
+                <div class="label">الحوالات</div>
+            </div>
+            <div class="feature">
+                <div class="icon">💰</div>
+                <div class="label">الأرصدة</div>
+            </div>
+            <div class="feature">
+                <div class="icon">📊</div>
+                <div class="label">التقارير</div>
+            </div>
+        </div>
+        
+        <div class="loading-bar"></div>
+        
+        <a href="{% url 'home' %}" class="skip-btn">الانتقال للرئيسية</a>
+    </div>
+    
+    <script>
+        setTimeout(function(){ window.location.href = "{% url 'home' %}"; }, 4000);
+    </script>
+</body>
+</html>

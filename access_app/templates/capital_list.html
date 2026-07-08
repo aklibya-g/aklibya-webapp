@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}الأرصدة{% endblock %}
+{% block page_title %}<i class="bi bi-wallet2 text-success"></i> الأرصدة{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+    <a href="{% url 'add_capital' %}" class="btn btn-success btn-sm"><i class="bi bi-plus-circle"></i> إضافة رصيد</a>
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <select name="year" class="form-select form-select-sm" style="width:auto;">
+            <option value="">كل السنوات</option>
+            {% for y in "2024,2025,2026,2027,2028"|split %}
+            <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <select name="month" class="form-select form-select-sm" style="width:auto;">
+            <option value="">كل الشهور</option>
+            {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
+            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>شهر {{ m }}</option>
+            {% endfor %}
+        </select>
+        <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
+    </form>
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSort()">
+        <i class="bi bi-sort-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+        {% if order == 'desc' %}تنازلي{% else %}تصاعدي{% endif %}
+    </button>
+</div>
+
+<div class="stat-card p-3 mb-3">
+    <div class="d-flex gap-3 flex-wrap">
+        <span><strong>إجمالي EGP:</strong> {{ total_egp|fmt }}</span>
+        <span class="text-muted">|</span>
+        <span><strong>متوسط السعر:</strong> {{ avg_rate|floatformat:"-3u" }}</span>
+        <span class="text-muted">|</span>
+        <span><strong>إجمالي LYD:</strong> {{ total_lyd|fmt }}</span>
+    </div>
+</div>
+
+<form id="bulkForm" method="post" action="{% url 'bulk_delete_capital' %}">
+    {% csrf_token %}
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelected()"><i class="bi bi-trash"></i> حذف المحدد</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearAll()"><i class="bi bi-trash3"></i> حذف الكل</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="printPage()"><i class="bi bi-printer"></i> طباعة</button>
+        <label class="btn btn-outline-secondary btn-sm" style="cursor:pointer;">
+            <input type="checkbox" id="selectAll" onchange="toggleAll(this)"> تحديد الكل
+        </label>
+    </div>
+
+    <div class="stat-card p-3">
+        <div class="table-responsive">
+            <table class="table-app">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"><input type="checkbox" id="selectAllTh" onchange="toggleAll(this)"></th>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>المبلغ مصري</th>
+                        <th>سعر الصرف</th>
+                        <th>المبلغ ليبي</th>
+                        <th>النوع</th>
+                        <th>العميل</th>
+                        <th>ملاحظات</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in capitals %}
+                    <tr>
+                        <td><input type="checkbox" name="ids" value="{{ c.id }}" class="row-check"></td>
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.date|date:"Y-m-d" }}</td>
+                        <td>{{ c.cash_in|fmt }}</td>
+                        <td>{{ c.exchange_rate|floatformat:"-3u" }}</td>
+                        <td>{{ c.libyan_cash|fmt }}</td>
+                        <td>{{ c.in_type|default:"-" }}</td>
+                        <td>{{ c.client.name|default:"-" }}</td>
+                        <td>{{ c.remarks|truncatechars:20|default:"" }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'edit_capital' c.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'delete_capital' c.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف هذا الرصيد؟')"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" class="text-center text-muted">لا توجد أرصدة</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+
+<form id="clearAllForm" method="post" action="{% url 'clear_capital' %}">
+    {% csrf_token %}
+</form>
+
+<script>
+function toggleAll(master) {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
+    document.getElementById('selectAllTh').checked = master.checked;
+    document.getElementById('selectAll').checked = master.checked;
+}
+function deleteSelected() {
+    var checked = document.querySelectorAll('.row-check:checked');
+    if (!checked.length) { alert('اختر أرصدة للحذف'); return; }
+    if (!confirm('حذف ' + checked.length + ' رصيد؟')) return;
+    document.getElementById('bulkForm').submit();
+}
+function clearAll() {
+    if (!confirm('هل أنت متأكد من حذف جميع الأرصدة؟')) return;
+    document.getElementById('clearAllForm').submit();
+}
+function printPage() {
+    var rows = document.querySelectorAll('.table-app tbody tr');
+    var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">';
+    html += '<title>تقرير الأرصدة</title>';
+    html += '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">';
+    html += '<style>';
+    html += '*{margin:0;padding:0;box-sizing:border-box}';
+    html += 'body{font-family:Cairo,sans-serif;direction:rtl;background:#fff;padding:15mm 12mm;font-size:10pt;color:#1a1a2e}';
+    html += '.header{text-align:center;border-bottom:3px double #059669;padding-bottom:10px;margin-bottom:16px}';
+    html += '.header h1{font-size:20pt;font-weight:900;color:#059669;margin:0}';
+    html += '.header .sub{font-size:10pt;color:#666;margin-top:4px}';
+    html += '.meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:9pt;color:#888;padding:0 4px}';
+    html += '.stats{display:flex;gap:12px;margin-bottom:14px;justify-content:center}';
+    html += '.stat-box{border:1.5px solid #059669;border-radius:8px;padding:8px 16px;text-align:center;min-width:130px}';
+    html += '.stat-box .label{font-size:8pt;color:#666;font-weight:600}.stat-box .val{font-size:13pt;font-weight:900;color:#059669}';
+    html += 'table{width:100%;border-collapse:collapse;margin-top:8px;font-size:9pt}';
+    html += 'thead th{background:#059669;color:#fff;padding:8px 6px;font-weight:700;text-align:center;font-size:8.5pt}';
+    html += 'tbody td{padding:6px 5px;border-bottom:1px solid #e5e7eb;text-align:center}';
+    html += 'tbody tr:nth-child(even){background:#f0fdf4}';
+    html += '.total-row{background:#d1fae5;font-weight:800;border-top:2px solid #059669}';
+    html += '.total-row td{padding:10px 6px;font-size:9.5pt}';
+    html += '.footer{margin-top:16px;text-align:center;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px}';
+    html += '.btn-print{display:inline-block;padding:10px 30px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
+    html += '@media print{body{padding:8mm 10mm}.btn-print{display:none!important}}';
+    html += '</style></head><body>';
+    
+    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير الأرصدة</div></div>';
+    html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
+    html += '<span>عدد السجلات: ' + rows.length + '</span></div>';
+    
+    var totalEGP = 0, totalLYD = 0;
+    rows.forEach(function(r){
+        var cells = r.querySelectorAll('td');
+        if(cells.length > 3){
+            totalEGP += parseFloat(cells[3].textContent.replace(/,/g,'')) || 0;
+            totalLYD += parseFloat(cells[5].textContent.replace(/,/g,'')) || 0;
+        }
+    });
+    
+    html += '<div class="stats">';
+    html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + rows.length + '</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي المصري (EGP)</div><div class="val">' + totalEGP.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي الليبي (LYD)</div><div class="val">' + totalLYD.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</div></div>';
+    html += '</div>';
+    
+    html += '<table><thead><tr><th>#</th><th>التاريخ</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th>النوع</th><th>العميل</th></tr></thead><tbody>';
+    
+    var idx = 1;
+    rows.forEach(function(r){
+        var cells = r.querySelectorAll('td');
+        if(cells.length > 3){
+            html += '<tr><td>' + idx + '</td>';
+            html += '<td>' + cells[2].textContent + '</td>';
+            html += '<td style="font-weight:800;color:#059669">' + cells[3].textContent + '</td>';
+            html += '<td>' + cells[4].textContent + '</td>';
+            html += '<td style="font-weight:800;color:#1e40af">' + cells[5].textContent + '</td>';
+            html += '<td>' + cells[6].textContent + '</td>';
+            html += '<td style="font-weight:700">' + cells[7].textContent + '</td></tr>';
+            idx++;
+        }
+    });
+    
+    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + totalEGP.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + totalLYD.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
+    
+    html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
+    html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
+    html += '</body></html>';
+    
+    var win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+}
+function toggleSort() {
+    var params = new URLSearchParams(window.location.search);
+    var current = params.get('order') || 'desc';
+    params.set('order', current === 'desc' ? 'asc' : 'desc');
+    window.location.search = params.toString();
+}
+</script>
+{% endblock %}

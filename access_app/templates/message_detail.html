@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}{{ msg.subject }}{% endblock %}
+{% block content %}
+<style}
+.detail-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.detail-header{padding:24px 28px;border-bottom:1px solid var(--border);background:var(--bg)}
+.detail-header h4{font-size:1.1rem;font-weight:800;margin-bottom:12px;color:var(--text)}
+.detail-meta{display:flex;gap:20px;flex-wrap:wrap}
+.detail-meta .meta-item{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--text-muted)}
+.detail-meta .meta-item i{font-size:.9rem}
+.detail-body{padding:28px}
+.detail-body .message-text{font-size:.95rem;line-height:2;color:var(--text);white-space:pre-wrap}
+.detail-sender{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.detail-sender .avatar{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800}
+.detail-sender .info{line-height:1.3}
+.detail-sender .name{font-size:.95rem;font-weight:700;color:var(--text)}
+.detail-sender .office{font-size:.78rem;color:var(--text-muted)}
+.reply-section{border-top:1px solid var(--border);padding:24px 28px;background:var(--bg)}
+.reply-section h6{font-size:.9rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.reply-box{width:100%;padding:16px;border:2px solid var(--border);border-radius:12px;font-family:Cairo,sans-serif;font-size:.9rem;background:var(--card-bg);color:var(--text);transition:border-color .2s;resize:vertical;min-height:120px;line-height:1.8}
+.reply-box:focus{outline:none;border-color:var(--primary)}
+.reply-actions{display:flex;gap:10px;margin-top:14px}
+.reply-btn{padding:10px 24px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.reply-btn-primary{background:#059669;color:#fff}.reply-btn-primary:hover{background:#047857}
+.reply-btn-danger{background:#dc2626;color:#fff}.reply-btn-danger:hover{background:#b91c1c}
+.reply-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.reply-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.reply-display{background:var(--card-bg);border:2px solid #059669;border-radius:12px;padding:20px;margin-top:16px}
+.reply-display .reply-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.82rem;font-weight:700;color:#059669}
+.reply-display .reply-text{font-size:.9rem;line-height:1.8;color:var(--text);white-space:pre-wrap}
+.reply-display .reply-time{font-size:.72rem;color:var(--text-muted);margin-top:8px}
+</style}
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-envelope-open fs-4" style="color:var(--primary)"></i>
+        <h5 class="mb-0 fw-bold">تفاصيل الرسالة</h5>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'messages_inbox' %}" class="reply-btn reply-btn-outline"><i class="bi bi-arrow-right"></i> الوارد</a>
+        <a href="{% url 'message_delete' msg.id %}" class="reply-btn reply-btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذه الرسالة؟')"><i class="bi bi-trash"></i> حذف</a>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="detail-header">
+        <h4>{{ msg.subject }}</h4>
+        <div class="detail-meta">
+            <div class="meta-item"><i class="bi bi-calendar3"></i> {{ msg.created_at|date:"Y-m-d H:i" }}</div>
+            <div class="meta-item"><i class="bi bi-clock"></i> {{ msg.created_at|timesince }}</div>
+            {% if msg.is_read %}
+            <div class="meta-item" style="color:#059669"><i class="bi bi-check-circle-fill"></i> مقروءة</div>
+            {% else %}
+            <div class="meta-item" style="color:var(--primary)"><i class="bi bi-circle-fill"></i> جديدة</div>
+            {% endif %}
+            {% if msg.is_replied %}
+            <div class="meta-item" style="color:#059669"><i class="bi bi-reply-fill"></i> تم الرد</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="detail-body">
+        <div class="detail-sender">
+            <div class="avatar" style="background:linear-gradient(135deg,{% if msg.sender.is_admin %}#8b5cf6,#a78bfa{% else %}#2563eb,#60a5fa{% endif %})">
+                {{ msg.sender.username|first }}
+            </div>
+            <div class="info">
+                <div class="name">{{ msg.sender.username }}</div>
+                <div class="office">{{ msg.sender.office_name|default:"شركة اليمامة المالية" }}</div>
+            </div>
+        </div>
+        <div class="message-text">{{ msg.body }}</div>
+    </div>
+    
+    {% if msg.is_replied and msg.reply %}
+    <div class="reply-section">
+        <h6><i class="bi bi-reply-fill" style="color:#059669"></i> الرد</h6>
+        <div class="reply-display">
+            <div class="reply-header">
+                <i class="bi bi-person-circle"></i>
+                رد {{ msg.receiver.username }}
+                {% if msg.reply_date %}<span style="margin-right:auto;font-weight:600;color:var(--text-muted)">{{ msg.reply_date|date:"Y-m-d H:i" }}</span>{% endif %}
+            </div>
+            <div class="reply-text">{{ msg.reply }}</div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if msg.receiver == current_user and not msg.is_replied %}
+    <div class="reply-section">
+        <h6><i class="bi bi-reply-fill"></i> رد على الرسالة</h6>
+        <form method="POST">
+            {% csrf_token %}
+            <textarea name="reply" class="reply-box" placeholder="اكتب ردك هنا..." required></textarea>
+            <div class="reply-actions">
+                <button type="submit" class="reply-btn reply-btn-primary"><i class="bi bi-send-fill"></i> إرسال الرد</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

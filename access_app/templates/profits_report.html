@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load static app_tags %}
+{% block title %}تقرير الأرباح{% endblock %}
+{% block page_title %}<i class="bi bi-graph-up-arrow text-success"></i> تقرير الأرباح{% endblock %}
+
+{% block content %}
+<div class="print-logo" style="display:none">
+    <img src="/static/images/logo.jpeg" alt="شعار الشركة">
+</div>
+<style>
+.profit-header{background:linear-gradient(135deg,#0f766e 0%,#065f46 100%);color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden}
+.profit-header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%);pointer-events:none}
+.profit-header h2{font-size:1.6rem;font-weight:800;margin:0 0 4px 0}
+.profit-header p{margin:0;opacity:.85;font-size:.95rem}
+.summary-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.s-card{background:#fff;border-radius:14px;padding:20px 18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.s-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.s-card .icon-box{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:12px}
+.s-card .s-label{font-size:.78rem;color:#6b7280;font-weight:600;margin-bottom:4px}
+.s-card .s-value{font-size:1.4rem;font-weight:800;color:#1a1a2e}
+.s-card .s-sub{font-size:.72rem;color:#9ca3af;margin-top:4px}
+.s-card.green .icon-box{background:#d1fae5;color:#059669}
+.s-card.green .s-value{color:#059669}
+.s-card.blue .icon-box{background:#dbeafe;color:#2563eb}
+.s-card.blue .s-value{color:#2563eb}
+.s-card.amber .icon-box{background:#fef3c7;color:#d97706}
+.s-card.amber .s-value{color:#d97706}
+.s-card.red .icon-box{background:#fee2e2;color:#dc2626}
+.s-card.red .s-value{color:#dc2626}
+.filter-card{background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;margin-bottom:24px}
+.filter-card .form-label{font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:5px}
+.filter-card .form-select{border-radius:10px;border:1.5px solid #d1d5db;padding:8px 12px;font-size:.85rem;transition:border-color .2s}
+.filter-card .form-select:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.15)}
+.btn-filter{background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-weight:700;font-size:.85rem;transition:all .2s}
+.btn-filter:hover{background:linear-gradient(135deg,#047857,#065f46);transform:translateY(-1px);box-shadow:0 4px 12px rgba(5,150,105,.3)}
+.btn-print{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-weight:700;font-size:.85rem;transition:all .2s}
+.btn-print:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.table-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;overflow:hidden}
+.table-card .table-header{padding:18px 22px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.table-card .table-header h3{font-size:1.05rem;font-weight:700;color:#1a1a2e;margin:0}
+.profit-table{width:100%;border-collapse:separate;border-spacing:0}
+.profit-table thead th{background:#f8fafb;color:#4b5563;font-size:.78rem;font-weight:700;padding:12px 14px;text-align:center;border-bottom:2px solid #e5e7eb;white-space:nowrap;letter-spacing:.3px}
+.profit-table tbody td{padding:12px 14px;text-align:center;font-size:.88rem;border-bottom:1px solid #f0f0f0;color:#374151;transition:background .15s}
+.profit-table tbody tr:hover td{background:#f0fdf9}
+.profit-table tbody tr:nth-child(even) td{background:#fafbfc}
+.profit-table tbody tr:nth-child(even):hover td{background:#f0fdf9}
+.profit-table .month-cell{font-weight:700;color:#1a1a2e;font-size:.9rem}
+.profit-table .profit-pos{color:#059669;font-weight:800}
+.profit-table .profit-neg{color:#dc2626;font-weight:800}
+.profit-table .rate-cell{background:#f8fafb;color:#6b7280;font-size:.82rem}
+.profit-table tfoot td{background:#f0fdf9;font-weight:800;color:#1a1a2e;border-top:2px solid #059669;padding:14px;font-size:.92rem}
+.profit-table tfoot .total-profit{font-size:1.1rem}
+.empty-state{text-align:center;padding:60px 20px;color:#9ca3af}
+.empty-state i{font-size:3rem;margin-bottom:12px;display:block}
+.monthly-detail{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.detail-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #e8ecf0;border-right:4px solid #059669}
+.detail-card.loss{border-right-color:#dc2626}
+.detail-card .dc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.detail-card .dc-month{font-weight:800;font-size:1rem;color:#1a1a2e}
+.detail-card .dc-profit{font-weight:800;font-size:1.1rem}
+.detail-card .dc-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.82rem;border-bottom:1px dashed #f0f0f0}
+.detail-card .dc-row:last-child{border-bottom:none}
+.detail-card .dc-row .dc-label{color:#6b7280}
+.detail-card .dc-row .dc-val{font-weight:600;color:#374151}
+.formula-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:.88rem;color:#1e40af;line-height:2}
+.formula-box strong{color:#1d4ed8}
+.toggle-view{display:flex;gap:8px}
+.toggle-btn{padding:7px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
+.toggle-btn:hover:not(.active){background:#f3f4f6}
+@media print{.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-card,.btn-filter,.btn-print,.toggle-view{display:none!important}.main-area{margin-right:0!important}.page-content{padding:8px!important}.profit-header{background:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 20px}.print-logo{display:block!important;text-align:center;margin-bottom:12px}.print-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #fff}.summary-cards{grid-template-columns:repeat(4,1fr);gap:10px}.s-card{box-shadow:none!important;border:1px solid #ccc;padding:12px}.table-card{box-shadow:none!important;border:1px solid #ccc}.monthly-detail{display:none!important}.profit-table thead th{background:#f0fdf0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.profit-table tfoot td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.formula-box{display:none!important}}
+@media(max-width:992px){.summary-cards{grid-template-columns:repeat(2,1fr)}.monthly-detail{grid-template-columns:1fr}}
+@media(max-width:576px){.summary-cards{grid-template-columns:1fr}}
+</style>
+
+<div class="profit-header">
+    <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div>
+            <h2>تقرير الأرباح الشهري</h2>
+            <p>شركة اليمامة المالية — {{ year }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="formula-box">
+    <i class="bi bi-calculator"></i> <strong>صيغة حساب الربح:</strong>
+    1 = (إجمالي الارصدة بالمصري − إجمالي الحوالات بالمصري) ÷ متوسط سعر صرف الارصدة &nbsp;|&nbsp;
+    2 = الارصدة بالليبي − الحوالات بالليبي &nbsp;|&nbsp;
+    <strong>الربح = 2 − 1</strong>
+</div>
+
+<div class="summary-cards">
+    <div class="s-card green">
+        <div class="icon-box"><i class="bi bi-cash-stack"></i></div>
+        <div class="s-label">صافي الربح (ليبي)</div>
+        <div class="s-value">{{ total_profit|fmt }}</div>
+        <div class="s-sub"> LYD {% if total_profit >= 0 %}+{% endif %}</div>
+    </div>
+    <div class="s-card blue">
+        <div class="icon-box"><i class="bi bi-bank"></i></div>
+        <div class="s-label">إجمالي الإيداعات (مصري)</div>
+        <div class="s-value">{{ total_cap_egp|fmt }}</div>
+        <div class="s-sub">EGP — الفرق بالليبي: {{ total_egp_to_lyd|fmt }}</div>
+    </div>
+    <div class="s-card amber">
+        <div class="icon-box"><i class="bi bi-send-arrow-up"></i></div>
+        <div class="s-label">إجمالي الحوالات (مصري)</div>
+        <div class="s-value">{{ total_db_egp|fmt }}</div>
+        <div class="s-sub">EGP — الحوالات بالليبي: {{ total_db_lyd|fmt }}</div>
+    </div>
+    <div class="s-card red">
+        <div class="icon-box"><i class="bi bi-currency-exchange"></i></div>
+        <div class="s-label">الفرق الليبي</div>
+        <div class="s-value">{{ total_lyd_surplus|fmt }}</div>
+        <div class="s-sub"> LYD — الإيداعات: {{ total_cap_lyd|fmt }}</div>
+    </div>
+</div>
+
+<div class="filter-card">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">السنة</label>
+            <select name="year" class="form-select">
+                {% for y in years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">من شهر</label>
+            <select name="month_from" class="form-select">
+                {% for m in months %}
+                <option value="{{ m.0 }}" {% if m.0 == month_from %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">إلى شهر</label>
+            <select name="month_to" class="form-select">
+                {% for m in months %}
+                <option value="{{ m.0 }}" {% if m.0 == month_to %}selected{% endif %}>{{ m.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn-filter w-100"><i class="bi bi-funnel"></i> تصفية</button>
+        </div>
+        <div class="col-md-2">
+            <button type="button" onclick="window.print()" class="btn-print w-100"><i class="bi bi-printer"></i> طباعة</button>
+        </div>
+        <div class="col-md-2">
+            <div class="toggle-view">
+                <button type="button" class="toggle-btn active" onclick="showView('table')"><i class="bi bi-table"></i></button>
+                <button type="button" class="toggle-btn" onclick="showView('cards')"><i class="bi bi-grid"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="tableView">
+    <div class="table-card">
+        <div class="table-header">
+            <h3><i class="bi bi-list-ol"></i> التفاصيل الشهري</h3>
+            <span style="font-size:.82rem;color:#6b7280">{{ data|length }} شهر</span>
+        </div>
+        {% if data %}
+        <div class="table-responsive">
+            <table class="profit-table" id="profitTable">
+                <thead>
+                    <tr>
+                        <th style="width:40px">#</th>
+                        <th>الشهر</th>
+                        <th>إيداعات (مصري)</th>
+                        <th>حوالات (مصري)</th>
+                        <th>الفرق ÷ السعر</th>
+                        <th>إيداعات (ليبي)</th>
+                        <th>حوالات (ليبي)</th>
+                        <th>الفرق الليبي</th>
+                        <th>متوسط السعر</th>
+                        <th>صافي الربح</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in data %}
+                    <tr>
+                        <td style="color:#9ca3af;font-size:.8rem">{{ forloop.counter }}</td>
+                        <td class="month-cell">{{ d.month_name }}</td>
+                        <td>{{ d.cap_egp|fmt }}</td>
+                        <td>{{ d.db_egp|fmt }}</td>
+                        <td class="rate-cell">{{ d.egp_to_lyd|fmt }}</td>
+                        <td>{{ d.cap_lyd|fmt }}</td>
+                        <td>{{ d.db_lyd|fmt }}</td>
+                        <td style="font-weight:600;color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</td>
+                        <td class="rate-cell">{{ d.avg_rate|fmt }}</td>
+                        <td class="{% if d.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+                            {% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td style="font-weight:800">الإجمالي</td>
+                        <td>{{ total_cap_egp|fmt }}</td>
+                        <td>{{ total_db_egp|fmt }}</td>
+                        <td class="rate-cell">{{ total_egp_to_lyd|fmt }}</td>
+                        <td>{{ total_cap_lyd|fmt }}</td>
+                        <td>{{ total_db_lyd|fmt }}</td>
+                        <td style="font-weight:800;color:{% if total_lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_lyd_surplus|fmt }}</td>
+                        <td class="rate-cell">—</td>
+                        <td class="total-profit {% if total_profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
+                            {% if total_profit >= 0 %}+{% endif %}{{ total_profit|fmt }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <div>لا توجد بيانات لهذا الفترة</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="cardsView" style="display:none">
+    <div class="monthly-detail">
+        {% for d in data %}
+        <div class="detail-card {% if d.profit < 0 %}loss{% endif %}">
+            <div class="dc-header">
+                <span class="dc-month"><i class="bi bi-calendar3"></i> {{ d.month_name }}</span>
+                <span class="dc-profit" style="color:{% if d.profit >= 0 %}#059669{% else %}#dc2626{% endif %}">
+                    {% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}
+                </span>
+            </div>
+            <div class="dc-row"><span class="dc-label">إيداعات (مصري)</span><span class="dc-val">{{ d.cap_egp|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">حوالات (مصري)</span><span class="dc-val">{{ d.db_egp|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">1 — الفرق ÷ السعر</span><span class="dc-val" style="color:#2563eb">{{ d.egp_to_lyd|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">إيداعات (ليبي)</span><span class="dc-val">{{ d.cap_lyd|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">حوالات (ليبي)</span><span class="dc-val">{{ d.db_lyd|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">2 — الفرق الليبي</span><span class="dc-val" style="color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">متوسط السعر</span><span class="dc-val">{{ d.avg_rate|fmt }}</span></div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if not data %}
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <div>لا توجد بيانات لهذا الفترة</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showView(v){
+    document.getElementById('tableView').style.display = v==='table'?'block':'none';
+    document.getElementById('cardsView').style.display = v==='cards'?'block':'none';
+    document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    event.target.closest('.toggle-btn').classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}رسالة جديدة{% endblock %}
+{% block content %}
+<style>
+.compose-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow)}
+.compose-header{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.compose-header i{font-size:1.5rem;color:var(--primary)}
+.compose-header h5{font-size:1.1rem;font-weight:800;margin:0}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:.82rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.form-input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text);transition:border-color .2s}
+.form-input:focus{outline:none;border-color:var(--primary)}
+.form-textarea{width:100%;padding:16px;border:2px solid var(--border);border-radius:12px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text);transition:border-color .2s;resize:vertical;min-height:180px;line-height:1.8}
+.form-textarea:focus{outline:none;border-color:var(--primary)}
+.compose-actions{display:flex;gap:12px;margin-top:24px}
+.compose-btn{padding:12px 28px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.compose-btn-primary{background:var(--primary);color:#fff}.compose-btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.compose-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.compose-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
+.user-option{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s;background:var(--bg)}
+.user-option:hover{border-color:var(--primary);background:var(--primary-bg)}
+.user-option.selected{border-color:var(--primary);background:var(--primary-bg);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.user-option input[type=radio]{display:none}
+.user-option .avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:800;flex-shrink:0}
+.user-option .info{line-height:1.2}
+.user-option .name{font-size:.82rem;font-weight:700;color:var(--text)}
+.user-option .office{font-size:.68rem;color:var(--text-muted)}
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-pencil-square fs-4" style="color:var(--primary)"></i>
+        <h5 class="mb-0 fw-bold">رسالة جديدة</h5>
+    </div>
+    <a href="{% url 'messages_inbox' %}" class="compose-btn compose-btn-outline" style="font-size:.8rem;padding:8px 16px"><i class="bi bi-arrow-right"></i> العودة</a>
+</div>
+
+<div class="compose-card">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>المستلم</label>
+            <div class="users-grid">
+                {% for u in users %}
+                <label class="user-option" onclick="this.classList.add('selected');document.querySelectorAll('.user-option').forEach(o=>{if(o!==this)o.classList.remove('selected')})">
+                    <input type="radio" name="receiver" value="{{ u.id }}" required>
+                    <div class="avatar" style="background:linear-gradient(135deg,{% if u.is_admin %}#8b5cf6,#a78bfa{% else %}#2563eb,#60a5fa{% endif %})">{{ u.username|first }}</div>
+                    <div class="info">
+                        <div class="name">{{ u.username }}</div>
+                        <div class="office">{{ u.office_name|default:"-" }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>الموضوع</label>
+            <input type="text" name="subject" class="form-input" placeholder="موضوع الرسالة..." required>
+        </div>
+        <div class="form-group">
+            <label>الرسالة</label>
+            <textarea name="body" class="form-textarea" placeholder="اكتب رسالتك هنا..." required></textarea>
+        </div>
+        <div class="compose-actions">
+            <button type="submit" class="compose-btn compose-btn-primary" onclick="if(typeof SoundManager!=='undefined')SoundManager.send()"><i class="bi bi-send"></i> إرسال الرسالة</button>
+            <a href="{% url 'messages_inbox' %}" class="compose-btn compose-btn-outline">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

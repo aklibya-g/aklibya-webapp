@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}تصدير واستيراد الأرصدة{% endblock %}
+{% block content %}
+<style>
+.ie-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--card-bg);border-radius:14px;padding:6px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.ie-tab{flex:1;padding:14px 16px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.88rem;font-weight:700;color:var(--text-muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px}
+.ie-tab:hover{background:var(--primary-bg);color:var(--primary)}
+.ie-tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.3)}
+.ie-tab .tab-icon{font-size:1.2rem}
+.ie-panel{display:none;animation:fadeSlide .3s ease}
+.ie-panel.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.ie-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.ie-card::before{content:'';position:absolute;top:0;right:0;left:0;height:4px}
+.ie-card.green::before{background:linear-gradient(90deg,#059669,#34d399)}
+.ie-card.blue::before{background:linear-gradient(90deg,#2563eb,#60a5fa)}
+.ie-card h5{font-size:1rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.ie-upload-zone{border:2.5px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;background:var(--bg)}
+.ie-upload-zone:hover{border-color:var(--primary);background:var(--primary-bg)}
+.ie-upload-zone input[type=file]{display:none}
+.ie-upload-zone .icon{font-size:2.5rem;margin-bottom:10px;display:block}
+.ie-upload-zone p{font-weight:600;color:var(--text-muted);margin:0}
+.ie-upload-zone small{color:var(--text-muted);font-size:.78rem}
+.ie-btn{padding:12px 24px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.ie-btn-primary{background:var(--primary);color:#fff}.ie-btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.ie-btn-success{background:#059669;color:#fff}.ie-btn-success:hover{background:#047857}
+.ie-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.ie-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.ie-textarea{width:100%;border:2px solid var(--border);border-radius:12px;padding:16px;font-family:Cairo,sans-serif;font-size:.9rem;resize:vertical;min-height:140px;background:var(--bg);color:var(--text);transition:border-color .2s}
+.ie-textarea:focus{outline:none;border-color:var(--primary)}
+.ie-label{font-weight:700;font-size:.85rem;color:var(--text);margin-bottom:8px;display:block}
+.ie-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
+.ie-count-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.ie-count-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.ie-count-card .num{font-size:1.8rem;font-weight:900;line-height:1}
+.ie-count-card .lbl{font-size:.75rem;color:var(--text-muted);margin-top:4px}
+.ie-select{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text);appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:left 12px center;background-size:16px 12px}
+.ie-select:focus{outline:none;border-color:var(--primary)}
+.ie-input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text)}
+.ie-input:focus{outline:none;border-color:var(--primary)}
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-wallet2 fs-4" style="color:#059669"></i>
+        <h5 class="mb-0 fw-bold">تصدير واستيراد الأرصدة</h5>
+    </div>
+    <a href="{% url 'capital_list' %}" class="ie-btn ie-btn-outline" style="font-size:.8rem;padding:8px 16px"><i class="bi bi-arrow-right"></i> العودة</a>
+</div>
+
+<div class="ie-tabs" id="mainTabs">
+    <button class="ie-tab active" onclick="switchMainTab('export')"><span class="tab-icon">📤</span> تصدير للجهاز</button>
+    <button class="ie-tab" onclick="switchMainTab('import-excel')"><span class="tab-icon">📥</span> استيراد من جهاز</button>
+    <button class="ie-tab" onclick="switchMainTab('text')"><span class="tab-icon">📋</span> استيراد من نص</button>
+</div>
+
+<div class="ie-panel active" id="panel-export">
+    <div class="ie-card green">
+        <h5><span style="font-size:1.4rem">📤</span> تصدير الأرصدة لجهاز الكمبيوتر</h5>
+        <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:20px">تحميل جميع سجلات الأرصدة كملف Excel يمكنك فتحه على أي جهاز</p>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+                <div class="ie-count-grid" style="grid-template-columns:1fr 1fr">
+                    <div class="ie-count-card">
+                        <div class="num" style="color:#059669">{{ cap_count|default:"0" }}</div>
+                        <div class="lbl">إجمالي السجلات</div>
+                    </div>
+                    <div class="ie-count-card">
+                        <div class="num" style="color:var(--primary)">{{ cap_total_egp|default:"0"|fmt }}</div>
+                        <div class="lbl">إجمالي المصري (EGP)</div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'export_capital' %}" class="ie-btn ie-btn-success" style="font-size:1rem;padding:16px 32px">
+                    <i class="bi bi-download" style="font-size:1.3rem"></i> تحميل ملف Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ie-panel" id="panel-import-excel">
+    <div class="ie-card blue">
+        <h5><span style="font-size:1.4rem">📥</span> استيراد أرصدة من جهاز الكمبيوتر</h5>
+        <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:20px">ارفع ملف Excel يحتوي على الأرصدة ليتم إضافتها للمنظومة</p>
+        <form method="POST" action="{% url 'import_capital_excel' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+                <div>
+                    <label class="ie-label">صاحب الرصيد</label>
+                    <select name="client_id" class="ie-select" required>
+                        <option value="">-- اختر العميل --</option>
+                        {% for c in clients %}
+                        <option value="{{ c.id }}" {% if selected_client_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="ie-upload-zone" id="excelZone" onclick="document.getElementById('capExcelFile').click()">
+                <span class="icon">📊</span>
+                <p>اضغط لاختيار ملف Excel</p>
+                <small>الصيغ المدعومة: .xlsx, .xls</small>
+                <input type="file" name="excel_file" id="capExcelFile" accept=".xlsx,.xls" onchange="updateCapFileName(this)">
+            </div>
+            <div id="capFileInfo" style="display:none;margin-top:12px;padding:12px;background:var(--primary-bg);border-radius:10px;font-size:.85rem;font-weight:600;color:var(--primary)"></div>
+            <div style="margin-top:16px;display:flex;gap:10px">
+                <button type="submit" class="ie-btn ie-btn-primary" id="importCapBtn" style="display:none">
+                    <i class="bi bi-upload"></i> استيراد الأرصدة
+                </button>
+            </div>
+        </form>
+        <div style="margin-top:20px;padding:16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+            <h6 style="font-size:.85rem;font-weight:700;margin-bottom:10px"><i class="bi bi-info-circle text-primary"></i> تنسيق الملف المطلوب:</h6>
+            <div style="font-size:.8rem;color:var(--text-muted);line-height:2">
+                <div>الأعمدة بالترتيب: <strong>التاريخ | العميل | وارد نقدي | نقدي ليبي | سعر الصرف | نوع الإيداع | ملاحظات</strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ie-panel" id="panel-text">
+    <div class="ie-card" style="border-top:4px solid #d97706">
+        <h5><span style="font-size:1.4rem">📋</span> استيراد أرصدة من نص</h5>
+        <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:20px">ارفع ملف تكست أو الصق النص مباشرة</p>
+        <form method="POST" action="{% url 'import_balance' %}" accept-charset="UTF-8">
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+                <div>
+                    <label class="ie-label">صاحب الرصيد</label>
+                    <select name="client_id" class="ie-select" required>
+                        <option value="">-- اختر العميل --</option>
+                        {% for c in clients %}
+                        <option value="{{ c.id }}" {% if selected_client_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="ie-label">تاريخ الإدخال</label>
+                    <input type="date" name="import_date" class="ie-input" value="{{ selected_date|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%">
+                        <h6 style="font-size:.9rem;font-weight:700;margin-bottom:14px"><i class="bi bi-file-earmark-text" style="color:#d97706"></i> رفع ملف تكست</h6>
+                        <div class="ie-upload-zone" onclick="this.querySelector('input').click()" style="padding:28px">
+                            <span class="icon" style="font-size:1.8rem">📄</span>
+                            <p style="font-size:.85rem">اختر ملف .txt</p>
+                            <input type="file" name="text_file" accept=".txt">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%">
+                        <h6 style="font-size:.9rem;font-weight:700;margin-bottom:14px"><i class="bi bi-clipboard" style="color:#d97706"></i> لصق النص مباشرة</h6>
+                        <textarea name="pasted_text" class="ie-textarea" rows="6" placeholder="5000 4.75&#10;2026-01-15 3000 6.80&#10;7000 4.90 2026-02-01"></textarea>
+                    </div>
+                </div>
+            </div>
+            <button class="ie-btn ie-btn-primary w-100 mt-4" type="submit" style="justify-content:center;font-size:1rem;padding:14px"><i class="bi bi-search"></i> معاينة</button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="ie-card green mt-4" style="border:2px solid #059669">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:#059669"></i> معاينة الأرصدة</h5>
+        <span class="ie-badge" style="background:#d1fae5;color:#059669">{{ results|length }} رصيد</span>
+    </div>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="client_id" value="{{ selected_client_id }}">
+        <input type="hidden" name="import_date" value="{{ selected_date|date:'Y-m-d' }}">
+        <textarea name="raw_text" style="display:none">{{ raw_text }}</textarea>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="border-radius:12px;overflow:hidden">
+                <thead style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
+                    <tr>
+                        <th style="padding:12px">#</th>
+                        <th style="padding:12px">الاسم</th>
+                        <th style="padding:12px">التاريخ</th>
+                        <th style="padding:12px">المبلغ مصري</th>
+                        <th style="padding:12px">سعر الصرف</th>
+                        <th style="padding:12px">المبلغ ليبي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr>
+                        <td style="font-weight:600">{{ forloop.counter }}</td>
+                        <td style="font-weight:700">{{ r.client_name }}</td>
+                        <td>{{ r.date|date:"Y-m-d"|default:"-" }}</td>
+                        <td style="font-weight:800;color:var(--primary)">{{ r.egp|fmt }}</td>
+                        <td>{{ r.rate|floatformat:"-3u" }}</td>
+                        <td style="font-weight:800;color:#059669">{{ r.lyd|fmt }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="ie-btn ie-btn-success flex-fill" type="submit" name="confirm" value="1" style="justify-content:center">
+                <i class="bi bi-check-lg"></i> تأكيد استيراد {{ results|length }} رصيد
+            </button>
+            <a href="{% url 'import_balance' %}" class="ie-btn ie-btn-outline">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<script>
+function switchMainTab(tab) {
+    document.querySelectorAll('.ie-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ie-panel').forEach(p => p.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+}
+function updateCapFileName(input) {
+    if (input.files.length > 0) {
+        document.getElementById('capFileInfo').style.display = 'block';
+        document.getElementById('capFileInfo').innerHTML = '<i class="bi bi-file-earmark-excel"></i> ' + input.files[0].name + ' <span style="color:#059669;margin-right:8px">✓</span>';
+        document.getElementById('importCapBtn').style.display = 'inline-flex';
+    }
+}
+</script>
+{% endblock %}

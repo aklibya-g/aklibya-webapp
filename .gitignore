@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.sqlite3
+.env
+staticfiles/
+db - Copy.sqlite3
+server.log
+server_error.log
+install.bat
+start.bat
+debug_parser.py

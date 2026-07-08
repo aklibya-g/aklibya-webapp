@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}الحوالات الداخلية{% endblock %}
+{% block page_title %}<i class="bi bi-arrow-left-right text-info"></i> الحوالات الداخلية{% endblock %}
+
+{% block content %}
+<div class="print-header" style="display:none">
+    <img src="/static/images/logo.jpeg" alt="شعار الشركة">
+    <h1>شركة اليمامة المالية</h1>
+    <div class="sub">تقرير الحوالات الداخلية</div>
+</div>
+<style>
+.filter-bar{background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;margin-bottom:20px}
+.filter-bar .form-input,.filter-bar .form-select{padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;justify-content:center}
+.action-row .btn{padding:10px 22px;border-radius:10px;font-weight:700;font-size:.85rem;text-decoration:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .25s;font-family:Cairo,sans-serif}
+.action-row .btn:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.btn-search{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.btn-print{background:linear-gradient(135deg,#059669,#047857);color:#fff}
+.btn-export{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.btn-import{background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff}
+.btn-new{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-mini{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #e8ecf0;text-align:center}
+.stat-mini .sm-label{font-size:.75rem;color:#6b7280;font-weight:600}
+.stat-mini .sm-value{font-size:1.2rem;font-weight:800;margin-top:4px}
+.table-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;overflow:hidden}
+.int-table{width:100%;border-collapse:separate;border-spacing:0}
+.int-table thead th{background:#f8fafb;color:#4b5563;font-size:.78rem;font-weight:700;padding:12px 14px;text-align:center;border-bottom:2px solid #e5e7eb}
+.int-table tbody td{padding:10px 14px;text-align:center;font-size:.85rem;border-bottom:1px solid #f0f0f0;color:#374151}
+.int-table tbody tr{cursor:pointer;transition:all .2s}
+.int-table tbody tr:hover td{filter:brightness(.97)}
+.status-badge{padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:inline-block}
+.status-sent{background:#dbeafe;color:#1d4ed8}
+.status-received{background:#d1fae5;color:#059669}
+.status-pending{background:#fef3c7;color:#d97706}
+.status-cancelled{background:#fee2e2;color:#dc2626}
+/* Row colors based on status */
+tr.row-received td{background:#f0fdf4 !important}
+tr.row-received td:first-child{border-right:4px solid #059669}
+tr.row-cancelled td{background:#fef2f2 !important}
+tr.row-cancelled td:first-child{border-right:4px solid #dc2626}
+tr.row-pending td{background:#fffbeb !important}
+tr.row-pending td:first-child{border-right:4px solid #f59e0b}
+tr.row-sent td{background:#eff6ff !important}
+tr.row-sent td:first-child{border-right:4px solid #3b82f6}
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;justify-content:center;align-items:center}
+.modal-box{background:#fff;border-radius:16px;max-width:520px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.modal-header{padding:18px 22px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{margin:0;font-size:1.1rem;color:#1a1a2e}
+.modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:#9ca3af;padding:4px}
+.modal-close:hover{color:#dc2626}
+.modal-body{padding:20px 22px}
+.modal-body .detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f8f8f8;font-size:.88rem}
+.modal-body .detail-row .dl{color:#6b7280}
+.modal-body .detail-row .dv{font-weight:600;color:#1a1a2e}
+.modal-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.status-btn{padding:14px;border-radius:12px;border:2px solid #e5e7eb;cursor:pointer;text-align:center;transition:all .2s;background:#fff}
+.status-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.status-btn.active{border-width:3px}
+.status-btn .sb-icon{font-size:1.6rem;margin-bottom:6px}
+.status-btn .sb-label{font-size:.82rem;font-weight:700}
+.status-btn.s-pending{border-color:#f59e0b}.status-btn.s-pending.active{background:#fffbeb;border-color:#f59e0b}
+.status-btn.s-sent{border-color:#3b82f6}.status-btn.s-sent.active{background:#eff6ff;border-color:#3b82f6}
+.status-btn.s-received{border-color:#059669}.status-btn.s-received.active{background:#f0fdf4;border-color:#059669}
+.status-btn.s-cancelled{border-color:#dc2626}.status-btn.s-cancelled.active{background:#fef2f2;border-color:#dc2626}
+.hint{text-align:center;color:#9ca3af;font-size:.8rem;margin-top:10px}
+@media(max-width:992px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:576px){.stats-row{grid-template-columns:1fr}.modal-status-grid{grid-template-columns:1fr}}
+@media print{@page{size:A4 landscape;margin:5mm}
+.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-bar,.btn,.no-print,.hint,.modal-overlay{display:none!important}
+.main-area{margin-right:0!important}
+.page-content{padding:0!important;margin:0!important}
+body{margin:0;padding:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.print-header{display:block!important;text-align:center;margin-bottom:8px;padding-bottom:6px;border-bottom:3px double #059669}
+.print-header img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #059669;margin-bottom:4px}
+.print-header h1{font-size:14pt;font-weight:900;color:#059669;margin:0}
+.print-header .sub{font-size:8pt;color:#666}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.stat-mini{box-shadow:none!important;border:1px solid #ccc;padding:6px 4px!important;border-radius:6px}
+.stat-mini .sm-label{font-size:6pt!important}
+.stat-mini .sm-value{font-size:9pt!important;margin-top:2px}
+.table-card{box-shadow:none!important;border:none!important;overflow:visible!important;border-radius:0!important}
+.table-responsive{overflow:visible!important}
+.int-table{width:100%;border-collapse:collapse;font-size:7pt!important}
+.int-table thead th{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4px 2px!important;font-size:6pt!important;font-weight:700;white-space:nowrap}
+.int-table tbody td{padding:3px 2px!important;font-size:6.5pt!important;white-space:nowrap}
+.status-badge{font-size:5.5pt!important;padding:1px 4px!important;border-radius:10px!important}
+.print-hide{display:none!important}}
+</style>
+
+<div class="filter-bar">
+    <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+        <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px">
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-input" style="width:160px">
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-input" style="width:160px">
+        <select name="status" class="form-select" style="width:150px">
+            <option value="">كل الحالات</option>
+            <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>قيد الإرسال</option>
+            <option value="sent" {% if selected_status == 'sent' %}selected{% endif %}>تم الإرسال</option>
+            <option value="received" {% if selected_status == 'received' %}selected{% endif %}>تم الاستلام</option>
+            <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>ملغي</option>
+        </select>
+        <button type="submit" class="btn btn-search"><i class="bi bi-search"></i> بحث</button>
+    </form>
+    <div class="action-row">
+        <a href="{% url 'add_internal_transfer' %}" class="btn btn-new"><i class="bi bi-plus-circle"></i> حوالة جديدة</a>
+        <button type="button" class="btn btn-print" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+        <a href="{% url 'export_internal_excel' %}" class="btn btn-export"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
+        <label class="btn btn-import" style="cursor:pointer"><i class="bi bi-upload"></i> استيراد Excel<input type="file" name="excel_file" accept=".xlsx,.xls" style="display:none" onchange="document.getElementById('importIntForm').submit()"></label>
+    </div>
+    <form method="POST" enctype="multipart/form-data" style="display:none" id="importIntForm">
+        {% csrf_token %}
+        <input type="file" name="excel_file" accept=".xlsx,.xls">
+    </form>
+</div>
+
+<div class="stats-row">
+    <div class="stat-mini"><div class="sm-label">عدد الحوالات</div><div class="sm-value" style="color:#3b82f6">{{ count }}</div></div>
+    <div class="stat-mini"><div class="sm-label">إجمالي المرسل</div><div class="sm-value" style="color:#1e40af">{{ total_sent|fmt }} LYD</div></div>
+    <div class="stat-mini"><div class="sm-label">إجمالي العمولات</div><div class="sm-value" style="color:#d97706">{{ total_commission|fmt }} LYD</div></div>
+    <div class="stat-mini"><div class="sm-label">إجمالي المستلم</div><div class="sm-value" style="color:#059669">{{ total_received|fmt }} LYD</div></div>
+</div>
+
+<div class="table-card">
+    {% if transfers %}
+    <div class="table-responsive">
+        <table class="int-table">
+            <thead>
+                <tr>
+                    <th class="print-hide">#</th>
+                    <th>رقم الحوالة</th>
+                    <th>التاريخ</th>
+                    <th>المرسل</th>
+                    <th>مكتب الإرسال</th>
+                    <th>المستلم</th>
+                    <th>مكتب الاستقبال</th>
+                    <th class="print-hide">المنطقة</th>
+                    <th>المبلغ</th>
+                    <th>العمولة</th>
+                    <th>المستلم</th>
+                    <th>الحالة</th>
+                    <th class="print-hide">طباعة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transfers %}
+                <tr class="row-{{ t.status }}" data-id="{{ t.id }}" data-status="{{ t.status }}" ondblclick="openModal(this)">
+                    <td class="print-hide" style="color:#9ca3af">{{ forloop.counter }}</td>
+                    <td style="color:#3b82f6;font-weight:600">{{ t.order_number }}</td>
+                    <td>{{ t.date|date:"Y-m-d" }}</td>
+                    <td style="font-weight:600">{{ t.sender_name }}</td>
+                    <td>{{ t.sender_office.office_name|default:"-" }}</td>
+                    <td style="font-weight:600">{{ t.receiver_name }}</td>
+                    <td>{{ t.receiver_office.office_name|default:"-" }}</td>
+                    <td class="print-hide">{{ t.delivery_area.name|default:t.delivery_area_name|default:"-" }}</td>
+                    <td style="font-weight:600;color:#1e40af">{{ t.sent_amount|fmt }}</td>
+                    <td style="color:#d97706">{{ t.office_commission|fmt }}</td>
+                    <td style="font-weight:700;color:#059669">{{ t.received_amount|fmt }}</td>
+                    <td>
+                        <span class="status-badge status-{{ t.status }}">
+                            {% if t.status == 'pending' %}قيد الإرسال{% elif t.status == 'sent' %}تم الإرسال{% elif t.status == 'received' %}تم التسليم{% else %}ملغي{% endif %}
+                        </span>
+                    </td>
+                    <td class="print-hide">
+                        {% if t.status == 'received' %}
+                        <a href="{% url 'internal_transfer_receipt' t.id %}" target="_blank" onclick="event.stopPropagation()" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:.78rem;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;transition:all .2s" title="طباعة إيصال الاستلام">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                        {% else %}
+                        <span style="color:#9ca3af;font-size:.75rem;background:#f3f4f6;padding:4px 8px;border-radius:6px" title="متاح فقط بعد التسليم">🔒</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:50px;color:#9ca3af">
+        <i class="bi bi-inbox" style="font-size:3rem;display:block;margin-bottom:10px"></i>
+        لا توجد حوالات داخلية
+    </div>
+    {% endif %}
+</div>
+
+<div class="hint"><i class="bi bi-info-circle"></i> انقر مزدوجًا على أي حوالة لتغيير حالتها</div>
+
+<!-- Status Modal -->
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="bi bi-pencil-square"></i> تغيير حالة الحوالة</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-row"><span class="dl">رقم الحوالة</span><span class="dv" id="m_order">-</span></div>
+            <div class="detail-row"><span class="dl">المرسل</span><span class="dv" id="m_sender">-</span></div>
+            <div class="detail-row"><span class="dl">المستلم</span><span class="dv" id="m_receiver">-</span></div>
+            <div class="detail-row"><span class="dl">المبلغ المستلم</span><span class="dv" style="color:#059669" id="m_amount">-</span></div>
+            <div class="modal-status-grid">
+                <div class="status-btn s-pending" data-status="pending" onclick="selectStatus(this)">
+                    <div class="sb-icon">⏳</div>
+                    <div class="sb-label">قيد الإرسال</div>
+                </div>
+                <div class="status-btn s-sent" data-status="sent" onclick="selectStatus(this)">
+                    <div class="sb-icon">📤</div>
+                    <div class="sb-label">تم الإرسال</div>
+                </div>
+                <div class="status-btn s-received" data-status="received" onclick="selectStatus(this)">
+                    <div class="sb-icon">✅</div>
+                    <div class="sb-label">تم التسليم</div>
+                </div>
+                <div class="status-btn s-cancelled" data-status="cancelled" onclick="selectStatus(this)">
+                    <div class="sb-icon">❌</div>
+                    <div class="sb-label">ملغي</div>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:18px">
+                <button class="btn-send" onclick="saveStatus()" style="background:#059669;color:#fff;border:none;border-radius:10px;padding:12px 32px;font-weight:700;font-size:.95rem;cursor:pointer">
+                    <i class="bi bi-check-lg"></i> حفظ الحالة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="printReceivedBox" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:16px 28px;border-radius:14px;box-shadow:0 8px 32px rgba(5,150,105,.4);z-index:9999;align-items:center;gap:14px;animation:toastIn .4s ease">
+    <i class="bi bi-check-circle-fill" style="font-size:1.5rem"></i>
+    <div style="flex:1">
+        <div style="font-weight:700;font-size:.9rem">تم التسليم بنجاح</div>
+        <div style="font-size:.78rem;opacity:.85">هل تريد طباعة إيصال التسليم؟</div>
+    </div>
+    <button onclick="printReceived()" style="background:#fff;color:#059669;border:none;border-radius:8px;padding:8px 18px;font-weight:700;font-size:.85rem;cursor:pointer;font-family:Cairo,sans-serif"><i class="bi bi-printer"></i> طباعة</button>
+    <button onclick="closePrintBox()" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:1rem">&times;</button>
+</div>
+
+<script>
+var currentId=null,currentStatus=null;
+function openModal(row){
+    currentId=row.dataset.id;
+    currentStatus=row.dataset.status;
+    document.getElementById('m_order').textContent=row.cells[1].textContent;
+    document.getElementById('m_sender').textContent=row.cells[3].textContent;
+    document.getElementById('m_receiver').textContent=row.cells[5].textContent;
+    document.getElementById('m_amount').textContent=row.cells[10].textContent+' LYD';
+    document.querySelectorAll('.status-btn').forEach(b=>{b.classList.toggle('active',b.dataset.status===currentStatus)});
+    document.getElementById('statusModal').style.display='flex';
+}
+function closeModal(){document.getElementById('statusModal').style.display='none'}
+function selectStatus(btn){
+    document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStatus=btn.dataset.status;
+}
+function saveStatus(){
+    if(!currentId||!currentStatus)return;
+    fetch('/api/internal-status/'+currentId+'/',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},
+        body:JSON.stringify({status:currentStatus})
+    }).then(r=>r.json()).then(d=>{
+        if(d.ok){
+            var row=document.querySelector('tr[data-id="'+currentId+'"]');
+            if(row){
+                row.className='row-'+currentStatus;
+                row.dataset.status=currentStatus;
+                var badge=row.querySelector('.status-badge');
+                badge.className='status-badge status-'+currentStatus;
+                var labels={'pending':'قيد الإرسال','sent':'تم الإرسال','received':'تم التسليم','ملغي':'ملغي'};
+                badge.textContent=labels[currentStatus]||currentStatus;
+            }
+            closeModal();
+            if(currentStatus==='received'){
+                var printBox=document.getElementById('printReceivedBox');
+                if(printBox){
+                    printBox.style.display='flex';
+                    printBox.dataset.transferId=currentId;
+                }
+            }
+        }
+    });
+}
+function printReceived(){
+    var box=document.getElementById('printReceivedBox');
+    if(box&&box.dataset.transferId){
+        window.open('/internal/receipt/'+box.dataset.transferId+'/','_blank');
+        box.style.display='none';
+    }
+}
+function closePrintBox(){
+    var box=document.getElementById('printReceivedBox');
+    if(box) box.style.display='none';
+}
+</script>
+{% endblock %}

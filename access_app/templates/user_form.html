@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}{% if mode == 'add' %}إضافة مستخدم{% else %}تعديل {{ user_obj.username }}{% endif %}{% endblock %}
+{% block content %}
+<style>
+.perm-section{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.perm-section h6{font-size:.9rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.perm-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.perm-item:hover{border-color:var(--primary);background:var(--primary-bg)}
+.perm-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+.perm-item label{font-size:.82rem;font-weight:600;color:var(--text);cursor:pointer;user-select:none}
+.form-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.82rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text);transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
+.form-btn{padding:12px 28px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.form-btn-primary{background:var(--primary);color:#fff}.form-btn-primary:hover{background:var(--primary-hover)}
+.form-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.form-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.admin-toggle{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:var(--primary-bg);border:2px solid var(--primary);cursor:pointer;transition:all .2s}
+.admin-toggle:hover{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.admin-toggle input{width:20px;height:20px;accent-color:var(--primary)}
+.admin-toggle label{font-weight:700;color:var(--primary);cursor:pointer}
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-person-plus fs-4" style="color:#8b5cf6"></i>
+        <h5 class="mb-0 fw-bold">{% if mode == 'add' %}إضافة مستخدم جديد{% else %}تعديل بيانات {{ user_obj.username }}{% endif %}</h5>
+    </div>
+    <a href="{% url 'users_list' %}" class="form-btn form-btn-outline"><i class="bi bi-arrow-right"></i> العودة</a>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    
+    <div class="form-card mb-4">
+        <h6 style="font-size:.95rem;font-weight:800;margin-bottom:16px"><i class="bi bi-person-badge" style="color:#8b5cf6"></i> بيانات الحساب</h6>
+        <div class="form-row">
+            <div class="form-group">
+                <label>اسم المستخدم</label>
+                <input type="text" name="username" value="{% if user_obj %}{{ user_obj.username }}{% endif %}" {% if mode == 'add' %}required{% else %}readonly style="opacity:.6"{% endif %} placeholder="اسم المستخدم">
+            </div>
+            <div class="form-group">
+                <label>{% if mode == 'add' %}كلمة المرور{% else %}كلمة المرور الجديدة (اتركها فارغة للإبقاء){% endif %}</label>
+                <input type="password" name="password" {% if mode == 'add' %}required{% endif %} placeholder="{% if mode == 'add' %}كلمة المرور{% else %}اتركها فارغة للإبقاء{% endif %}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>اسم المكتب</label>
+                <input type="text" name="office_name" value="{% if user_obj %}{{ user_obj.office_name }}{% endif %}" placeholder="اسم المكتب (اختياري)">
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <div class="admin-toggle">
+                    <input type="checkbox" name="is_admin" value="1" id="isAdmin" {% if user_obj and user_obj.is_admin %}checked{% endif %}>
+                    <label for="isAdmin">مدير النظام (صلاحيات كاملة)</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#2563eb"><i class="bi bi-speedometer2"></i> الرئيسية</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_home" value="1" id="perm_home" {% if not user_obj or user_obj.perm_home %}checked{% endif %}>
+                <label for="perm_home">عرض لوحة التحكم</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#2563eb"><i class="bi bi-arrow-left-right"></i> الحوالات</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_transactions" value="1" id="perm_trans" {% if not user_obj or user_obj.perm_transactions %}checked{% endif %}>
+                <label for="perm_trans">عرض الحوالات</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_add_transaction" value="1" id="perm_add_trans" {% if not user_obj or user_obj.perm_add_transaction %}checked{% endif %}>
+                <label for="perm_add_trans">إضافة حوالة</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_edit_transaction" value="1" id="perm_edit_trans" {% if not user_obj or user_obj.perm_edit_transaction %}checked{% endif %}>
+                <label for="perm_edit_trans">تعديل حوالة</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_delete_transaction" value="1" id="perm_del_trans" {% if user_obj and user_obj.perm_delete_transaction %}checked{% endif %}>
+                <label for="perm_del_trans">حذف حوالة</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#059669"><i class="bi bi-wallet2"></i> الأرصدة</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_capital" value="1" id="perm_cap" {% if not user_obj or user_obj.perm_capital %}checked{% endif %}>
+                <label for="perm_cap">عرض الأرصدة</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_add_capital" value="1" id="perm_add_cap" {% if not user_obj or user_obj.perm_add_capital %}checked{% endif %}>
+                <label for="perm_add_cap">إضافة رصيد</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_edit_capital" value="1" id="perm_edit_cap" {% if not user_obj or user_obj.perm_edit_capital %}checked{% endif %}>
+                <label for="perm_edit_cap">تعديل رصيد</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_delete_capital" value="1" id="perm_del_cap" {% if user_obj and user_obj.perm_delete_capital %}checked{% endif %}>
+                <label for="perm_del_cap">حذف رصيد</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#d97706"><i class="bi bi-receipt"></i> المصروفات</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_expenses" value="1" id="perm_exp" {% if not user_obj or user_obj.perm_expenses %}checked{% endif %}>
+                <label for="perm_exp">عرض المصروفات</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_add_expense" value="1" id="perm_add_exp" {% if not user_obj or user_obj.perm_add_expense %}checked{% endif %}>
+                <label for="perm_add_exp">إضافة مصروف</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_edit_expense" value="1" id="perm_edit_exp" {% if not user_obj or user_obj.perm_edit_expense %}checked{% endif %}>
+                <label for="perm_edit_exp">تعديل مصروف</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_delete_expense" value="1" id="perm_del_exp" {% if user_obj and user_obj.perm_delete_expense %}checked{% endif %}>
+                <label for="perm_del_exp">حذف مصروف</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#7c3aed"><i class="bi bi-arrow-left-right"></i> الحوالات الداخلية</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_internal_transfer" value="1" id="perm_int" {% if not user_obj or user_obj.perm_internal_transfer %}checked{% endif %}>
+                <label for="perm_int">الحوالات الداخلية</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#db2777"><i class="bi bi-download"></i> الاستيراد والتصدير</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_import_whatsapp" value="1" id="perm_imp_wa" {% if not user_obj or user_obj.perm_import_whatsapp %}checked{% endif %}>
+                <label for="perm_imp_wa">استيراد من واتساب</label>
+            </div>
+            <div class="perm-item">
+                <input type="checkbox" name="perm_import_balance" value="1" id="perm_imp_bal" {% if not user_obj or user_obj.perm_import_balance %}checked{% endif %}>
+                <label for="perm_imp_bal">استيراد أرصدة</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#0891b2"><i class="bi bi-graph-up"></i> التقارير</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_profits_report" value="1" id="perm_profit" {% if not user_obj or user_obj.perm_profits_report %}checked{% endif %}>
+                <label for="perm_profit">تقرير الأرباح</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="perm-section">
+        <h6 style="color:#9333ea"><i class="bi bi-people"></i> إدارة المستخدمين</h6>
+        <div class="perm-grid">
+            <div class="perm-item">
+                <input type="checkbox" name="perm_users" value="1" id="perm_users" {% if user_obj and user_obj.perm_users %}checked{% endif %}>
+                <label for="perm_users">إدارة المستخدمين</label>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px">
+        <button type="submit" class="form-btn form-btn-primary">
+            <i class="bi bi-check-lg"></i> {% if mode == 'add' %}إضافة المستخدم{% else %}حفظ التعديلات{% endif %}
+        </button>
+        <a href="{% url 'users_list' %}" class="form-btn form-btn-outline">إلغاء</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}الرسائل المرسلة{% endblock %}
+{% block content %}
+<style>
+.msg-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--card-bg);border-radius:12px;padding:5px;border:1px solid var(--border)}
+.msg-tab{flex:1;padding:10px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:700;color:var(--text-muted);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.msg-tab:hover{background:var(--primary-bg);color:var(--primary)}
+.msg-tab.active{background:var(--primary);color:#fff}
+.msg-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:10px;transition:all .2s;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.msg-card:hover{border-color:var(--primary);box-shadow:var(--shadow);transform:translateY(-1px)}
+.msg-card.replied{border-right:4px solid #059669}
+.msg-avatar{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;font-weight:800;flex-shrink:0}
+.msg-info{flex:1;min-width:0}
+.msg-info .receiver{font-size:.88rem;font-weight:700;color:var(--text)}
+.msg-info .subject{font-size:.82rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-info .preview{font-size:.78rem;color:var(--text-muted);margin-top:4px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-meta{text-align:left;flex-shrink:0}
+.msg-meta .time{font-size:.72rem;color:var(--text-muted);white-space:nowrap}
+.msg-meta .status{margin-top:4px;font-size:.68rem;font-weight:700}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state .icon{font-size:4rem;opacity:.3;margin-bottom:16px}
+.empty-state h4{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+.empty-state p{font-size:.85rem}
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-send fs-4" style="color:var(--primary)"></i>
+        <h5 class="mb-0 fw-bold">الرسائل المرسلة</h5>
+    </div>
+    <a href="{% url 'message_compose' %}" style="padding:10px 20px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:Cairo,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+        <i class="bi bi-pencil-square"></i> رسالة جديدة
+    </a>
+</div>
+
+<div class="msg-tabs">
+    <a href="{% url 'messages_inbox' %}" class="msg-tab"><i class="bi bi-inbox"></i> الوارد</a>
+    <a href="{% url 'messages_sent' %}" class="msg-tab active"><i class="bi bi-send"></i> المرسل</a>
+    <a href="{% url 'message_compose' %}" class="msg-tab"><i class="bi bi-pencil-square"></i> جديدة</a>
+</div>
+
+{% if messages_list %}
+<div>
+    {% for msg in messages_list %}
+    <a href="{% url 'message_detail' msg.id %}" class="msg-card {% if msg.is_replied %}replied{% endif %}">
+        <div class="msg-avatar" style="background:linear-gradient(135deg,{% if msg.receiver.is_admin %}#8b5cf6,#a78bfa{% else %}#059669,#34d399{% endif %})">
+            {{ msg.receiver.username|first }}
+        </div>
+        <div class="msg-info">
+            <div class="receiver">إلى: {{ msg.receiver.username }} {% if msg.receiver.office_name %}<span style="font-size:.72rem;color:var(--text-muted);font-weight:600">({{ msg.receiver.office_name }})</span>{% endif %}</div>
+            <div class="subject">{{ msg.subject }}</div>
+            <div class="preview">{{ msg.body|truncatechars:60 }}</div>
+        </div>
+        <div class="msg-meta">
+            <div class="time">{{ msg.created_at|timesince }}</div>
+            <div class="status">
+                {% if msg.is_replied %}
+                <span style="color:#059669">✓✓ تم الرد</span>
+                {% elif msg.is_read %}
+                <span style="color:var(--text-muted)">✓ مقروءة</span>
+                {% else %}
+                <span style="color:#d97706">● غير مقروءة</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="icon">📤</div>
+    <h4>لا توجد رسائل مرسلة</h4>
+    <p>ابدأ بإرسال رسالة جديدة</p>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var alerts = document.querySelectorAll('.alert-app');
+    for (var i = 0; i < alerts.length; i++) {
+        if (alerts[i].textContent.indexOf('تم إرسال') !== -1) {
+            if (typeof SoundManager !== 'undefined') SoundManager.send();
+            break;
+        }
+    }
+});
+</script>
+{% endblock %}

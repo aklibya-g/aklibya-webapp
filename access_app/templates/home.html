@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}الرئيسية - شركة اليمامة المالية{% endblock %}
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-house-door-fill fs-4 text-primary"></i>
+            <h5 class="mb-0 fw-bold">لوحة التحكم</h5>
+        </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">{{ today|date:"l, d F Y" }}</div>
+    </div>
+
+    {% if clients %}
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;padding:10px 0;margin-bottom:20px;overflow:hidden;position:relative">
+        <div style="position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(to left,#0f172a,transparent);z-index:2"></div>
+        <div style="position:absolute;left:0;top:0;bottom:0;width:60px;background:linear-gradient(to right,#0f172a,transparent);z-index:2"></div>
+        <div class="ticker-wrap">
+            <div class="ticker">
+                {% for c in clients %}
+                <div class="ticker-item">
+                    <span class="ticker-name">{{ c.name }}</span>
+                    <span class="ticker-amount {% if c.remaining_egp >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} EGP
+                    </span>
+                </div>
+                {% endfor %}
+                {% for c in clients %}
+                <div class="ticker-item">
+                    <span class="ticker-name">{{ c.name }}</span>
+                    <span class="ticker-amount {% if c.remaining_egp >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} EGP
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="dash-card card-blue p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="dash-icon"><i class="bi bi-arrow-left-right"></i></div>
+                    <span class="dash-badge">{{ db_count }}</span>
+                </div>
+                <div class="dash-title">الحوالات</div>
+                <div class="dash-value">{{ db_total_egp|fmt }} <span class="dash-unit">EGP</span></div>
+                <div class="dash-sub">{{ db_total_lyd|fmt }} LYD</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dash-card card-green p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="dash-icon" style="background:#059669;"><i class="bi bi-wallet2"></i></div>
+                    <span class="dash-badge" style="background:#d1fae5;color:#059669;">{{ cap_count }}</span>
+                </div>
+                <div class="dash-title">إيداعات الأرصدة</div>
+                <div class="dash-value" style="color:#059669;">{{ cap_total_egp|fmt }} <span class="dash-unit">EGP</span></div>
+                <div class="dash-sub">{{ cap_total_lyd|fmt }} LYD</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dash-card card-amber p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="dash-icon" style="background:#d97706;"><i class="bi bi-people"></i></div>
+                    <span class="dash-badge" style="background:#fef3c7;color:#d97706;">{{ client_count }}</span>
+                </div>
+                <div class="dash-title">العملاء</div>
+                <div class="dash-value" style="color:#d97706;">{{ remaining_egp|fmt }} <span class="dash-unit">EGP</span></div>
+                <div class="dash-sub">صاف الرصيد</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dash-card card-red p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="dash-icon" style="background:#dc2626;"><i class="bi bi-receipt"></i></div>
+                    <span class="dash-badge" style="background:#fee2e2;color:#dc2626;">{{ exp_count }}</span>
+                </div>
+                <div class="dash-title">المصروفات</div>
+                <div class="dash-value" style="color:#dc2626;">{{ exp_total|fmt }} <span class="dash-unit">EGP</span></div>
+                <div class="dash-sub">إجمالي المصروفات</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:8px;height:24px;border-radius:4px;background:var(--primary);"></div>
+                            <h6 class="mb-0 fw-bold">آخر الحوالات</h6>
+                        </div>
+                        <a href="{% url 'transactions' %}" style="font-size:0.8rem;color:var(--primary);text-decoration:none;font-weight:600;">عرض الكل <i class="bi bi-arrow-left"></i></a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">#</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">التاريخ</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المرسل</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المستلم</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المبلغ مصري</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">الصرف</th>
+                                    <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المبلغ ليبي</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in latest %}
+                                <tr>
+                                    <td style="font-size:0.85rem;padding:10px 12px;">{{ t.order_number|default:t.id }}</td>
+                                    <td style="font-size:0.85rem;padding:10px 12px;">{{ t.date|date:"Y-m-d" }}</td>
+                                    <td style="font-size:0.85rem;padding:10px 12px;font-weight:600;">{{ t.sender_name|default:"-" }}</td>
+                                    <td style="font-size:0.85rem;padding:10px 12px;">{{ t.receiver_name|default:"-" }}</td>
+                                    <td style="font-size:0.9rem;padding:10px 12px;font-weight:700;color:var(--primary);">{{ t.transfered_amount|fmt }}</td>
+                                    <td style="font-size:0.85rem;padding:10px 12px;">{{ t.exchange_rate|floatformat:"-3u" }}</td>
+                                    <td style="font-size:0.9rem;padding:10px 12px;font-weight:700;color:#059669;">{{ t.transfer_amount|fmt }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="7" class="text-center py-4" style="color:#94a3b8;font-size:0.9rem;">
+                                    <i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
+                                    لا توجد حوالات
+                                </td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:8px;height:24px;border-radius:4px;background:#059669;"></div>
+                            <h6 class="mb-0 fw-bold">أرصدة العملاء</h6>
+                        </div>
+                    </div>
+                    {% for c in clients %}
+                    <div class="client-bar mb-2">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span style="font-size:0.82rem;font-weight:600;color:#1e293b;">{{ c.name }}</span>
+                            <span style="font-size:0.82rem;font-weight:700;color:{% if c.remaining_egp < 0 %}#dc2626{% else %}#059669{% endif %};">{{ c.remaining_egp|fmt }}</span>
+                        </div>
+                        <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                            <div style="height:100%;width:{% widthratio c.remaining_egp total_egp_clients 100 %}%;min-width:2%;max-width:100%;background:{% if c.remaining_egp < 0 %}#dc2626{% else %}linear-gradient(90deg,#059669,#10b981){% endif %};border-radius:3px;"></div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4" style="color:#94a3b8;font-size:0.9rem;">
+                        <i class="bi bi-person-x" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
+                        لا يوجد عملاء
+                    </div>
+                    {% endfor %}
+                    {% if clients %}
+                    <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between">
+                        <span style="font-size:0.8rem;color:#64748b;font-weight:600;">الإجمالي</span>
+                        <span style="font-size:1rem;font-weight:800;color:var(--primary);">{{ total_egp_clients|fmt }} EGP</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:8px;height:24px;border-radius:4px;background:#d97706;"></div>
+                    <h6 class="mb-0 fw-bold">آخر الإيداعات</h6>
+                </div>
+                <a href="{% url 'capital_list' %}" style="font-size:0.8rem;color:#d97706;text-decoration:none;font-weight:600;">عرض الكل <i class="bi bi-arrow-left"></i></a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr style="background:#f8fafc;">
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">#</th>
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">التاريخ</th>
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">العميل</th>
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المبلغ مصري</th>
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">الصرف</th>
+                            <th style="font-size:0.75rem;color:#64748b;padding:8px 12px;">المبلغ ليبي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in latest_capital %}
+                        <tr>
+                            <td style="font-size:0.85rem;padding:10px 12px;">{{ c.id }}</td>
+                            <td style="font-size:0.85rem;padding:10px 12px;">{{ c.date|date:"Y-m-d" }}</td>
+                            <td style="font-size:0.85rem;padding:10px 12px;font-weight:600;">{{ c.client.name|default:"-" }}</td>
+                            <td style="font-size:0.9rem;padding:10px 12px;font-weight:700;color:#d97706;">{{ c.cash_in|fmt }}</td>
+                            <td style="font-size:0.85rem;padding:10px 12px;">{{ c.exchange_rate|floatformat:"-3u" }}</td>
+                            <td style="font-size:0.9rem;padding:10px 12px;font-weight:700;color:#059669;">{{ c.libyan_cash|fmt }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center py-4" style="color:#94a3b8;font-size:0.9rem;">
+                            <i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
+                            لا توجد إيداعات
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.dash-card { border:none; border-radius:14px; transition:all 0.3s; cursor:default; }
+.dash-card:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(0,0,0,0.1); }
+.card-blue { background:linear-gradient(135deg,#eef2ff,#e0e7ff); border:2px solid #c7d2fe; }
+.card-green { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border:2px solid #a7f3d0; }
+.card-amber { background:linear-gradient(135deg,#fffbeb,#fef3c7); border:2px solid #fde68a; }
+.card-red { background:linear-gradient(135deg,#fef2f2,#fee2e2); border:2px solid #fecaca; }
+.dash-icon { width:40px; height:40px; border-radius:10px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.dash-badge { font-size:0.7rem; font-weight:700; background:#ede9fe; color:#6d28d9; padding:3px 10px; border-radius:20px; }
+.dash-title { font-size:0.8rem; font-weight:600; color:#64748b; margin-bottom:4px; }
+.dash-value { font-size:1.5rem; font-weight:800; color:#0f172a; line-height:1.2; }
+.dash-unit { font-size:0.7rem; font-weight:600; color:#64748b; }
+.dash-sub { font-size:0.75rem; color:#94a3b8; margin-top:2px; }
+.client-bar { padding:8px 12px; border-radius:8px; background:#f8fafc; transition:all 0.2s; }
+.client-bar:hover { background:#f1f5f9; }
+.table td, .table th { padding:10px 12px !important; vertical-align:middle !important; }
+.table tbody tr:hover { background:var(--primary-bg) !important; }
+.ticker-wrap{overflow:hidden;width:100%}
+.ticker{display:flex;animation:ticker 20s linear infinite;white-space:nowrap}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;padding:6px 24px;border-radius:8px;background:rgba(255,255,255,.08);margin:0 8px;flex-shrink:0;border:1px solid rgba(255,255,255,.1)}
+.ticker-name{color:#94a3b8;font-size:.82rem;font-weight:600}
+.ticker-amount{font-size:.9rem;font-weight:800}
+.ticker-amount.positive{color:#4ade80}
+.ticker-amount.negative{color:#f87171}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+</style>
+{% endblock %}

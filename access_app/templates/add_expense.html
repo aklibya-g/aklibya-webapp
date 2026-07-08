@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}<i class="bi bi-receipt text-warning"></i> {{ title }}{% endblock %}
+{% block breadcrumb %}المصروفات{% endblock %}
+
+{% block content %}
+<div class="stat-card p-4">
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.date.label }}</label>
+            {{ form.date }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.amount.label }}</label>
+            {{ form.amount }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.expense_type.label }}</label>
+            <div class="input-group">
+                <select name="expense_type_select" class="form-select" id="id_expense_type_select">
+                    <option value="">---</option>
+                    {% for t in expense_types %}
+                    <option value="{{ t }}" {% if form.expense_type.value == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-outline-success" type="button" onclick="addExpenseType()" title="إضافة نوع جديد"><i class="bi bi-plus-lg"></i></button>
+            </div>
+            <input type="hidden" name="expense_type" id="id_expense_type" value="{{ form.expense_type.value|default:'' }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">{{ form.paid_by.label }}</label>
+            <div class="input-group">
+                <select name="paid_by_select" class="form-select" id="id_paid_by_select">
+                    <option value="">---</option>
+                    {% for p in paid_by_list %}
+                    <option value="{{ p }}" {% if form.paid_by.value == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-outline-success" type="button" onclick="addPaidBy()" title="إضافة جديد"><i class="bi bi-plus-lg"></i></button>
+            </div>
+            <input type="hidden" name="paid_by" id="id_paid_by" value="{{ form.paid_by.value|default:'' }}">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label fw-bold">{{ form.notes.label }}</label>
+            {{ form.notes }}
+        </div>
+        <div class="col-12 mt-3">
+            <button class="btn btn-success"><i class="bi bi-save"></i> {% if edit_mode %}تعديل المصروف{% else %}حفظ المصروف{% endif %}</button>
+            <a href="{% url 'expenses_list' %}" class="btn btn-secondary"><i class="bi bi-arrow-right"></i> رجوع</a>
+        </div>
+    </form>
+</div>
+{% block extra_js %}
+<script>
+function addExpenseType() {
+    var val = prompt("أدخل نوع المصروف الجديد:");
+    if (val && val.trim()) {
+        val = val.trim();
+        var sel = document.getElementById('id_expense_type_select');
+        var opt = document.createElement('option');
+        opt.value = val;
+        opt.text = val;
+        opt.selected = true;
+        sel.appendChild(opt);
+        document.getElementById('id_expense_type').value = val;
+    }
+}
+function addPaidBy() {
+    var val = prompt("أدخل اسم المدفوع بواسطة الجديد:");
+    if (val && val.trim()) {
+        val = val.trim();
+        var sel = document.getElementById('id_paid_by_select');
+        var opt = document.createElement('option');
+        opt.value = val;
+        opt.text = val;
+        opt.selected = true;
+        sel.appendChild(opt);
+        document.getElementById('id_paid_by').value = val;
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    function syncSelect(selId, hiddenId) {
+        var sel = document.getElementById(selId);
+        var hidden = document.getElementById(hiddenId);
+        sel.addEventListener('change', function() { hidden.value = this.value; });
+        if (sel.value) hidden.value = sel.value;
+    }
+    syncSelect('id_expense_type_select', 'id_expense_type');
+    syncSelect('id_paid_by_select', 'id_paid_by');
+});
+</script>
+{% endblock %}
+{% endblock %}

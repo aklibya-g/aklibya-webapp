@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}تم الإرسال - {{ t.order_number }}{% endblock %}
+{% block page_title %}<i class="bi bi-check-circle text-success"></i> تم الإرسال بنجاح{% endblock %}
+
+{% block content %}
+<style>
+.success-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden}
+.success-header{background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:30px;text-align:center}
+.success-header .order-num{font-size:1.8rem;font-weight:900;margin:8px 0}
+.success-body{padding:24px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.info-box{background:#f8fafb;border-radius:12px;padding:14px 16px;border:1px solid #e8ecf0}
+.info-box h4{margin:0 0 10px;font-size:.82rem;color:#6b7280;font-weight:600}
+.info-box p{margin:4px 0;font-size:.9rem;color:#1a1a2e}
+.info-box p strong{color:#374151}
+.amount-box{background:linear-gradient(135deg,#fefce8,#fef3c7);border:2px solid #f59e0b;border-radius:14px;padding:20px;text-align:center;margin-bottom:20px}
+.amount-box .main-amount{font-size:2rem;font-weight:900;color:#92400e}
+.amount-box .sub-amount{font-size:1rem;color:#b45309;margin-top:4px}
+.actions-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.actions-row a,.actions-row button{padding:12px 24px;border-radius:10px;font-weight:700;text-decoration:none;border:none;cursor:pointer;font-size:.9rem;transition:all .2s}
+.btn-receipt{background:#3b82f6;color:#fff}
+.btn-receipt:hover{background:#2563eb}
+.btn-new{background:#059669;color:#fff}
+.btn-new:hover{background:#047857}
+.btn-close{background:#f3f4f6;color:#374151}
+.btn-close:hover{background:#e5e7eb}
+</style>
+
+<div class="success-card">
+    <div class="success-header">
+        <i class="bi bi-check-circle" style="font-size:2.5rem"></i>
+        <div>تم إرسال الحوالة الداخلية بنجاح</div>
+        <div class="order-num"># {{ t.order_number }}</div>
+    </div>
+    <div class="success-body">
+        <div class="info-grid">
+            <div class="info-box">
+                <h4><i class="bi bi-person-raised-hand"></i> المرسل</h4>
+                <p><strong>الاسم:</strong> {{ t.sender_name }}</p>
+                <p><strong>الهاتف:</strong> {{ t.sender_tele|default:"-" }}</p>
+                <p><strong>المكتب:</strong> {{ t.sender_office.office_name|default:"-" }}</p>
+                {% if t.sender_notes %}<p><strong>ملاحظات:</strong> {{ t.sender_notes }}</p>{% endif %}
+            </div>
+            <div class="info-box">
+                <h4><i class="bi bi-person-check"></i> المستلم</h4>
+                <p><strong>الاسم:</strong> {{ t.receiver_name }}</p>
+                <p><strong>الهاتف:</strong> {{ t.receiver_tele|default:"-" }}</p>
+                <p><strong>المكتب:</strong> {{ t.receiver_office.office_name|default:"-" }}</p>
+                <p><strong>المنطقة:</strong> {{ t.delivery_area.name|default:t.delivery_area_name|default:"-" }}</p>
+                {% if t.receiver_notes %}<p><strong>ملاحظات:</strong> {{ t.receiver_notes }}</p>{% endif %}
+            </div>
+        </div>
+        <div class="amount-box">
+            <div style="font-size:.85rem;color:#92400e;margin-bottom:4px">المبلغ المستلم</div>
+            <div class="main-amount">{{ t.received_amount|fmt }} LYD</div>
+            <div class="sub-amount">مرسل: {{ t.sent_amount|fmt }} | عمولة: {{ t.office_commission|fmt }}</div>
+        </div>
+        <div class="actions-row">
+            {% if t.status == 'received' %}
+            <a href="{% url 'internal_transfer_receipt' t.id %}" target="_blank" class="btn-receipt"><i class="bi bi-printer"></i> طباعة إيصال الاستلام</a>
+            {% endif %}
+            <a href="{% url 'add_internal_transfer' %}" class="btn-new"><i class="bi bi-plus-circle"></i> حوالة جديدة</a>
+            <a href="{% url 'internal_transfer_list' %}" class="btn-close"><i class="bi bi-list"></i> قائمة الحوالات</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}ترحيل الرصيد{% endblock %}
+{% block page_title %}<i class="bi bi-skip-forward text-primary"></i> ترحيل الرصيد{% endblock %}
+
+{% block content %}
+<div class="stat-card p-3">
+    <form method="get" class="row g-2">
+        <div class="col-md-3">
+            <label class="form-label">السنة</label>
+            <select name="source_year" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for y in "2024,2025,2026,2027,2028"|split %}
+                <option value="{{ y }}" {% if request.GET.source_year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">شهر المصدر</label>
+            <select name="source_month" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
+                <option value="{{ m }}" {% if request.GET.source_month == m %}selected{% endif %}>شهر {{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">الشخص</label>
+            <select name="person_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">اختر الشخص</option>
+                {% for c in clients %}
+                <option value="{{ c.id }}" {% if request.GET.person_id|slugify == c.id|slugify %}selected{% endif %}>{{ c.name }} — <span style="color:{% if c.remaining_egp < 0 %}#dc2626{% else %}#059669{% endif %};font-weight:700;">{{ c.remaining_egp|fmt }} EGP</span></option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">شهر الهدف</label>
+            <select name="target_month" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
+                <option value="{{ m }}" {% if request.GET.target_month == m %}selected{% endif %}>شهر {{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% if selected_client %}
+<div class="stat-card p-3 mt-3">
+    <div class="d-flex gap-3 flex-wrap mb-3">
+        <span><strong>الرصيد المتبقي للترحيل:</strong> {{ source_egp|fmt }} EGP</span>
+        <span><strong>السعر:</strong> {{ source_rate|floatformat:"-3u" }}</span>
+        <span><strong>المبلغ الليبي:</strong> {{ source_lyd|fmt }} LYD</span>
+    </div>
+    {% if source_egp <= 0 %}
+    <div class="alert alert-warning">لا يوجد رصيد للترحيل حالياً</div>
+    {% elif source_egp > selected_client.egp_balance %}
+    <div class="alert alert-danger">رصيد العميل الحالي ({{ selected_client.egp_balance|fmt }}) أقل من المبلغ المطلوب ({{ source_egp|fmt }})</div>
+    {% else %}
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="person_id" value="{{ selected_client.id }}">
+        <input type="hidden" name="source_month" value="{{ request.GET.source_month }}">
+        <input type="hidden" name="source_year" value="{{ request.GET.source_year }}">
+        <input type="hidden" name="target_month" value="{{ request.GET.target_month }}">
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" {% if carryover_exists %}disabled{% endif %}><i class="bi bi-skip-forward"></i> ترحيل</button>
+            {% if carryover_exists %}
+            <a href="{% url 'carryover_balance' %}" class="btn btn-outline-secondary">تم الترحيل مسبقاً</a>
+            {% endif %}
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

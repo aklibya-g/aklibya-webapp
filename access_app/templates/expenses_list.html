@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}المصروفات{% endblock %}
+{% block content %}
+<style>
+.exp-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 20px;box-shadow:var(--shadow-sm)}
+.exp-filter .fg{display:flex;flex-direction:column;gap:4px;min-width:140px}
+.exp-filter .fg label{font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.exp-filter .fg input,.exp-filter .fg select{padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600;background:var(--bg);color:var(--text);transition:border-color .2s}
+.exp-filter .fg input:focus,.exp-filter .fg select:focus{outline:none;border-color:var(--primary)}
+.exp-btn{padding:10px 20px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.exp-btn-primary{background:var(--primary);color:#fff}.exp-btn-primary:hover{background:var(--primary-hover)}
+.exp-btn-danger{background:#dc2626;color:#fff}.exp-btn-danger:hover{background:#b91c1c}
+.exp-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.exp-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.exp-btn-warning{background:#d97706;color:#fff}.exp-btn-warning:hover{background:#b45309}
+.exp-summary{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.exp-sum-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);min-width:180px}
+.exp-sum-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;flex-shrink:0}
+.exp-sum-info .num{font-size:1.3rem;font-weight:900;line-height:1}
+.exp-sum-info .lbl{font-size:.72rem;color:var(--text-muted);font-weight:600;margin-top:2px}
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-cash-stack fs-4" style="color:#d97706"></i>
+        <h5 class="mb-0 fw-bold">المصروفات</h5>
+        <span style="background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:.75rem;font-weight:700;color:var(--text-muted)">{{ expenses|length }} سجل</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="exp-btn exp-btn-warning" onclick="printPage()"><i class="bi bi-printer"></i> طباعة تقرير</button>
+        <a href="{% url 'export_expenses_excel' %}" class="exp-btn" style="background:#2563eb;color:#fff"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
+        <form method="POST" enctype="multipart/form-data" style="display:inline" id="importExpForm">
+            {% csrf_token %}
+            <label class="exp-btn" style="background:#7c3aed;color:#fff;cursor:pointer"><i class="bi bi-upload"></i> استيراد Excel<input type="file" name="excel_file" accept=".xlsx,.xls" style="display:none" onchange="document.getElementById('importExpForm').submit()"></label>
+        </form>
+        <a href="{% url 'add_expense' %}" class="exp-btn exp-btn-primary"><i class="bi bi-plus-circle"></i> إضافة مصروف</a>
+    </div>
+</div>
+
+<form method="GET" class="exp-filter">
+    <div class="fg">
+        <label>بحث بالاسم</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="اسم المصروف...">
+    </div>
+    <div class="fg">
+        <label>من شهر</label>
+        <input type="month" name="date_from_month" value="{{ date_from_month|default:'' }}">
+    </div>
+    <div class="fg">
+        <label>إلى شهر</label>
+        <input type="month" name="date_to_month" value="{{ date_to_month|default:'' }}">
+    </div>
+    <div class="fg">
+        <label>من تاريخ</label>
+        <input type="date" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="fg">
+        <label>إلى تاريخ</label>
+        <input type="date" name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="fg">
+        <label>نوع المصروف</label>
+        <input type="text" name="expense_type" value="{{ expense_filter }}" placeholder="النوع...">
+    </div>
+    <div class="fg">
+        <label>الدفع بواسطة</label>
+        <input type="text" name="paid_by" value="{{ paid_by_filter }}" placeholder="المدفوع...">
+    </div>
+    <div class="fg" style="flex-direction:row;gap:6px;align-self:flex-end">
+        <button type="submit" class="exp-btn exp-btn-primary"><i class="bi bi-search"></i> بحث</button>
+        <a href="{% url 'expenses_list' %}" class="exp-btn exp-btn-outline"><i class="bi bi-x-lg"></i> مسح</a>
+    </div>
+</form>
+
+<div class="exp-summary">
+    <div class="exp-sum-card">
+        <div class="exp-sum-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="bi bi-cash"></i></div>
+        <div class="exp-sum-info">
+            <div class="num" style="color:#d97706">{{ total|fmt }}</div>
+            <div class="lbl">إجمالي المصروفات (EGP)</div>
+        </div>
+    </div>
+    <div class="exp-sum-card">
+        <div class="exp-sum-icon" style="background:linear-gradient(135deg,#2563eb,#60a5fa)"><i class="bi bi-list-numbered"></i></div>
+        <div class="exp-sum-info">
+            <div class="num" style="color:var(--primary)">{{ expenses|length }}</div>
+            <div class="lbl">عدد السجلات</div>
+        </div>
+    </div>
+</div>
+
+<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden">
+    <div class="table-responsive">
+        <table class="table-app">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الاسم</th>
+                    <th>المبلغ</th>
+                    <th>التاريخ</th>
+                    <th>النوع</th>
+                    <th>المدفوع بواسطة</th>
+                    <th>ملاحظات</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td style="font-weight:600;color:var(--text-muted)">{{ forloop.counter }}</td>
+                    <td style="font-weight:700">{{ e.expense_type|default:e.name|default:"-" }}</td>
+                    <td style="font-weight:800;color:#dc2626">{{ e.amount|fmt }} <span style="font-size:.7rem;color:var(--text-muted)">EGP</span></td>
+                    <td>{{ e.date|date:"Y-m-d" }}</td>
+                    <td><span style="background:var(--primary-bg);color:var(--primary);padding:3px 10px;border-radius:8px;font-size:.78rem;font-weight:700">{{ e.expense_type|default:"-" }}</span></td>
+                    <td>{{ e.paid_by|default:"-" }}</td>
+                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.notes|default:"" }}</td>
+                    <td>
+                        <a href="{% url 'edit_expense' e.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center" style="padding:40px;color:var(--text-muted);font-size:.9rem">
+                    <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.5"></i>
+                    لا توجد مصروفات
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function printPage() {
+    var rows = document.querySelectorAll('.table-app tbody tr');
+    var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">';
+    html += '<title>تقرير المصروفات</title>';
+    html += '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">';
+    html += '<style>';
+    html += '*{margin:0;padding:0;box-sizing:border-box}';
+    html += 'body{font-family:Cairo,sans-serif;direction:rtl;background:#fff;padding:15mm 12mm;font-size:10pt;color:#1a1a2e}';
+    html += '.header{text-align:center;border-bottom:3px double #d97706;padding-bottom:10px;margin-bottom:16px}';
+    html += '.header h1{font-size:20pt;font-weight:900;color:#d97706;margin:0}';
+    html += '.header .sub{font-size:10pt;color:#666;margin-top:4px}';
+    html += '.meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:9pt;color:#888;padding:0 4px}';
+    html += '.stats{display:flex;gap:12px;margin-bottom:14px;justify-content:center}';
+    html += '.stat-box{border:1.5px solid #d97706;border-radius:8px;padding:8px 16px;text-align:center;min-width:130px}';
+    html += '.stat-box .label{font-size:8pt;color:#666;font-weight:600}.stat-box .val{font-size:13pt;font-weight:900;color:#d97706}';
+    html += 'table{width:100%;border-collapse:collapse;margin-top:8px;font-size:9pt}';
+    html += 'thead th{background:#d97706;color:#fff;padding:8px 6px;font-weight:700;text-align:center;font-size:8.5pt}';
+    html += 'tbody td{padding:6px 5px;border-bottom:1px solid #e5e7eb;text-align:center}';
+    html += 'tbody tr:nth-child(even){background:#fffbeb}';
+    html += '.total-row{background:#fef3c7;font-weight:800;border-top:2px solid #d97706}';
+    html += '.total-row td{padding:10px 6px;font-size:9.5pt}';
+    html += '.footer{margin-top:16px;text-align:center;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px}';
+    html += '.btn-print{display:inline-block;padding:10px 30px;background:#d97706;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
+    html += '@media print{body{padding:8mm 10mm}.btn-print{display:none!important}}';
+    html += '</style></head><body>';
+    
+    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #d97706"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير المصروفات</div></div>';
+    html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
+    html += '<span>عدد السجلات: ' + rows.length + '</span></div>';
+    
+    var total = 0;
+    rows.forEach(function(r){
+        var cells = r.querySelectorAll('td');
+        if(cells.length > 2){
+            total += parseFloat(cells[2].textContent.replace(/,/g,'')) || 0;
+        }
+    });
+    
+    html += '<div class="stats">';
+    html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + rows.length + '</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي المصروفات</div><div class="val">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' EGP</div></div>';
+    html += '</div>';
+    
+    html += '<table><thead><tr><th>#</th><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th>المدفوع بواسطة</th><th>ملاحظات</th></tr></thead><tbody>';
+    
+    var idx = 1;
+    rows.forEach(function(r){
+        var cells = r.querySelectorAll('td');
+        if(cells.length > 2){
+            html += '<tr><td>' + idx + '</td>';
+            html += '<td style="font-weight:700">' + cells[1].textContent + '</td>';
+            html += '<td style="font-weight:800;color:#dc2626">' + cells[2].textContent + '</td>';
+            html += '<td>' + cells[3].textContent + '</td>';
+            html += '<td>' + cells[5].textContent + '</td>';
+            html += '<td>' + cells[6].textContent + '</td></tr>';
+            idx++;
+        }
+    });
+    
+    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#dc2626;font-size:11pt">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' EGP</td><td colspan="3"></td></tr></tfoot></table>';
+    
+    html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
+    html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
+    html += '</body></html>';
+    
+    var win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+}
+</script>
+{% endblock %}

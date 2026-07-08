@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}إرسال حوالة داخلية{% endblock %}
+{% block page_title %}<i class="bi bi-send text-info"></i> إرسال حوالة داخلية{% endblock %}
+
+{% block content %}
+<style>
+.send-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden}
+.section-header{padding:14px 20px;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f0f0f0}
+.section-header.sender{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1e40af}
+.section-header.receiver{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534}
+.section-header.amount{background:linear-gradient(135deg,#fefce8,#fef3c7);color:#92400e}
+.section-body{padding:18px 20px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.field-row.full{grid-template-columns:1fr}
+.form-label{font-size:.8rem;font-weight:600;color:#4b5563;margin-bottom:5px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:.88rem;transition:all .2s;background:#fff}
+.form-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.form-select{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:.88rem;background:#fff;cursor:pointer}
+.form-textarea{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:.88rem;resize:none;min-height:60px}
+.btn-send{background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:12px;padding:14px 32px;font-weight:700;font-size:1rem;cursor:pointer;transition:all .2s;width:100%}
+.btn-send:hover{background:linear-gradient(135deg,#047857,#065f46);transform:translateY(-1px);box-shadow:0 6px 20px rgba(5,150,105,.3)}
+.confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;justify-content:center;align-items:center}
+.confirm-box{background:#fff;border-radius:16px;padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.confirm-box h3{margin:0 0 16px;font-size:1.2rem;color:#1a1a2e}
+.confirm-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:.88rem}
+.confirm-row .label{color:#6b7280}
+.confirm-row .val{font-weight:700;color:#1a1a2e}
+.confirm-actions{display:flex;gap:10px;margin-top:20px}
+.confirm-actions button{flex:1;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;border:none;font-size:.95rem}
+.btn-confirm-yes{background:#059669;color:#fff}
+.btn-confirm-no{background:#f3f4f6;color:#374151}
+.quick-add-btn{background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:.82rem;color:#6b7280;transition:all .2s}
+.quick-add-btn:hover{border-color:#3b82f6;color:#3b82f6}
+.amount-calc{background:#f8fafb;border-radius:12px;padding:14px 18px;margin-top:10px}
+.amount-calc .calc-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.9rem}
+.amount-calc .calc-row.total{border-top:2px solid #059669;margin-top:6px;padding-top:10px;font-weight:800;font-size:1.05rem;color:#059669}
+@media(max-width:768px){.field-row{grid-template-columns:1fr}}
+</style>
+
+<div class="send-card">
+    <form method="post" id="sendForm">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div style="background:#fee2e2;border-bottom:1px solid #fca5a5;padding:12px 20px;color:#dc2626;font-size:.85rem">
+            {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="section-header sender">
+            <i class="bi bi-person-raised-hand"></i> بيانات المرسل
+        </div>
+        <div class="section-body">
+            <div class="field-row">
+                <div>
+                    <label class="form-label">مكتب الإرسال</label>
+                    <select name="sender_office" class="form-select" required>
+                        <option value="">اختر المكتب...</option>
+                        {% for o in offices %}
+                        <option value="{{ o.id }}">{{ o.office_name }}{% if o.code %} ({{ o.code }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">اسم المرسل</label>
+                    <input type="text" name="sender_name" class="form-input" required placeholder="الاسم الكامل...">
+                </div>
+            </div>
+            <div class="field-row">
+                <div>
+                    <label class="form-label">هاتف المرسل</label>
+                    <input type="text" name="sender_tele" class="form-input" placeholder="رقم الهاتف...">
+                </div>
+                <div>
+                    <label class="form-label">ملاحظات المرسل</label>
+                    <textarea name="sender_notes" class="form-textarea" rows="2" placeholder="ملاحظات اختيارية..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header receiver">
+            <i class="bi bi-person-check"></i> بيانات المستلم
+        </div>
+        <div class="section-body">
+            <div class="field-row">
+                <div>
+                    <label class="form-label">مكتب الاستقبال</label>
+                    <select name="receiver_office" class="form-select" required>
+                        <option value="">اختر المكتب...</option>
+                        {% for o in offices %}
+                        <option value="{{ o.id }}">{{ o.office_name }}{% if o.code %} ({{ o.code }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">اسم المستلم</label>
+                    <input type="text" name="receiver_name" class="form-input" required placeholder="الاسم الكامل...">
+                </div>
+            </div>
+            <div class="field-row">
+                <div>
+                    <label class="form-label">هاتف المستلم</label>
+                    <input type="text" name="receiver_tele" class="form-input" placeholder="رقم الهاتف...">
+                </div>
+                <div>
+                    <label class="form-label">منطقة التسليم</label>
+                    <div style="display:flex;gap:8px">
+                        <select name="delivery_area" id="id_delivery_area" class="form-select" style="flex:1">
+                            <option value="">اختر المنطقة...</option>
+                        </select>
+                        <button type="button" class="quick-add-btn" onclick="showNewArea()"><i class="bi bi-plus-circle"></i></button>
+                    </div>
+                    <div id="newAreaBox" style="display:none;margin-top:8px;display:flex;gap:8px">
+                        <input type="text" name="new_area" id="id_new_area" class="form-input" placeholder="اسم المنطقة الجديدة..." style="flex:1">
+                        <button type="button" class="quick-add-btn" onclick="addNewArea()"><i class="bi bi-check-lg"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="field-row full">
+                <div>
+                    <label class="form-label">ملاحظات المستلم</label>
+                    <textarea name="receiver_notes" class="form-textarea" rows="2" placeholder="ملاحظات اختيارية..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header amount">
+            <i class="bi bi-cash-stack"></i> المبالغ
+        </div>
+        <div class="section-body">
+            <div class="field-row">
+                <div>
+                    <label class="form-label">المبلغ المرسل (LYD)</label>
+                    <input type="number" name="sent_amount" id="id_sent_amount" class="form-input" step="0.01" required placeholder="0.00" oninput="calcAmount()">
+                </div>
+                <div>
+                    <label class="form-label">عمولة المكتب (LYD)</label>
+                    <input type="number" name="office_commission" id="id_commission" class="form-input" step="0.01" value="0" placeholder="0.00" oninput="calcAmount()">
+                </div>
+            </div>
+            <div class="amount-calc">
+                <div class="calc-row"><span>المبلغ المرسل</span><span id="show_sent">0.00</span></div>
+                <div class="calc-row"><span>عمولة المكتب</span><span id="show_comm">0.00</span></div>
+                <div class="calc-row total"><span>المبلغ المستلم</span><span id="show_recv">0.00</span></div>
+            </div>
+            <input type="hidden" name="received_amount" id="id_received">
+        </div>
+
+        <div style="padding:18px 20px">
+            <input type="hidden" name="date" value="{{ form.date.value|default:'' }}">
+            <input type="hidden" name="time" value="{{ form.time.value|default:'' }}">
+            <input type="hidden" name="status" value="sent">
+            <button type="button" class="btn-send" onclick="showConfirm()">
+                <i class="bi bi-send-check"></i> إرسال الحوالة
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <h3><i class="bi bi-exclamation-triangle text-warning"></i> تأكيد الإرسال</h3>
+        <div class="confirm-row"><span class="label">مكتب الإرسال</span><span class="val" id="c_sender_office">-</span></div>
+        <div class="confirm-row"><span class="label">المرسل</span><span class="val" id="c_sender">-</span></div>
+        <div class="confirm-row"><span class="label">مكتب الاستقبال</span><span class="val" id="c_receiver_office">-</span></div>
+        <div class="confirm-row"><span class="label">المستلم</span><span class="val" id="c_receiver">-</span></div>
+        <div class="confirm-row"><span class="label">منطقة التسليم</span><span class="val" id="c_area">-</span></div>
+        <div class="confirm-row"><span class="label">المبلغ المرسل</span><span class="val" id="c_sent">-</span></div>
+        <div class="confirm-row"><span class="label">العمولة</span><span class="val" id="c_comm">-</span></div>
+        <div class="confirm-row" style="border-top:2px solid #059669;font-size:1rem"><span class="label" style="font-weight:700">المبلغ المستلم</span><span class="val" style="color:#059669" id="c_recv">-</span></div>
+        <div class="confirm-actions">
+            <button class="btn-confirm-no" onclick="hideConfirm()">إلغاء</button>
+            <button class="btn-confirm-yes" onclick="document.getElementById('sendForm').submit()">
+                <i class="bi bi-check-lg"></i> تأكيد الإرسال
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcAmount(){
+    var s=parseFloat(document.getElementById('id_sent_amount').value)||0;
+    var c=parseFloat(document.getElementById('id_commission').value)||0;
+    var r=s-c;
+    document.getElementById('show_sent').textContent=s.toLocaleString('ar-LY',{minimumFractionDigits:2});
+    document.getElementById('show_comm').textContent=c.toLocaleString('ar-LY',{minimumFractionDigits:2});
+    document.getElementById('show_recv').textContent=r.toLocaleString('ar-LY',{minimumFractionDigits:2});
+    document.getElementById('id_received').value=r;
+}
+function showConfirm(){
+    var offS=document.querySelector('[name=sender_office]');
+    var offR=document.querySelector('[name=receiver_office]');
+    var area=document.getElementById('id_delivery_area');
+    var newArea=document.getElementById('id_new_area');
+    document.getElementById('c_sender_office').textContent=offS.options[offS.selectedIndex]?.text||'-';
+    document.getElementById('c_sender').textContent=document.querySelector('[name=sender_name]').value||'-';
+    document.getElementById('c_receiver_office').textContent=offR.options[offR.selectedIndex]?.text||'-';
+    document.getElementById('c_receiver').textContent=document.querySelector('[name=receiver_name]').value||'-';
+    document.getElementById('c_area').textContent=(area.options[area.selectedIndex]?.text||'')+(newArea.value?' ('+newArea.value+')':'')||'-';
+    var s=parseFloat(document.getElementById('id_sent_amount').value)||0;
+    var c=parseFloat(document.getElementById('id_commission').value)||0;
+    document.getElementById('c_sent').textContent=s.toLocaleString('ar-LY',{minimumFractionDigits:2})+' LYD';
+    document.getElementById('c_comm').textContent=c.toLocaleString('ar-LY',{minimumFractionDigits:2})+' LYD';
+    document.getElementById('c_recv').textContent=(s-c).toLocaleString('ar-LY',{minimumFractionDigits:2})+' LYD';
+    document.getElementById('confirmOverlay').style.display='flex';
+}
+function hideConfirm(){document.getElementById('confirmOverlay').style.display='none'}
+function showNewArea(){document.getElementById('newAreaBox').style.display='flex'}
+function addNewArea(){
+    var name=document.getElementById('id_new_area').value.trim();
+    if(!name){return}
+    fetch('/api/quick-area/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({name:name})})
+    .then(r=>r.json()).then(d=>{
+        var sel=document.getElementById('id_delivery_area');
+        var opt=document.createElement('option');opt.value=d.id;opt.text=d.name;opt.selected=true;
+        sel.add(opt);document.getElementById('newAreaBox').style.display='none';
+    });
+}
+fetch('/api/quick-area/',{method:'GET'}).then(r=>r.json()).then(d=>{
+    var sel=document.getElementById('id_delivery_area');
+    if(d.areas){d.areas.forEach(a=>{var o=document.createElement('option');o.value=a.id;o.text=a.name;sel.add(o)})}
+});
+</script>
+{% endblock %}

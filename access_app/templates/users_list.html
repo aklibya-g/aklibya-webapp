@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}إدارة المستخدمين{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-people-fill fs-4" style="color:#8b5cf6"></i>
+        <h5 class="mb-0 fw-bold">إدارة المستخدمين</h5>
+        <span style="background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:.75rem;font-weight:700;color:var(--text-muted)">{{ users|length }} مستخدم</span>
+    </div>
+    <a href="{% url 'add_user' %}" class="exp-btn exp-btn-primary"><i class="bi bi-plus-circle"></i> إضافة مستخدم</a>
+</div>
+
+<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden">
+    <div class="table-responsive">
+        <table class="table-app">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>اسم المستخدم</th>
+                    <th>المكتب</th>
+                    <th>النوع</th>
+                    <th>الصلاحيات</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="font-weight:600;color:var(--text-muted)">{{ forloop.counter }}</td>
+                    <td style="font-weight:700">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:32px;height:32px;border-radius:8px;background:{% if u.is_admin %}linear-gradient(135deg,#8b5cf6,#a78bfa){% elif not u.is_active %}linear-gradient(135deg,#9ca3af,#d1d5db){% else %}linear-gradient(135deg,#2563eb,#60a5fa){% endif %};display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:800">{{ u.username|first }}</div>
+                            <div>
+                                {{ u.username }}
+                                {% if not u.is_active %}<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;margin-right:4px">معطّل</span>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ u.office_name|default:"-" }}</td>
+                    <td>
+                        {% if u.is_admin %}
+                        <span style="background:linear-gradient(135deg,#8b5cf6,#a78bfa);color:#fff;padding:3px 12px;border-radius:8px;font-size:.75rem;font-weight:700">مدير النظام</span>
+                        {% else %}
+                        <span style="background:var(--primary-bg);color:var(--primary);padding:3px 12px;border-radius:8px;font-size:.75rem;font-weight:700">مستخدم</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:300px">
+                            {% if u.perm_transactions %}<span style="background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">حوالات</span>{% endif %}
+                            {% if u.perm_capital %}<span style="background:#d1fae5;color:#059669;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">أرصدة</span>{% endif %}
+                            {% if u.perm_expenses %}<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">مصروفات</span>{% endif %}
+                            {% if u.perm_internal_transfer %}<span style="background:#ede9fe;color:#7c3aed;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">حوالات داخلية</span>{% endif %}
+                            {% if u.perm_import_whatsapp %}<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">واتساب</span>{% endif %}
+                            {% if u.perm_profits_report %}<span style="background:#fce7f3;color:#db2777;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">أرباح</span>{% endif %}
+                            {% if u.perm_users %}<span style="background:#f3e8ff;color:#9333ea;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700">مستخدمين</span>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'edit_user' u.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem"><i class="bi bi-pencil"></i></a>
+                            {% if not u.is_admin %}
+                            <form method="POST" action="{% url 'toggle_user_active' u.id %}" style="display:inline">
+                                {% csrf_token %}
+                                <button type="submit" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem;border-color:{% if u.is_active %}#d97706{% else %}#059669{% endif %};color:{% if u.is_active %}#d97706{% else %}#059669{% endif %}" title="{% if u.is_active %}تعطيل{% else %}تفعيل{% endif %}">
+                                    <i class="bi bi-{% if u.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                </button>
+                            </form>
+                            <a href="{% url 'delete_user' u.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem;border-color:#dc2626;color:#dc2626" onclick="return confirm('هل أنت متأكد من حذف {{ u.username }}؟')"><i class="bi bi-trash"></i></a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center" style="padding:40px;color:var(--text-muted)">
+                    <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.5"></i>
+                    لا يوجد مستخدمون
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

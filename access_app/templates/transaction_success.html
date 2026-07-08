@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}تم الحفظ{% endblock %}
+{% block page_title %}<i class="bi bi-check-circle-fill text-success"></i> تم الحفظ بنجاح{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center gap-3 mb-4">
+    <a href="{% url 'add_transaction' %}" class="btn btn-primary btn-lg" style="border-radius:12px;background:linear-gradient(135deg,#4f46e5,#6366f1);border:none;font-weight:700;">
+        <i class="bi bi-plus-circle"></i> حوالة جديدة
+    </a>
+    <a href="{% url 'transaction_receipt' t.id %}" target="_blank" class="btn btn-success btn-lg" style="border-radius:12px;font-weight:700;">
+        <i class="bi bi-printer"></i> طباعة الإيصال
+    </a>
+    <a href="{% url 'transactions' %}" class="btn btn-outline-secondary btn-lg" style="border-radius:12px;">
+        <i class="bi bi-x-lg"></i> إغلاق
+    </a>
+</div>
+
+<div class="stat-card p-4 mb-4" style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:10px;">✅</div>
+    <h5 style="font-weight:700;color:var(--success);">تم حفظ الحوالة بنجاح!</h5>
+    <p style="color:var(--text-muted);font-size:0.9rem;">رقم الحوالة: <strong>{{ t.order_number }}</strong></p>
+</div>
+
+<div class="stat-card p-4 mb-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 style="font-weight:700;color:var(--primary);margin:0;">بيانات الحوالة</h6>
+        <span style="background:var(--primary);color:#fff;padding:4px 12px;border-radius:8px;font-size:0.8rem;font-weight:700;">{{ t.order_number }}</span>
+    </div>
+    <div class="row g-3" style="font-size:0.85rem;">
+        <div class="col-md-6">
+            <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);padding:12px;border-radius:10px;border:1px solid #c7d2fe;">
+                <div style="font-weight:700;color:#4f46e5;margin-bottom:6px;"><i class="bi bi-person-up"></i> المرسل</div>
+                <div>الاسم: <strong>{{ t.sender_name }}</strong></div>
+                <div>الهاتف: <strong>{{ t.sender_tele|default:"-" }}</strong></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);padding:12px;border-radius:10px;border:1px solid #a7f3d0;">
+                <div style="font-weight:700;color:#059669;margin-bottom:6px;"><i class="bi bi-person-down"></i> المستلم</div>
+                <div>الاسم: <strong>{{ t.receiver_name }}</strong></div>
+                <div>الهاتف: <strong>{{ t.receiver_tele|default:"-" }}</strong></div>
+                <div>المنطقة: <strong>{{ t.receiver_region|default:"-" }}</strong></div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);padding:12px;border-radius:10px;border:1px solid #fde68a;">
+                <div style="font-weight:700;color:#d97706;margin-bottom:6px;"><i class="bi bi-calculator"></i> بيانات التحويل</div>
+                <div class="row" style="font-size:0.82rem;">
+                    <div class="col-3">المبلغ بالليبي: <strong>{{ t.transfer_amount|fmt }} LYD</strong></div>
+                    <div class="col-3">سعر الصرف: <strong>{{ t.exchange_rate }}</strong></div>
+                    <div class="col-3">المبلغ بالمصري: <strong>{{ t.transfered_amount|fmt }} EGP</strong></div>
+                    <div class="col-3">التاريخ: <strong>{{ t.date }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stat-card p-3 mb-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="bi bi-whatsapp text-success" style="font-size:1.2rem;"></i>
+        <span style="font-weight:700;font-size:0.85rem;">رسالة الواتساب</span>
+    </div>
+    <div id="waMessage" style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:14px;font-family:monospace;font-size:0.82rem;line-height:1.8;white-space:pre-wrap;direction:rtl;text-align:right;">🏢 شركة اليمامة المالية
+
+رقم الحوالة: {{ t.order_number }}
+التاريخ: {{ t.date }}
+
+👤 المرسل: {{ t.sender_name }}
+📞 هاتف المرسل: {{ t.sender_tele|default:"-" }}
+
+👤 المستلم: {{ t.receiver_name }}
+📞 هاتف المستلم: {{ t.receiver_tele|default:"-" }}
+📍 المنطقة: {{ t.receiver_region|default:"-" }}
+
+💰 المبلغ بالليبي: {{ t.transfer_amount|fmt }} LYD
+💱 سعر الصرف: {{ t.exchange_rate }}
+💰 المبلغ بالمصري: {{ t.transfered_amount|fmt }} EGP
+🏦 المكتب: {{ t.office_name }}
+
+{% if t.remarks %}📝 ملاحظات: {{ t.remarks }}{% endif %}
+
+شكراً لتعاملكم معنا 🤍</div>
+    <button class="btn btn-success mt-2" onclick="copyMessage()" style="border-radius:10px;font-weight:700;width:100%;">
+        <i class="bi bi-clipboard"></i> نسخ الرسالة للواتساب
+    </button>
+    <div id="copyDone" style="display:none;color:var(--success);font-weight:700;margin-top:6px;">✅ تم النسخ!</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyMessage() {
+    var msg = document.getElementById('waMessage').innerText;
+    navigator.clipboard.writeText(msg).then(function() {
+        document.getElementById('copyDone').style.display = 'block';
+        setTimeout(function() { document.getElementById('copyDone').style.display = 'none'; }, 2000);
+    });
+}
+</script>
+{% endblock %}
