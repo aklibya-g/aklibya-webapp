@@ -662,6 +662,7 @@ def import_whatsapp(request):
                 else:
                     results = parsed
 
+    whatsapp_alerts = ImportAlert.objects.filter(import_type="whatsapp")[:10]
     return render(request, "import_whatsapp.html", {
         "title": "استيراد حوالات خارجية",
         "results": results,
@@ -669,6 +670,7 @@ def import_whatsapp(request):
         "db_count": Database.objects.count(),
         "db_total_egp": Database.objects.aggregate(t=Sum("transfered_amount"))["t"] or 0,
         "use_prev_rate": use_prev_rate,
+        "whatsapp_alerts": whatsapp_alerts,
     })
 
 
@@ -955,6 +957,7 @@ def import_balance(request):
                     return redirect("capital_list")
                 else:
                     results = parsed
+    balance_alerts = ImportAlert.objects.filter(import_type="balance")[:10]
     return render(request, "import_balance.html", {
         "title": "استيراد أرصدة خارجية",
         "clients": clients,
@@ -964,6 +967,7 @@ def import_balance(request):
         "selected_date": selected_date,
         "cap_count": Capital.objects.count(),
         "cap_total_egp": Capital.objects.aggregate(t=Sum("cash_in"))["t"] or 0,
+        "balance_alerts": balance_alerts,
     })
 
 

@@ -210,6 +210,29 @@
 </div>
 {% endif %}
 
+{% if balance_alerts %}
+<div class="ie-card mt-4" style="border:2px solid rgba(220,38,38,0.3);border-right:4px solid #dc2626;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-bell-fill" style="color:#f59e0b"></i> تنبيهات فشل الاستيراد</h5>
+        <a href="{% url 'import_alerts' %}" style="font-size:.8rem;color:var(--primary);font-weight:600">عرض الكل ←</a>
+    </div>
+    {% for alert in balance_alerts %}
+    <div style="background:{% if not alert.is_read %}var(--danger-bg){% else %}var(--bg){% endif %};border:1px solid {% if not alert.is_read %}rgba(220,38,38,0.2){% else %}var(--border){% endif %};border-radius:10px;padding:14px;margin-bottom:10px;{% if not alert.is_read %}border-right:3px solid #dc2626;{% endif %}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div style="font-size:.85rem;font-weight:700">{{ alert.created_at|date:"Y-m-d H:i" }}</div>
+            <div class="d-flex gap-2">
+                <span class="ie-badge" style="background:#d1fae5;color:#059669">ناجح: {{ alert.success_count }}</span>
+                <span class="ie-badge" style="background:#fee2e2;color:#dc2626">فاشل: {{ alert.failed_count }}</span>
+            </div>
+        </div>
+        {% if alert.failed_details %}
+        <div style="font-size:.8rem;color:var(--text);white-space:pre-line;background:var(--card-bg);padding:10px;border-radius:8px;margin-top:8px;border:1px solid var(--border)">{{ alert.failed_details }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <script>
 function switchMainTab(tab) {
     document.querySelectorAll('.ie-tab').forEach(t => t.classList.remove('active'));
