@@ -12,47 +12,30 @@
     </div>
 
     {% if clients %}
-    <div style="background:linear-gradient(135deg,#0a0f1a 0%,#111827 50%,#0f172a 100%);border-radius:16px;padding:0;margin-bottom:24px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.06);box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06)">
-            <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite"></div>
-            <span style="color:#64748b;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">أرصدة العملاء</span>
-            <div style="flex:1"></div>
-            <span style="color:#475569;font-size:.7rem">الإجمالي: <span style="color:#22c55e;font-weight:800">{{ total_egp_clients|fmt }}</span> EGP</span>
-        </div>
-        <div style="position:relative">
-            <div style="position:absolute;right:0;top:0;bottom:0;width:80px;background:linear-gradient(to left,#0a0f1a,transparent);z-index:2"></div>
-            <div style="position:absolute;left:0;top:0;bottom:0;width:80px;background:linear-gradient(to right,#0a0f1a,transparent);z-index:2"></div>
-            <div class="ticker-wrap" style="padding:14px 0">
-                <div class="ticker">
-                    {% for c in clients %}
-                    <div class="ticker-item" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 20px;gap:12px">
-                        <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#fff;flex-shrink:0;{% if c.remaining_egp >= 0 %}background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 12px rgba(5,150,105,0.3){% else %}background:linear-gradient(135deg,#dc2626,#ef4444);box-shadow:0 4px 12px rgba(220,38,38,0.3){% endif %}">{{ c.name|truncatechars:2 }}</div>
-                        <div style="display:flex;flex-direction:column;gap:2px">
-                            <span style="color:#94a3b8;font-size:.78rem;font-weight:600">{{ c.name }}</span>
-                            <span style="font-size:1rem;font-weight:900;letter-spacing:-0.5px;{% if c.remaining_egp >= 0 %}color:#4ade80{% else %}color:#f87171{% endif %}">
-                                {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} <span style="font-size:.7rem;font-weight:600;opacity:0.7">EGP</span>
-                            </span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% for c in clients %}
-                    <div class="ticker-item" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 20px;gap:12px">
-                        <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#fff;flex-shrink:0;{% if c.remaining_egp >= 0 %}background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 12px rgba(5,150,105,0.3){% else %}background:linear-gradient(135deg,#dc2626,#ef4444);box-shadow:0 4px 12px rgba(220,38,38,0.3){% endif %}">{{ c.name|truncatechars:2 }}</div>
-                        <div style="display:flex;flex-direction:column;gap:2px">
-                            <span style="color:#94a3b8;font-size:.78rem;font-weight:600">{{ c.name }}</span>
-                            <span style="font-size:1rem;font-weight:900;letter-spacing:-0.5px;{% if c.remaining_egp >= 0 %}color:#4ade80{% else %}color:#f87171{% endif %}">
-                                {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} <span style="font-size:.7rem;font-weight:600;opacity:0.7">EGP</span>
-                            </span>
-                        </div>
-                    </div>
-                    {% endfor %}
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;padding:10px 0;margin-bottom:20px;overflow:hidden;position:relative">
+        <div style="position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(to left,#0f172a,transparent);z-index:2"></div>
+        <div style="position:absolute;left:0;top:0;bottom:0;width:60px;background:linear-gradient(to right,#0f172a,transparent);z-index:2"></div>
+        <div class="ticker-wrap">
+            <div class="ticker">
+                {% for c in clients %}
+                <div class="ticker-item">
+                    <span class="ticker-name">{{ c.name }}</span>
+                    <span class="ticker-amount {% if c.remaining_egp >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} EGP
+                    </span>
                 </div>
+                {% endfor %}
+                {% for c in clients %}
+                <div class="ticker-item">
+                    <span class="ticker-name">{{ c.name }}</span>
+                    <span class="ticker-amount {% if c.remaining_egp >= 0 %}positive{% else %}negative{% endif %}">
+                        {% if c.remaining_egp >= 0 %}+{% endif %}{{ c.remaining_egp|fmt }} EGP
+                    </span>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
-    <style>
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    </style>
     {% endif %}
 
     <div class="row g-3 mb-4">
@@ -249,11 +232,10 @@
 .table td, .table th { padding:10px 12px !important; vertical-align:middle !important; }
 .table tbody tr:hover { background:var(--primary-bg) !important; }
 .ticker-wrap{overflow:hidden;width:100%}
-.ticker{display:flex;animation:ticker 30s linear infinite;white-space:nowrap;gap:12px}
-.ticker-item{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;transition:transform .2s ease}
-.ticker-item:hover{transform:scale(1.03)}
-.ticker-name{color:#94a3b8;font-size:.78rem;font-weight:600}
-.ticker-amount{font-size:1rem;font-weight:900;letter-spacing:-0.5px}
+.ticker{display:flex;animation:ticker 20s linear infinite;white-space:nowrap}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;padding:6px 24px;border-radius:8px;background:rgba(255,255,255,.08);margin:0 8px;flex-shrink:0;border:1px solid rgba(255,255,255,.1)}
+.ticker-name{color:#94a3b8;font-size:.82rem;font-weight:600}
+.ticker-amount{font-size:.9rem;font-weight:800}
 .ticker-amount.positive{color:#4ade80}
 .ticker-amount.negative{color:#f87171}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
