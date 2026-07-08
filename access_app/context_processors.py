@@ -29,7 +29,7 @@ def carryover_reminder(request):
         dep = Capital.objects.filter(client=client).exclude(in_type="ترحيل").aggregate(
             total=Sum("cash_in")
         )["total"] or 0
-        used = Database.objects.filter(from_source__from_field=client.name).aggregate(
+        used = Database.objects.filter(from_source__from_field__iexact=client.name).aggregate(
             total=Sum("transfered_amount")
         )["total"] or 0
         remaining = dep - used

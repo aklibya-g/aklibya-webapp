@@ -70,26 +70,11 @@ def has_perm(request, perm_name):
 
 def _get_clients_with_remaining():
     clients_qs = ClientBalance.objects.all().order_by("name")
-    deposited_per_client = (
-        Capital.objects
-        .filter(client__isnull=False)
-        .exclude(in_type="ترحيل")
-        .values("client__name")
-        .annotate(total_dep=Sum("cash_in"))
-    )
-    dep_map = {r["client__name"]: r["total_dep"] or 0 for r in deposited_per_client}
-    transferred_per_client = (
-        Database.objects
-        .filter(from_source__isnull=False)
-        .values("from_source__from_field")
-        .annotate(total_used=Sum("transfered_amount"))
-    )
-    used_map = {r["from_source__from_field"]: r["total_used"] or 0 for r in transferred_per_client}
     clients = []
     total_egp = 0
     for c in clients_qs:
-        deposited = dep_map.get(c.name, 0)
-        used = used_map.get(c.name, 0)
+        deposited = Capital.objects.filter(client=c).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
+        used = Database.objects.filter(from_source__from_field__iexact=c.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
         remaining = deposited - used
         c.remaining_egp = remaining
         c.total_deposited = deposited
@@ -1390,7 +1375,7 @@ def carryover_balance(request):
             ).exists()
             if not carryover_exists:
                 dep = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
-                used = Database.objects.filter(from_source__from_field=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
+                used = Database.objects.filter(from_source__from_field__iexact=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
                 egp = dep - used
                 lyd_cap = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("libyan_cash"))["total"] or 0
                 avg_rate = round(dep / lyd_cap, 3) if lyd_cap else 1
@@ -1424,7 +1409,7 @@ def carryover_balance(request):
             date__year=sy, date__month=tm,
         ).exists()
         dep = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
-        used = Database.objects.filter(from_source__from_field=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
+        used = Database.objects.filter(from_source__from_field__iexact=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
         source_egp = dep - used
         lyd_cap = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("libyan_cash"))["total"] or 0
         avg_rate = round(dep / lyd_cap, 3) if lyd_cap else 1
