@@ -27,13 +27,13 @@
         <span style="background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:.75rem;font-weight:700;color:var(--text-muted)">{{ expenses|length }} سجل</span>
     </div>
     <div class="d-flex gap-2">
-        <button class="exp-btn exp-btn-warning" onclick="printPage()"><i class="bi bi-printer"></i> طباعة تقرير</button>
         <a href="{% url 'export_expenses_excel' %}" class="exp-btn" style="background:#2563eb;color:#fff"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
         <form method="POST" enctype="multipart/form-data" style="display:inline" id="importExpForm">
             {% csrf_token %}
             <label class="exp-btn" style="background:#7c3aed;color:#fff;cursor:pointer"><i class="bi bi-upload"></i> استيراد Excel<input type="file" name="excel_file" accept=".xlsx,.xls" style="display:none" onchange="document.getElementById('importExpForm').submit()"></label>
         </form>
         <a href="{% url 'add_expense' %}" class="exp-btn exp-btn-primary"><i class="bi bi-plus-circle"></i> إضافة مصروف</a>
+        <button class="exp-btn" onclick="printPage()" style="background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;margin-left:auto"><i class="bi bi-printer"></i> طباعة تقرير</button>
     </div>
 </div>
 

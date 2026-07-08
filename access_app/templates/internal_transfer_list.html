@@ -106,9 +106,9 @@ body{margin:0;padding:0!important;-webkit-print-color-adjust:exact;print-color-a
     </form>
     <div class="action-row">
         <a href="{% url 'add_internal_transfer' %}" class="btn btn-new"><i class="bi bi-plus-circle"></i> حوالة جديدة</a>
-        <button type="button" class="btn btn-print" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
         <a href="{% url 'export_internal_excel' %}" class="btn btn-export"><i class="bi bi-file-earmark-excel"></i> تصدير Excel</a>
         <label class="btn btn-import" style="cursor:pointer"><i class="bi bi-upload"></i> استيراد Excel<input type="file" name="excel_file" accept=".xlsx,.xls" style="display:none" onchange="document.getElementById('importIntForm').submit()"></label>
+        <button type="button" class="btn" onclick="window.print()" style="background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;margin-left:auto"><i class="bi bi-printer"></i> طباعة</button>
     </div>
     <form method="POST" enctype="multipart/form-data" style="display:none" id="importIntForm">
         {% csrf_token %}
