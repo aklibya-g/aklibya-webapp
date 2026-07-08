@@ -68,6 +68,10 @@
                 <div class="dash-title">الحوالات</div>
                 <div class="dash-value">{{ db_total_egp|fmt }} <span class="dash-unit">EGP</span></div>
                 <div class="dash-sub">{{ db_total_lyd|fmt }} LYD</div>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="font-size:.75rem;color:var(--text-muted)">متوسط السعر:</span>
+                    <span style="font-size:1rem;font-weight:900;color:#2563eb;background:linear-gradient(135deg,#eff6ff,#dbeafe);padding:4px 12px;border-radius:8px">{{ avg_rate|floatformat:"-3u" }}</span>
+                </div>
             </div>
         </div>
         <div class="col-md-3">
@@ -79,6 +83,10 @@
                 <div class="dash-title">إيداعات الأرصدة</div>
                 <div class="dash-value" style="color:#059669;">{{ cap_total_egp|fmt }} <span class="dash-unit">EGP</span></div>
                 <div class="dash-sub">{{ cap_total_lyd|fmt }} LYD</div>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="font-size:.75rem;color:var(--text-muted)">متوسط السعر:</span>
+                    <span style="font-size:1rem;font-weight:900;color:#059669;background:linear-gradient(135deg,#ecfdf5,#d1fae5);padding:4px 12px;border-radius:8px">{{ cap_avg_rate|floatformat:"-3u" }}</span>
+                </div>
             </div>
         </div>
         <div class="col-md-3">
