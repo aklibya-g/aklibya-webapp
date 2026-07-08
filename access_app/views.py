@@ -3,7 +3,7 @@ from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import models
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -108,20 +108,18 @@ def home(request):
     agg = Database.objects.aggregate(
         total_lyd=Sum("transfer_amount"),
         total_egp=Sum("transfered_amount"),
-        avg_rate=Avg("exchange_rate"),
     )
     db_total_lyd = agg["total_lyd"] or 0
     db_total_egp = agg["total_egp"] or 0
-    avg_rate = agg["avg_rate"] or 0
+    avg_rate = round(db_total_egp / db_total_lyd, 3) if db_total_lyd else 0
 
     cap_agg = Capital.objects.aggregate(
         total_egp=Sum("cash_in"),
         total_lyd=Sum("libyan_cash"),
-        avg_rate=Avg("exchange_rate"),
     )
     cap_total_egp = cap_agg["total_egp"] or 0
     cap_total_lyd = cap_agg["total_lyd"] or 0
-    cap_avg_rate = cap_agg["avg_rate"] or 0
+    cap_avg_rate = round(cap_total_egp / cap_total_lyd, 3) if cap_total_lyd else 0
 
     exp_agg = Expense.objects.aggregate(total=Sum("amount"))
     exp_total = exp_agg["total"] or 0
@@ -187,8 +185,11 @@ def transactions(request):
     agg = qs.aggregate(
         total_egp=Sum("transfered_amount"),
         total_lyd=Sum("transfer_amount"),
-        avg_rate=Avg("exchange_rate"),
     )
+
+    total_egp_val = agg["total_egp"] or 0
+    total_lyd_val = agg["total_lyd"] or 0
+    avg_rate = round(total_egp_val / total_lyd_val, 3) if total_lyd_val else 0
 
     clients, total_egp_clients = _get_clients_with_remaining()
 
@@ -200,9 +201,9 @@ def transactions(request):
         "date_to": date_to,
         "selected_year": year,
         "selected_month": month,
-        "total_egp": agg["total_egp"] or 0,
-        "total_lyd": agg["total_lyd"] or 0,
-        "avg_rate": agg["avg_rate"] or 0,
+        "total_egp": total_egp_val,
+        "total_lyd": total_lyd_val,
+        "avg_rate": avg_rate,
         "clients": clients,
         "total_egp_clients": total_egp_clients,
         "order": order,
@@ -330,8 +331,11 @@ def capital_list(request):
     agg = qs.aggregate(
         total_egp=Sum("cash_in"),
         total_lyd=Sum("libyan_cash"),
-        avg_rate=Avg("exchange_rate"),
     )
+
+    total_egp_val = agg["total_egp"] or 0
+    total_lyd_val = agg["total_lyd"] or 0
+    avg_rate = round(total_egp_val / total_lyd_val, 3) if total_lyd_val else 0
 
     clients = ClientBalance.objects.all().order_by("name")
 
@@ -345,9 +349,9 @@ def capital_list(request):
         "selected_client": client_id,
         "selected_year": year,
         "selected_month": month,
-        "total_egp": agg["total_egp"] or 0,
-        "total_lyd": agg["total_lyd"] or 0,
-        "avg_rate": agg["avg_rate"] or 0,
+        "total_egp": total_egp_val,
+        "total_lyd": total_lyd_val,
+        "avg_rate": avg_rate,
         "order": order,
     })
 
@@ -1244,7 +1248,7 @@ def profits_report(request):
         cap_egp = cap_qs.aggregate(t=Sum("cash_in"))["t"] or 0
         cap_lyd = cap_qs.aggregate(t=Sum("libyan_cash"))["t"] or 0
 
-        avg_rate = cap_qs.aggregate(a=Avg("exchange_rate"))["a"] or 0
+        avg_rate = round(cap_egp / cap_lyd, 3) if cap_lyd else 0
         egypt_surplus_egp = cap_egp - db_egp
         egypt_surplus_lyd = egypt_surplus_egp / avg_rate if avg_rate else 0
         lyd_surplus = cap_lyd - db_lyd
@@ -1388,7 +1392,8 @@ def carryover_balance(request):
                 dep = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
                 used = Database.objects.filter(from_source__from_field=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
                 egp = dep - used
-                avg_rate = Capital.objects.filter(client=selected_client).aggregate(avg=Avg("exchange_rate"))["avg"] or 1
+                lyd_cap = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("libyan_cash"))["total"] or 0
+                avg_rate = round(dep / lyd_cap, 3) if lyd_cap else 1
                 lyd = round(egp / avg_rate, 2) if avg_rate else 0
                 Capital.objects.create(
                     cash_in=-egp,
@@ -1421,7 +1426,8 @@ def carryover_balance(request):
         dep = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
         used = Database.objects.filter(from_source__from_field=selected_client.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
         source_egp = dep - used
-        avg_rate = Capital.objects.filter(client=selected_client).aggregate(avg=Avg("exchange_rate"))["avg"] or 1
+        lyd_cap = Capital.objects.filter(client=selected_client).exclude(in_type="ترحيل").aggregate(total=Sum("libyan_cash"))["total"] or 0
+        avg_rate = round(dep / lyd_cap, 3) if lyd_cap else 1
         source_rate = avg_rate
         source_lyd = round(source_egp / source_rate, 2) if source_rate else 0
 
