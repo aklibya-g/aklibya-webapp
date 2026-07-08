@@ -68,12 +68,29 @@ def has_perm(request, perm_name):
     return False
 
 
+def _normalize_arabic(s):
+    if not s:
+        return ""
+    replacements = {'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ة': 'ه', 'ى': 'ي', 'ؤ': 'و', 'ئ': 'ي'}
+    for old, new in replacements.items():
+        s = s.replace(old, new)
+    return s.strip()
+
 def _get_clients_with_remaining():
     clients_qs = ClientBalance.objects.all().order_by("name")
+    all_transfers = list(Database.objects.values_list("sender_name", "transfered_amount"))
+    transfer_map = {}
+    for sn, amt in all_transfers:
+        norm = _normalize_arabic(sn or "")
+        transfer_map[norm] = transfer_map.get(norm, 0) + (amt or 0)
+
     clients = []
     total_egp = 0
     for c in clients_qs:
-        remaining = c.egp_balance
+        deposited = Capital.objects.filter(client=c).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
+        norm_name = _normalize_arabic(c.name)
+        transferred = transfer_map.get(norm_name, 0)
+        remaining = deposited - transferred
         c.remaining_egp = remaining
         total_egp += remaining
         clients.append(c)
