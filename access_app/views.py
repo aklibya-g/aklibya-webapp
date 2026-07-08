@@ -73,11 +73,8 @@ def _get_clients_with_remaining():
     clients = []
     total_egp = 0
     for c in clients_qs:
-        deposited = Capital.objects.filter(client=c).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
-        used = Database.objects.filter(from_source__from_field__iexact=c.name).aggregate(total=Sum("transfered_amount"))["total"] or 0
-        remaining = deposited - used
+        remaining = c.egp_balance
         c.remaining_egp = remaining
-        c.total_deposited = deposited
         total_egp += remaining
         clients.append(c)
     return clients, total_egp
