@@ -54,6 +54,12 @@ def extract_egp_from_line(line):
         if v and v >= 50:
             return v
 
+    m = re.search(r'(\d[\d,\.]*)\s*ج(?!\s*م)', line_norm)
+    if m:
+        v = _parse_number(m.group(1))
+        if v and v >= 50:
+            return v
+
     m = re.search(r'حول\s+له?\s+(\d[\d,\.]*)', line_norm)
     if m:
         v = _parse_number(m.group(1))
