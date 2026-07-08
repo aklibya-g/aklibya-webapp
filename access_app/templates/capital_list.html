@@ -6,7 +6,7 @@
 {% block content %}
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="{% url 'add_capital' %}" class="btn btn-success btn-sm"><i class="bi bi-plus-circle"></i> إضافة رصيد</a>
-    <form method="get" class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2 align-items-center" id="filterForm">
         <select name="year" class="form-select form-select-sm" style="width:auto;">
             <option value="">كل السنوات</option>
             {% for y in "2024,2025,2026,2027,2028"|split %}
@@ -26,6 +26,9 @@
             {% endfor %}
         </select>
         <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
+        {% if selected_year or selected_month_from or selected_month_to %}
+        <a href="{% url 'capital_list' %}?order={{ order }}" class="btn btn-outline-danger btn-sm" title="مسح الفلتر"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
         <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
     </form>
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSort()">

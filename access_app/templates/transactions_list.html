@@ -21,7 +21,7 @@
 
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="{% url 'add_transaction' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> تحويل</a>
-    <form method="get" class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2 align-items-center" id="filterForm">
         <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px;border-radius:8px;">
         <select name="year" class="form-select form-select-sm" style="width:auto;">
             <option value="">كل السنوات</option>
@@ -42,6 +42,9 @@
             {% endfor %}
         </select>
         <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
+        {% if q or selected_year or selected_month_from or selected_month_to %}
+        <a href="{% url 'transactions' %}?order={{ order }}" class="btn btn-outline-danger btn-sm" title="مسح الفلتر"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
         <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
     </form>
     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSort()">
