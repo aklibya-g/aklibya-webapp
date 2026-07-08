@@ -1,6 +1,6 @@
 from datetime import datetime
 from django.db.models import Sum
-from .models import Capital, Database, ClientBalance, SystemUser
+from .models import Capital, Database, ClientBalance, SystemUser, ImportAlert
 
 
 def carryover_reminder(request):
@@ -64,3 +64,8 @@ def maintenance_processor(request):
     from .models import SystemSetting
     setting = SystemSetting.get()
     return {"maintenance_mode": setting.maintenance_mode, "maintenance_message": setting.maintenance_message}
+
+
+def import_alerts_processor(request):
+    unread = ImportAlert.objects.filter(is_read=False).count()
+    return {"import_alerts_unread": unread}

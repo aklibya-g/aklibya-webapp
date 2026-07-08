@@ -61,4 +61,5 @@ urlpatterns = [
     path('expenses/export/', views.export_expenses_excel, name='export_expenses_excel'),
     path('expenses/import/', views.import_expenses_excel, name='import_expenses_excel'),
     path('api/toggle-maintenance/', views.toggle_maintenance, name='toggle_maintenance'),
+    path('import-alerts/', views.import_alerts, name='import_alerts'),
 ]

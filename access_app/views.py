@@ -8,7 +8,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
-from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser
+from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
@@ -648,6 +648,14 @@ def import_whatsapp(request):
                     if created:
                         word = "حوالة" if created == 1 else "حوالات"
                         messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد أحمد ياسين.")
+                    if errors:
+                        ImportAlert.objects.create(
+                            import_type="whatsapp",
+                            total_items=len(parsed),
+                            success_count=created,
+                            failed_count=len(errors),
+                            failed_details="\n".join(errors),
+                        )
                     for err in errors:
                         messages.error(request, f"❌ {err}")
                     return redirect("import_whatsapp")
@@ -915,20 +923,35 @@ def import_balance(request):
                 if "confirm" in request.POST:
                     client = get_object_or_404(ClientBalance, id=selected_client_id)
                     created = 0
+                    errors = []
                     for item in parsed:
-                        client.egp_balance += item["egp"]
-                        client.lyd_balance += item["lyd"]
-                        Capital.objects.create(
-                            cash_in=item["egp"],
-                            libyan_cash=item["lyd"],
-                            exchange_rate=item["rate"],
-                            date=item["date"],
-                            in_type="إيداع",
-                            client=client,
-                        )
-                        created += 1
+                        try:
+                            client.egp_balance += item["egp"]
+                            client.lyd_balance += item["lyd"]
+                            Capital.objects.create(
+                                cash_in=item["egp"],
+                                libyan_cash=item["lyd"],
+                                exchange_rate=item["rate"],
+                                date=item["date"],
+                                in_type="إيداع",
+                                client=client,
+                            )
+                            created += 1
+                        except Exception as e:
+                            errors.append(f"خطأ في سطر: EGP={item.get('egp', '?')}, السعر={item.get('rate', '?')} - {e}")
                     client.save()
-                    messages.success(request, f"✅ تم استيراد {created} رصيد لحساب {client.name}.")
+                    if created:
+                        messages.success(request, f"✅ تم استيراد {created} رصيد لحساب {client.name}.")
+                    if errors:
+                        ImportAlert.objects.create(
+                            import_type="balance",
+                            total_items=len(parsed),
+                            success_count=created,
+                            failed_count=len(errors),
+                            failed_details="\n".join(errors),
+                        )
+                    for err in errors:
+                        messages.error(request, f"❌ {err}")
                     return redirect("capital_list")
                 else:
                     results = parsed
@@ -2015,3 +2038,32 @@ def toggle_user_active(request, id):
         status = "تفعيل" if target.is_active else "تعطيل"
         messages.success(request, f"تم {status} حساب {target.username}")
     return redirect("users_list")
+
+
+@login_required_custom
+def import_alerts(request):
+    user = get_current_user(request)
+    alerts = ImportAlert.objects.all()
+    if not user or not user.is_admin:
+        alerts = alerts[:0]
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "mark_read":
+            alert_id = request.POST.get("alert_id")
+            if alert_id:
+                ImportAlert.objects.filter(id=alert_id).update(is_read=True)
+            return redirect("import_alerts")
+        elif action == "mark_all_read":
+            ImportAlert.objects.filter(is_read=False).update(is_read=True)
+            messages.success(request, "تم تعيين الكل كمقروء")
+            return redirect("import_alerts")
+        elif action == "clear_all":
+            ImportAlert.objects.all().delete()
+            messages.success(request, "تم حذف جميع التنبيهات")
+            return redirect("import_alerts")
+    unread_count = ImportAlert.objects.filter(is_read=False).count()
+    return render(request, "import_alerts.html", {
+        "title": "تنبيهات الاستيراد",
+        "alerts": alerts,
+        "unread_count": unread_count,
+    })

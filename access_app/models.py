@@ -310,6 +310,33 @@ class Message(models.Model):
         return f"{self.sender.username} -> {self.receiver.username}: {self.subject}"
 
 
+class ImportAlert(models.Model):
+    IMPORT_TYPE_CHOICES = [
+        ("whatsapp", "استيراد واتساب"),
+        ("balance", "استيراد أرصدة"),
+    ]
+    import_type = models.CharField(max_length=20, choices=IMPORT_TYPE_CHOICES, verbose_name="نوع الاستيراد")
+    total_items = models.IntegerField(default=0, verbose_name="إجمالي العناصر")
+    success_count = models.IntegerField(default=0, verbose_name="عدد الناجح")
+    failed_count = models.IntegerField(default=0, verbose_name="عدد الفاشل")
+    failed_details = models.TextField(default="", verbose_name="تفاصيل الفشل")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإنشاء")
+    is_read = models.BooleanField(default=False, verbose_name="تمت القراءة")
+
+    class Meta:
+        verbose_name = "تنبيه استيراد"
+        verbose_name_plural = "تنبيهات الاستيراد"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_import_type_display()} - {self.failed_count} فاشل من {self.total_items}"
+
+    def save(self, *args, **kwargs):
+        if not self.failed_count and self.total_items and self.success_count:
+            self.failed_count = self.total_items - self.success_count
+        super().save(*args, **kwargs)
+
+
 class SystemSetting(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="وضع الصيانة")
     maintenance_message = models.TextField(default="النظام تحت الصيانة حالياً. يرجى المحاولة لاحقاً.", verbose_name="رسالة الصيانة")

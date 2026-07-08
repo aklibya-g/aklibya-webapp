@@ -51,6 +51,7 @@ TEMPLATES = [
                 'access_app.context_processors.carryover_reminder',
                 'access_app.context_processors.current_user_processor',
                 'access_app.context_processors.maintenance_processor',
+                'access_app.context_processors.import_alerts_processor',
             ],
         },
     },
