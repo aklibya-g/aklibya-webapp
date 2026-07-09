@@ -10,6 +10,8 @@ def clean_emoji(text):
     text = text.translate(ARABIC_DIGITS)
     text = re.sub(r"[\U0001F1E6-\U0001F1FF]", "", text)
     text = re.sub(r"[\U0001F300-\U0010FFFF\u2600-\u27BF\uFE00-\uFE0F]", "", text)
+    text = re.sub(r"[\u200B-\u200F\u2028-\u202F\u2060-\u2069\u2066-\u2069]", "", text)
+    text = re.sub(r"[^\w\s\d،.,:/\-\+\(\)\n]", "", text)
     return text.strip()
 
 
@@ -72,6 +74,14 @@ def extract_egp_from_line(line):
         if v and v >= 50:
             return v
 
+    m = re.search(r'(\d[\d,\.]*)\s*ج\.م', line_norm)
+    if m:
+        v = _parse_number(m.group(1))
+        if v and v >= 50:
+            return v
+
+    return None
+
     return None
 
 
@@ -92,6 +102,25 @@ def extract_rate_from_line(line):
         r_str = m.group(1) + "." + m.group(2)
         try:
             v = float(r_str)
+            if 3 < v < 10:
+                return v
+        except ValueError:
+            pass
+
+    m = re.search(r'(\d)\.(\d{1,2})', line_norm)
+    if m:
+        try:
+            v = float(m.group(1) + "." + m.group(2))
+            if 3 < v < 10:
+                return v
+        except ValueError:
+            pass
+
+    m = re.search(r'(\d{3})', line_norm)
+    if m:
+        digits = m.group(1)
+        try:
+            v = float(digits[0] + "." + digits[1:])
             if 3 < v < 10:
                 return v
         except ValueError:
