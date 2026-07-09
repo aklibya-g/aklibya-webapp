@@ -1,6 +1,6 @@
 import re
 
-TRANSFER_TYPES = ["كاش", "فودافون كاش", "انستا باي", "تحويل بنكي"]
+TRANSFER_TYPES = ["كاش", "فودافون كاش", "فادفون كاش", "فدفون كاش", "انستا باي", "تحويل بنكي", "صك"]
 RATE_KEYWORDS = ["سعر", "السعر", "سعر الصرف", "سعرالصرف"]
 
 ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
@@ -36,11 +36,11 @@ def _parse_number(raw_str):
 def extract_egp_from_line(line):
     line_norm = line.replace("،", ",")
 
-    m = re.search(r'القيمو?ه?ة?[:\s]+(\d[\d,\.]*)', line_norm)
+    m = re.search(r'القيمو?ه?ة?[:\s]+(\-?\d[\d,\.]*)', line_norm)
     if m:
         v = _parse_number(m.group(1))
-        if v and v >= 50:
-            return v
+        if v and abs(v) >= 50:
+            return abs(v)
 
     m = re.search(r'(\d[\d,\.]*)\s*جنيه\s*مصري', line_norm)
     if m:
@@ -124,6 +124,29 @@ def _is_rate_line(line):
     return False
 
 
+def _is_phone_line_strict(line):
+    digits = re.sub(r"[^\d]", "", line)
+    if len(digits) >= 10 and (digits.startswith("01") or digits.startswith("00")):
+        return True
+    return False
+
+
+def _is_name_line(line):
+    keywords = ["بدون اسم", "الاسم", "الأسم", "اسمه", "اسم"]
+    for kw in keywords:
+        if kw in line:
+            return True
+    return False
+
+
+def _is_location_line(line):
+    keywords = ["الزاجل", "المتخصص", "الفرجاني", "مصر", "صك", "حوله"]
+    for kw in keywords:
+        if kw in line:
+            return True
+    return False
+
+
 def parse_whatsapp_block(block, block_raw=None):
     lines = [l.strip() for l in block.strip().split("\n") if l.strip()]
     raw_lines = [l.strip() for l in block_raw.strip().split("\n")] if block_raw else lines
@@ -137,6 +160,10 @@ def parse_whatsapp_block(block, block_raw=None):
 
     for idx, line in enumerate(lines):
         orig = raw_lines[idx] if idx < len(raw_lines) else line
+
+        if _is_name_line(line) or _is_location_line(line):
+            continue
+
         if is_header_line(line):
             egp = extract_egp_from_line(line)
             if egp and amount_egp is None:
@@ -169,7 +196,7 @@ def parse_whatsapp_block(block, block_raw=None):
 
         p = is_phone_line(line)
         if not p:
-            labelled = re.sub(r"^(الرقم|رقم| phone|tel|telephone)\s*[:：]?\s*", "", line, flags=re.IGNORECASE)
+            labelled = re.sub(r"^(الرقم|رقم| phone|tel|telephone|رقم الهاتف)\s*[:：]?\s*", "", line, flags=re.IGNORECASE)
             if labelled != line:
                 p = is_phone_line(labelled)
         if not p:
@@ -188,11 +215,15 @@ def parse_whatsapp_block(block, block_raw=None):
             if transfer_type:
                 continue
 
+        egp = extract_egp_from_line(line)
+        if egp and amount_egp is None:
+            amount_egp = egp
+
         if _is_rate_line(line):
             rate_val = extract_rate_from_line(line)
             if rate_val:
-                    rate = rate_val
-                    continue
+                rate = rate_val
+                continue
             line_clean = line.replace("،", ",").replace(",", ".").replace(" ", "")
             try:
                 v = float(line_clean)
@@ -201,10 +232,6 @@ def parse_whatsapp_block(block, block_raw=None):
                     continue
             except ValueError:
                 pass
-
-        egp = extract_egp_from_line(line)
-        if egp and amount_egp is None:
-            amount_egp = egp
 
     if amount_egp is None:
         for line in lines:
@@ -261,7 +288,18 @@ def parse_whatsapp_block(block, block_raw=None):
             except ValueError:
                 pass
 
-    if not amount_egp or not rate or rate <= 0:
+    if not amount_egp:
+        return None
+
+    if not rate or rate <= 0:
+        if amount_egp and phone:
+            return {
+                "receiver_tele": phone or "",
+                "transfer_type": transfer_type or "كاش",
+                "amount_egp": amount_egp,
+                "exchange_rate": 0,
+                "amount_lyd": 0,
+            }
         return None
 
     return {
@@ -274,17 +312,48 @@ def parse_whatsapp_block(block, block_raw=None):
 
 
 def _is_transfer_start(cleaned_line, prev_cleaned_line):
-    if re.search(r'فودافون\s*كاش', cleaned_line):
-        if prev_cleaned_line is None or re.search(r'♻|-price|سعر|مبلغ|مصري|ج\.م|جنيه|كاش|^\d', prev_cleaned_line):
+    if re.search(r'فودافون\s*كاش|فادفون\s*كاش', cleaned_line):
+        if prev_cleaned_line and re.search(r'^\d+\s*(ج|مصري)', prev_cleaned_line):
+            return False
+        if prev_cleaned_line and re.search(r'القيمة|^\d{3,8}$', prev_cleaned_line):
+            return False
+        return True
+    if re.match(r'^0\d{9,10}$', cleaned_line.replace(" ", "")):
+        if prev_cleaned_line and re.search(r'رقم\s*الهاتف', prev_cleaned_line):
+            return False
+        if prev_cleaned_line and _is_rate_line(prev_cleaned_line):
             return True
-        if not re.search(r'الرقم|القيمة|^\d{3,}', cleaned_line):
+        if prev_cleaned_line and re.search(r'♻|5[،,]\d{2}', prev_cleaned_line):
             return True
-    if re.match(r'^0\d{10}$', cleaned_line):
+        if prev_cleaned_line and re.search(r'^\d+\s*(ج|مصري)', prev_cleaned_line):
+            return True
         return True
     if re.match(r'^\+?\d[\d\s\-]{8,}\d$', cleaned_line):
         return True
+    if re.search(r'انستا\s*باي', cleaned_line):
+        if prev_cleaned_line and (extract_egp_from_line(prev_cleaned_line) or re.search(r'^0\d', prev_cleaned_line)):
+            return False
+        return True
     if re.search(r'^(لاس|الرق|مصري\s*/)', cleaned_line):
         return True
+    if re.search(r'^\d+\s*(ج|مصري)', cleaned_line):
+        if prev_cleaned_line and _is_rate_line(prev_cleaned_line):
+            return True
+        if prev_cleaned_line and re.search(r'5[،,]\d{2}$', prev_cleaned_line):
+            return True
+    if re.search(r'حول\s*له', cleaned_line):
+        return True
+    if re.search(r'صك', cleaned_line):
+        if prev_cleaned_line and re.search(r'مصر|حوله', prev_cleaned_line):
+            return False
+        return True
+    if re.search(r'بدون\s*اسم', cleaned_line):
+        return True
+    if _is_phone_line_strict(cleaned_line):
+        if prev_cleaned_line and _is_rate_line(prev_cleaned_line):
+            return True
+        if prev_cleaned_line and re.search(r'♻|5[،,]\d{2}', prev_cleaned_line):
+            return True
     return False
 
 
