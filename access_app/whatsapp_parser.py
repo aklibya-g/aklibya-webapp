@@ -176,10 +176,12 @@ def _is_name_line(line):
 
 
 def _is_location_line(line):
-    keywords = ["الزاجل", "المتخصص", "الفرجاني", "مصر", "صك", "حوله"]
+    keywords = ["الزاجل", "المتخصص", "الفرجاني", "صك", "حوله"]
     for kw in keywords:
         if kw in line:
             return True
+    if re.search(r'^مصر$', line.strip()):
+        return True
     return False
 
 
@@ -249,6 +251,10 @@ def parse_whatsapp_block(block, block_raw=None):
             header_match = re.match(r"^.*?:\s*(\d{10,})", line)
             if header_match:
                 p = header_match.group(1)
+        if not p:
+            embedded = re.search(r'(?<!\d)(01\d{9})(?!\d)', line)
+            if embedded:
+                p = embedded.group(1)
         if p and not phone:
             phone = p
             continue
