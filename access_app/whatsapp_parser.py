@@ -341,7 +341,7 @@ def _is_transfer_start(cleaned_line, prev_cleaned_line):
             return True
         if prev_cleaned_line and re.search(r'5[،,]\d{2}$', prev_cleaned_line):
             return True
-    if re.search(r'حول\s*له', cleaned_line):
+    if re.search(r'حول\s*له|حوله', cleaned_line):
         return True
     if re.search(r'صك', cleaned_line):
         if prev_cleaned_line and re.search(r'مصر|حوله', prev_cleaned_line):
