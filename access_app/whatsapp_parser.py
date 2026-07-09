@@ -11,7 +11,7 @@ def clean_emoji(text):
     text = re.sub(r"[\U0001F1E6-\U0001F1FF]", "", text)
     text = re.sub(r"[\U0001F300-\U0010FFFF\u2600-\u27BF\uFE00-\uFE0F]", "", text)
     text = re.sub(r"[\u200B-\u200F\u2028-\u202F\u2060-\u2069\u2066-\u2069]", "", text)
-    text = re.sub(r"[^\w\s\d،.,:/\-\+\(\)\n]", "", text)
+    text = re.sub(r"[^\w\s\d،.,:/\-\+\(\)\[\]\n]", "", text)
     return text.strip()
 
 
@@ -228,6 +228,16 @@ def parse_whatsapp_block(block, block_raw=None):
             rate_from_header = extract_rate_from_line(line)
             if rate_from_header and rate is None:
                 rate = rate_from_header
+            if not phone:
+                phone_match = re.search(r'(\+?\d[\d\s\-]{8,}\d)', orig)
+                if phone_match:
+                    phone = re.sub(r'[\s\-]', '', phone_match.group(1))
+                    if len(phone) < 10:
+                        phone = None
+            if not phone:
+                ph = is_phone_line(line)
+                if ph:
+                    phone = ph
             continue
 
         p = is_phone_line(line)
