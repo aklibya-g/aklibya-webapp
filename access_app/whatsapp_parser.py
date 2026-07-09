@@ -78,9 +78,18 @@ def extract_egp_from_line(line):
 def extract_rate_from_line(line):
     line_norm = line.replace("،", ".")
 
-    m = re.search(r'سعر[:\s]*(\d+[\.،]?\d*)', line_norm)
+    m = re.search(r'سعر[:\s]*(\d+\.?\d*)', line_norm)
     if m:
-        r_str = m.group(1).replace("،", ".")
+        try:
+            v = float(m.group(1))
+            if 3 < v < 10:
+                return v
+        except ValueError:
+            pass
+
+    m = re.search(r'(\d+)\s*[,.،]\s*(\d+)', line_norm)
+    if m:
+        r_str = m.group(1) + "." + m.group(2)
         try:
             v = float(r_str)
             if 3 < v < 10:
@@ -88,21 +97,19 @@ def extract_rate_from_line(line):
         except ValueError:
             pass
 
-    m = re.search(r'(\d+[\.،]?\d*)\s*♻', line_norm)
+    m = re.search(r'(\d+\.?\d*)\s*[\U0001f1e6-\U0001f1ff]{2}', line_norm)
     if m:
-        r_str = m.group(1).replace("،", ".")
         try:
-            v = float(r_str)
+            v = float(m.group(1))
             if 3 < v < 10:
                 return v
         except ValueError:
             pass
 
-    m = re.search(r'(\d+[\.،]?\d*)\s*[\U0001f1e6-\U0001f1ff]{2}', line_norm)
+    m = re.search(r'^(\d+\.?\d*)$', line_norm.strip())
     if m:
-        r_str = m.group(1).replace("،", ".")
         try:
-            v = float(r_str)
+            v = float(m.group(1))
             if 3 < v < 10:
                 return v
         except ValueError:
