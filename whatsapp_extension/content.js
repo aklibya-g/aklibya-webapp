@@ -26,6 +26,31 @@ function togglePanel() {
     return;
   }
   createPanel();
+  loadLastExtraction();
+}
+
+function loadLastExtraction() {
+  chrome.storage.local.get(["extractedAt", "extractedCount", "extractedType", "lastChat"], (data) => {
+    if (data.extractedAt && panel) {
+      const info = panel.querySelector('.yma-info');
+      if (info) {
+        const date = new Date(data.extractedAt);
+        const timeStr = date.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'});
+        const count = data.extractedCount || '?';
+        const type = data.extractedType === 'transfer' ? 'حوالات' : 'أرصدة';
+        const chat = data.lastChat || '';
+        info.innerHTML = `
+          <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px 10px;margin-bottom:8px">
+            <p style="margin:0;font-size:11px;color:#065f46;font-weight:600">📦 آخر استيراد: ${count} ${type} — ${timeStr}</p>
+            ${chat ? '<p style="margin:2px 0 0;font-size:10px;color:#059669">المحادثة: ' + chat + '</p>' : ''}
+          </div>
+          <p>1. افتح المحادثة المطلوبة</p>
+          <p>2. سكرول لأعلى (لو محتاج كل الرسائل)</p>
+          <p>3. اضغط "استخراج الرسائل"</p>
+        `;
+      }
+    }
+  });
 }
 
 function createPanel() {
@@ -89,6 +114,9 @@ function extractMessages() {
   statusEl.className = "yma-status yma-loading";
   statusEl.textContent = "جاري تحميل جميع الرسائل (سكرول تلقائي)...";
 
+  // Save current chat name
+  saveCurrentChat();
+
   // First, scroll to top to load ALL messages
   scrollToTopThenExtract(statusEl, previewEl, sendBtn);
 }
@@ -145,6 +173,9 @@ function doExtract(statusEl, previewEl, sendBtn) {
       return;
     }
 
+    // Mark extracted messages with green checkmark
+    markExtractedMessages();
+
     const text = messages.join("\n\n");
     const activeType = document.querySelector(".yma-type-btn.active").dataset.type;
     const detectedType = activeType === "auto" ? detectType(text) : activeType;
@@ -169,6 +200,37 @@ function doExtract(statusEl, previewEl, sendBtn) {
     statusEl.className = "yma-status yma-error";
     statusEl.textContent = "خطأ في الاستخراج: " + e.message;
   }
+}
+
+function markExtractedMessages() {
+  // Remove old marks
+  document.querySelectorAll('.yma-extracted-mark').forEach(el => el.remove());
+
+  const msgContainers = document.querySelectorAll('div[data-testid="msg-container"]');
+  let count = 0;
+
+  msgContainers.forEach((container) => {
+    const textEl = container.querySelector("span.selectable-text, span._ao3q");
+    if (textEl && textEl.innerText.trim().length > 1) {
+      // Add green checkmark badge
+      const badge = document.createElement("div");
+      badge.className = "yma-extracted-mark";
+      badge.innerHTML = "✅";
+      badge.title = "تم استخراج هذه الرسالة";
+      container.style.position = "relative";
+      container.appendChild(badge);
+      count++;
+    }
+  });
+
+  // Auto-remove marks after 30 seconds
+  setTimeout(() => {
+    document.querySelectorAll('.yma-extracted-mark').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 1s';
+      setTimeout(() => el.remove(), 1000);
+    });
+  }, 30000);
 }
 
 function getWhatsAppMessages() {
@@ -276,7 +338,7 @@ function sendToServer() {
   statusEl.textContent = "جاري الإرسال للمنظمة...";
   sendBtn.disabled = true;
 
-  // Save to chrome storage for the popup/smart import page to use
+  // Save to chrome storage
   chrome.storage.local.set(
     {
       extractedText: text,
@@ -290,7 +352,6 @@ function sendToServer() {
       sendBtn.disabled = false;
       sendBtn.style.display = "none";
 
-      // Try to open the smart import page
       chrome.runtime.sendMessage({
         action: "openSmartImport",
         type: type,
@@ -312,6 +373,14 @@ function observeChatChanges() {
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Save chat name on chat open
+function saveCurrentChat() {
+  const chatTitle = document.querySelector('#main header span[title]');
+  if (chatTitle) {
+    chrome.storage.local.set({ lastChat: chatTitle.getAttribute('title') });
+  }
 }
 
 // Initialize
