@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      direction: rtl;
+      background: #f8fafc;
+    }
+    .popup-header {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: #fff;
+      padding: 16px;
+      text-align: center;
+    }
+    .popup-header h3 { font-size: 14px; font-weight: 700; }
+    .popup-header p { font-size: 11px; opacity: 0.9; margin-top: 4px; }
+    .popup-body { padding: 16px; }
+    .status-box {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .status-ready { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .status-loading { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+    .status-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .status-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+
+    .data-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .data-card h4 { font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px; }
+    .data-card .preview {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 11px;
+      color: #64748b;
+      max-height: 100px;
+      overflow-y: auto;
+      line-height: 1.6;
+      direction: rtl;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .badge-transfer { background: #eef2ff; color: #4f46e5; }
+    .badge-balance { background: #ecfdf5; color: #059669; }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+    .btn-primary { background: #4f46e5; color: #fff; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-success { background: #059669; color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn-outline {
+      background: #fff;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+    }
+    .btn-outline:hover { border-color: #4f46e5; color: #4f46e5; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .link { font-size: 11px; color: #4f46e5; text-decoration: none; text-align: center; display: block; margin-top: 8px; font-weight: 600; }
+    .link:hover { text-decoration: underline; }
+
+    #dataPreview { display: none; }
+  </style>
+</head>
+<body>
+  <div class="popup-header">
+    <h3>📦 شركة اليمامة المالية</h3>
+    <p>استيراد الحوالات والأرصدة من واتساب</p>
+  </div>
+  <div class="popup-body">
+    <div id="statusBox" class="status-box status-ready">جاهز للاستخدام</div>
+
+    <div id="dataPreview">
+      <div class="data-card">
+        <h4>📄 البيانات المستخرجة <span id="dataBadge" class="badge badge-transfer"></span></h4>
+        <div class="preview" id="dataPreviewText"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="openWaBtn">
+      <span>💬</span> فتح واتساب ويب
+    </button>
+    <button class="btn btn-success" id="sendBtn" disabled>
+      <span>🚀</span> إرسال للمنظومة
+    </button>
+    <button class="btn btn-outline" id="clearBtn">
+      <span>🗑️</span> مسح البيانات
+    </button>
+    <a href="https://webapp-production-5df54.up.railway.app/smart-import/" target="_blank" class="link">فتح المنظومة ↗</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

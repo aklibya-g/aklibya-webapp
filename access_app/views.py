@@ -2189,3 +2189,53 @@ def api_smart_detect(request):
                 "amount_lyd": item.get("amount_lyd", 0),
             })
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
+
+
+
+@csrf_exempt
+def api_extension_receive(request):
+    """API endpoint for Chrome extension to send extracted messages."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    text = data.get("text", "").strip()
+    content_type = data.get("type", "auto")
+    if not text:
+        return JsonResponse({"error": "no text"}, status=400)
+
+    if content_type == "auto":
+        t = text.lower()
+        balance_score = sum(3 if k in t else 0 for k in ["جنيه", "ج م", "القيمة", "القيمه"])
+        balance_score += sum(2 if k in t else 0 for k in ["مصري", "سعر"])
+        transfer_score = sum(3 if k in t else 0 for k in ["حوالة", "حواله", "فودافون", "فادفون", "فدفون", "تحويل بنكي"])
+        transfer_score += sum(2 if k in t else 0 for k in ["كاش", "انستا", "صك"])
+        if re.search(r'01\d{9}', text):
+            transfer_score += 2
+        content_type = "transfer" if transfer_score >= 2 else "balance" if balance_score >= 3 else "transfer"
+
+    if content_type == "balance":
+        parsed = parse_balance_lines(text)
+        results = [{"egp": i.get("egp",0), "rate": i.get("rate",0), "lyd": i.get("lyd",0)} for i in parsed]
+        return JsonResponse({"results": results, "type": "balance", "count": len(results)})
+    else:
+        parsed = parse_whatsapp_text(text)
+        last_rate = None
+        for item in parsed:
+            if item.get("exchange_rate"):
+                last_rate = item["exchange_rate"]
+            elif last_rate:
+                item["exchange_rate"] = last_rate
+                if item.get("amount_egp") and last_rate > 0:
+                    item["amount_lyd"] = round(item["amount_egp"] / last_rate, 2)
+        results = [{
+            "receiver_tele": i.get("receiver_tele",""),
+            "transfer_type": i.get("transfer_type","كاش"),
+            "amount_egp": i.get("amount_egp",0),
+            "exchange_rate": i.get("exchange_rate",0),
+            "amount_lyd": i.get("amount_lyd",0),
+        } for i in parsed]
+        return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
