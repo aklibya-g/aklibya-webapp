@@ -154,12 +154,13 @@
 <div class="ie-card green mt-4" style="border:2px solid #059669">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:#059669"></i> معاينة الحوالات</h5>
-        <span class="ie-badge" style="background:#d1fae5;color:#059669">{{ results|length }} حوالة</span>
+        <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> حوالة</span>
     </div>
-    <form method="POST">
+    <form method="POST" id="importForm">
         {% csrf_token %}
         <textarea name="raw_text" style="display:none">{{ raw_text }}</textarea>
         <input type="hidden" name="use_prev_rate" value="{{ use_prev_rate|default:'1' }}">
+        <input type="hidden" name="filtered_results" id="filteredResults">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="border-radius:12px;overflow:hidden">
                 <thead style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
@@ -170,17 +171,23 @@
                         <th style="padding:12px">المبلغ مصري</th>
                         <th style="padding:12px">سعر الصرف</th>
                         <th style="padding:12px">المبلغ ليبي</th>
+                        <th style="padding:12px;width:50px"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="previewBody">
                     {% for r in results %}
-                    <tr>
+                    <tr data-phone="{{ r.receiver_tele }}" data-type="{{ r.transfer_type }}" data-egp="{{ r.amount_egp }}" data-rate="{{ r.exchange_rate }}" data-lyd="{{ r.amount_lyd }}">
                         <td style="font-weight:600">{{ forloop.counter }}</td>
                         <td dir="ltr" style="font-weight:700">{{ r.receiver_tele|default:"-" }}</td>
                         <td>{{ r.transfer_type }}</td>
                         <td style="font-weight:800;color:var(--primary)">{{ r.amount_egp|fmt }}</td>
                         <td>{{ r.exchange_rate|floatformat:"-3u" }}</td>
                         <td style="font-weight:800;color:#059669">{{ r.amount_lyd|fmt }}</td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm removeRow" title="حذف هذه الحوالة" style="border-radius:8px;padding:4px 8px">
+                                <i class="bi bi-x-lg" style="font-size:.75rem"></i>
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -188,16 +195,45 @@
         </div>
         <div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:16px;margin-top:16px;font-size:.88rem">
             <i class="bi bi-info-circle" style="color:var(--primary)"></i>
-            سيتم خصم <strong>{{ results|length }} حوالة</strong> من رصيد أحمد ياسين المصري وإضافة المبلغ الليبي لرصيده.
+            سيتم خصم <strong><span id="previewCountMsg">{{ results|length }}</span> حوالة</strong> من رصيد أحمد ياسين المصري وإضافة المبلغ الليبي لرصيده.
         </div>
         <div style="display:flex;gap:10px;margin-top:16px">
             <button class="ie-btn ie-btn-success flex-fill" type="submit" name="confirm" value="1" style="justify-content:center">
-                <i class="bi bi-check-lg"></i> تأكيد استيراد {{ results|length }} حوالة
+                <i class="bi bi-check-lg"></i> تأكيد استيراد <span id="previewCountBtn">{{ results|length }}</span> حوالة
             </button>
             <a href="{% url 'import_whatsapp' %}" class="ie-btn ie-btn-outline">إلغاء</a>
         </div>
     </form>
 </div>
+<script>
+document.querySelectorAll('.removeRow').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        this.closest('tr').remove();
+        updatePreview();
+    });
+});
+function updatePreview() {
+    var rows = document.querySelectorAll('#previewBody tr');
+    rows.forEach(function(r, i) { r.querySelector('td').textContent = i + 1; });
+    document.getElementById('previewCount').textContent = rows.length;
+    document.getElementById('previewCountMsg').textContent = rows.length;
+    document.getElementById('previewCountBtn').textContent = rows.length;
+}
+document.getElementById('importForm').addEventListener('submit', function() {
+    var rows = document.querySelectorAll('#previewBody tr');
+    var data = [];
+    rows.forEach(function(r) {
+        data.push({
+            receiver_tele: r.dataset.phone || '',
+            transfer_type: r.dataset.type || '',
+            amount_egp: parseFloat(r.dataset.egp) || 0,
+            exchange_rate: parseFloat(r.dataset.rate) || 0,
+            amount_lyd: parseFloat(r.dataset.lyd) || 0
+        });
+    });
+    document.getElementById('filteredResults').value = JSON.stringify(data);
+});
+</script>
 {% endif %}
 
 {% if created_records %}

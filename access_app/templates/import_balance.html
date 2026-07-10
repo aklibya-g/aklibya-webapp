@@ -167,13 +167,14 @@
 <div class="ie-card green mt-4" style="border:2px solid #059669">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:#059669"></i> معاينة الأرصدة</h5>
-        <span class="ie-badge" style="background:#d1fae5;color:#059669">{{ results|length }} رصيد</span>
+        <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> رصيد</span>
     </div>
-    <form method="POST">
+    <form method="POST" id="importBalanceForm">
         {% csrf_token %}
         <input type="hidden" name="client_id" value="{{ selected_client_id }}">
         <input type="hidden" name="import_date" value="{{ selected_date|date:'Y-m-d' }}">
         <textarea name="raw_text" style="display:none">{{ raw_text }}</textarea>
+        <input type="hidden" name="filtered_results" id="filteredBalanceResults">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="border-radius:12px;overflow:hidden">
                 <thead style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
@@ -184,17 +185,23 @@
                         <th style="padding:12px">المبلغ مصري</th>
                         <th style="padding:12px">سعر الصرف</th>
                         <th style="padding:12px">المبلغ ليبي</th>
+                        <th style="padding:12px;width:50px"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="previewBalanceBody">
                     {% for r in results %}
-                    <tr>
+                    <tr data-client="{{ r.client_name }}" data-date="{{ r.date|date:'Y-m-d' }}" data-egp="{{ r.egp }}" data-rate="{{ r.rate }}" data-lyd="{{ r.lyd }}">
                         <td style="font-weight:600">{{ forloop.counter }}</td>
                         <td style="font-weight:700">{{ r.client_name }}</td>
                         <td>{{ r.date|date:"Y-m-d"|default:"-" }}</td>
                         <td style="font-weight:800;color:var(--primary)">{{ r.egp|fmt }}</td>
                         <td>{{ r.rate|floatformat:"-3u" }}</td>
                         <td style="font-weight:800;color:#059669">{{ r.lyd|fmt }}</td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger btn-sm removeBalanceRow" title="حذف هذا الرصيد" style="border-radius:8px;padding:4px 8px">
+                                <i class="bi bi-x-lg" style="font-size:.75rem"></i>
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -202,12 +209,40 @@
         </div>
         <div style="display:flex;gap:10px;margin-top:16px">
             <button class="ie-btn ie-btn-success flex-fill" type="submit" name="confirm" value="1" style="justify-content:center">
-                <i class="bi bi-check-lg"></i> تأكيد استيراد {{ results|length }} رصيد
+                <i class="bi bi-check-lg"></i> تأكيد استيراد <span id="previewBalanceBtn">{{ results|length }}</span> رصيد
             </button>
             <a href="{% url 'import_balance' %}" class="ie-btn ie-btn-outline">إلغاء</a>
         </div>
     </form>
 </div>
+<script>
+document.querySelectorAll('.removeBalanceRow').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        this.closest('tr').remove();
+        updateBalancePreview();
+    });
+});
+function updateBalancePreview() {
+    var rows = document.querySelectorAll('#previewBalanceBody tr');
+    rows.forEach(function(r, i) { r.querySelector('td').textContent = i + 1; });
+    document.getElementById('previewCount').textContent = rows.length;
+    document.getElementById('previewBalanceBtn').textContent = rows.length;
+}
+document.getElementById('importBalanceForm').addEventListener('submit', function() {
+    var rows = document.querySelectorAll('#previewBalanceBody tr');
+    var data = [];
+    rows.forEach(function(r) {
+        data.push({
+            client_name: r.dataset.client || '',
+            date: r.dataset.date || '',
+            egp: parseFloat(r.dataset.egp) || 0,
+            rate: parseFloat(r.dataset.rate) || 0,
+            lyd: parseFloat(r.dataset.lyd) || 0
+        });
+    });
+    document.getElementById('filteredBalanceResults').value = JSON.stringify(data);
+});
+</script>
 {% endif %}
 
 {% if created_records %}

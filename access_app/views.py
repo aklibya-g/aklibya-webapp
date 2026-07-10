@@ -602,7 +602,12 @@ def import_whatsapp(request):
         elif "raw_text" in request.POST:
             raw_text = request.POST["raw_text"]
 
-        if raw_text:
+        if "filtered_results" in request.POST and request.POST["filtered_results"]:
+            try:
+                parsed = json.loads(request.POST["filtered_results"])
+            except (json.JSONDecodeError, ValueError):
+                parsed = []
+        elif raw_text:
             parsed = parse_whatsapp_text(raw_text)
             if use_prev_rate and parsed:
                 last_rate = None
@@ -613,81 +618,84 @@ def import_whatsapp(request):
                         item["exchange_rate"] = last_rate
                         if item.get("amount_egp") and last_rate > 0:
                             item["amount_lyd"] = round(item["amount_egp"] / last_rate, 2)
-            if not parsed:
-                messages.error(request, "لم يتم التعرف على أي حوالة صالحة. تأكد من تنسيق النص.")
-            else:
-                if "confirm" in request.POST:
-                    ahmed = ClientBalance.objects.filter(name__contains="أحمد ياسين").first()
-                    from_whatsapp, _ = FromSource.objects.get_or_create(from_field="واتساب")
-                    created = 0
-                    errors = []
-                    created_records = []
-                    order_num_str = _next_order_number()
-                    order_num_parts = order_num_str.rsplit("-", 1)
-                    order_num_seq = int(order_num_parts[-1]) if len(order_num_parts) > 1 else 1
-                    order_num_prefix = "-".join(order_num_parts[:-1]) + "-" if len(order_num_parts) > 1 else order_num_str
-                    for item in parsed:
-                        try:
-                            amount_lyd = item["amount_lyd"]
-                            amount_egp = item["amount_egp"]
-                            if ahmed:
-                                if ahmed.egp_balance < amount_egp:
-                                    errors.append(f"رقم {item['receiver_tele']}: رصيد أحمد ياسين المصري غير كافٍ ({ahmed.egp_balance:.2f} < {amount_egp:.2f})")
-                                    continue
-                                ahmed.egp_balance -= amount_egp
-                                ahmed.lyd_balance += amount_lyd
-                                ahmed.save()
+        else:
+            parsed = []
 
-                            tt_name = item.get("transfer_type", "كاش")
-                            tt, _ = TransferType.objects.get_or_create(Transfer_type=tt_name)
-                            rec = Database.objects.create(
-                                sender_name="أحمد ياسين",
-                                receiver_tele=item.get("receiver_tele") or "",
-                                transfer_amount=amount_lyd,
-                                exchange_rate=item["exchange_rate"],
-                                transfered_amount=amount_egp,
-                                transfer_type=tt,
-                                order_number=f"{order_num_prefix}{order_num_seq:03d}",
-                                date=datetime.now(),
-                                time=datetime.now(),
-                                from_source=from_whatsapp,
-                            )
-                            created_records.append(rec)
-                            created += 1
-                            order_num_seq += 1
-                        except Exception as e:
-                            errors.append(f"خطأ: {e}")
+        if raw_text and not parsed:
+            messages.error(request, "لم يتم التعرف على أي حوالة صالحة. تأكد من تنسيق النص.")
+        else:
+            if "confirm" in request.POST:
+                ahmed = ClientBalance.objects.filter(name__contains="أحمد ياسين").first()
+                from_whatsapp, _ = FromSource.objects.get_or_create(from_field="واتساب")
+                created = 0
+                errors = []
+                created_records = []
+                order_num_str = _next_order_number()
+                order_num_parts = order_num_str.rsplit("-", 1)
+                order_num_seq = int(order_num_parts[-1]) if len(order_num_parts) > 1 else 1
+                order_num_prefix = "-".join(order_num_parts[:-1]) + "-" if len(order_num_parts) > 1 else order_num_str
+                for item in parsed:
+                    try:
+                        amount_lyd = item["amount_lyd"]
+                        amount_egp = item["amount_egp"]
+                        if ahmed:
+                            if ahmed.egp_balance < amount_egp:
+                                errors.append(f"رقم {item['receiver_tele']}: رصيد أحمد ياسين المصري غير كافٍ ({ahmed.egp_balance:.2f} < {amount_egp:.2f})")
+                                continue
+                            ahmed.egp_balance -= amount_egp
+                            ahmed.lyd_balance += amount_lyd
+                            ahmed.save()
 
-                    if created:
-                        word = "حوالة" if created == 1 else "حوالات"
-                        messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد أحمد ياسين.")
-                    if not created and not errors:
-                        messages.warning(request, "⚠️ لم يتم استيراد أي حوالة. تأكد من صحة البيانات.")
-                    if errors:
-                        ImportAlert.objects.create(
-                            import_type="whatsapp",
-                            total_items=len(parsed),
-                            success_count=created,
-                            failed_count=len(errors),
-                            failed_details="\n".join(errors),
+                        tt_name = item.get("transfer_type", "كاش")
+                        tt, _ = TransferType.objects.get_or_create(Transfer_type=tt_name)
+                        rec = Database.objects.create(
+                            sender_name="أحمد ياسين",
+                            receiver_tele=item.get("receiver_tele") or "",
+                            transfer_amount=amount_lyd,
+                            exchange_rate=item["exchange_rate"],
+                            transfered_amount=amount_egp,
+                            transfer_type=tt,
+                            order_number=f"{order_num_prefix}{order_num_seq:03d}",
+                            date=datetime.now(),
+                            time=datetime.now(),
+                            from_source=from_whatsapp,
                         )
-                        messages.error(request, f"❌ فشل استيراد {len(errors)} من {len(parsed)} حوالة. السبب: {errors[0]}")
-                        if len(errors) > 1:
-                            messages.info(request, f"📋 تفاصيل الفشل ({len(errors)} رسالة):")
-                            for i, err in enumerate(errors[:5], 1):
-                                messages.warning(request, f"  {i}. {err}")
-                            if len(errors) > 5:
-                                messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
-                    return render(request, "import_whatsapp.html", {
-                        "title": "استيراد حوالات خارجية",
-                        "created_records": created_records,
-                        "db_count": Database.objects.count(),
-                        "db_total_egp": Database.objects.aggregate(t=Sum("transfered_amount"))["t"] or 0,
-                        "use_prev_rate": use_prev_rate,
-                        "whatsapp_alerts": ImportAlert.objects.filter(import_type="whatsapp")[:10],
-                    })
-                else:
-                    results = parsed
+                        created_records.append(rec)
+                        created += 1
+                        order_num_seq += 1
+                    except Exception as e:
+                        errors.append(f"خطأ: {e}")
+
+                if created:
+                    word = "حوالة" if created == 1 else "حوالات"
+                    messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد أحمد ياسين.")
+                if not created and not errors:
+                    messages.warning(request, "⚠️ لم يتم استيراد أي حوالة. تأكد من صحة البيانات.")
+                if errors:
+                    ImportAlert.objects.create(
+                        import_type="whatsapp",
+                        total_items=len(parsed),
+                        success_count=created,
+                        failed_count=len(errors),
+                        failed_details="\n".join(errors),
+                    )
+                    messages.error(request, f"❌ فشل استيراد {len(errors)} من {len(parsed)} حوالة. السبب: {errors[0]}")
+                    if len(errors) > 1:
+                        messages.info(request, f"📋 تفاصيل الفشل ({len(errors)} رسالة):")
+                        for i, err in enumerate(errors[:5], 1):
+                            messages.warning(request, f"  {i}. {err}")
+                        if len(errors) > 5:
+                            messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
+                return render(request, "import_whatsapp.html", {
+                    "title": "استيراد حوالات خارجية",
+                    "created_records": created_records,
+                    "db_count": Database.objects.count(),
+                    "db_total_egp": Database.objects.aggregate(t=Sum("transfered_amount"))["t"] or 0,
+                    "use_prev_rate": use_prev_rate,
+                    "whatsapp_alerts": ImportAlert.objects.filter(import_type="whatsapp")[:10],
+                })
+            else:
+                results = parsed
 
     whatsapp_alerts = ImportAlert.objects.filter(import_type="whatsapp")[:10]
     return render(request, "import_whatsapp.html", {
@@ -942,13 +950,26 @@ def import_balance(request):
         selected_date = dt.strptime(selected_date_str, "%Y-%m-%d").date() if selected_date_str else None
         if raw_text and selected_client_id:
             client_name = ClientBalance.objects.filter(id=selected_client_id).values_list("name", flat=True).first()
-            parsed = parse_balance_lines(raw_text)
+            if "filtered_results" in request.POST and request.POST["filtered_results"]:
+                try:
+                    parsed = json.loads(request.POST["filtered_results"])
+                except (json.JSONDecodeError, ValueError):
+                    parsed = []
+            else:
+                parsed = parse_balance_lines(raw_text)
             if not parsed:
                 messages.error(request, "لم يتم التعرف على أي بيانات صالحة.")
             else:
                 for item in parsed:
                     item["client_name"] = client_name or "-"
-                    item["date"] = selected_date or dt.now().date()
+                    if not isinstance(item.get("date"), (type(None),)):
+                        try:
+                            if isinstance(item["date"], str):
+                                item["date"] = dt.strptime(item["date"], "%Y-%m-%d").date()
+                        except (ValueError, TypeError):
+                            item["date"] = selected_date or dt.now().date()
+                    else:
+                        item["date"] = selected_date or dt.now().date()
                 if "confirm" in request.POST:
                     client = get_object_or_404(ClientBalance, id=selected_client_id)
                     created = 0
