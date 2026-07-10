@@ -621,6 +621,7 @@ def import_whatsapp(request):
                     from_whatsapp, _ = FromSource.objects.get_or_create(from_field="واتساب")
                     created = 0
                     errors = []
+                    created_records = []
                     order_num_str = _next_order_number()
                     order_num_parts = order_num_str.rsplit("-", 1)
                     order_num_seq = int(order_num_parts[-1]) if len(order_num_parts) > 1 else 1
@@ -639,7 +640,7 @@ def import_whatsapp(request):
 
                             tt_name = item.get("transfer_type", "كاش")
                             tt, _ = TransferType.objects.get_or_create(Transfer_type=tt_name)
-                            Database.objects.create(
+                            rec = Database.objects.create(
                                 sender_name="أحمد ياسين",
                                 receiver_tele=item.get("receiver_tele") or "",
                                 transfer_amount=amount_lyd,
@@ -651,6 +652,7 @@ def import_whatsapp(request):
                                 time=datetime.now(),
                                 from_source=from_whatsapp,
                             )
+                            created_records.append(rec)
                             created += 1
                             order_num_seq += 1
                         except Exception as e:
@@ -676,7 +678,14 @@ def import_whatsapp(request):
                                 messages.warning(request, f"  {i}. {err}")
                             if len(errors) > 5:
                                 messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
-                    return redirect("import_whatsapp")
+                    return render(request, "import_whatsapp.html", {
+                        "title": "استيراد حوالات خارجية",
+                        "created_records": created_records,
+                        "db_count": Database.objects.count(),
+                        "db_total_egp": Database.objects.aggregate(t=Sum("transfered_amount"))["t"] or 0,
+                        "use_prev_rate": use_prev_rate,
+                        "whatsapp_alerts": ImportAlert.objects.filter(import_type="whatsapp")[:10],
+                    })
                 else:
                     results = parsed
 
@@ -944,11 +953,12 @@ def import_balance(request):
                     client = get_object_or_404(ClientBalance, id=selected_client_id)
                     created = 0
                     errors = []
+                    created_records = []
                     for item in parsed:
                         try:
                             client.egp_balance += item["egp"]
                             client.lyd_balance += item["lyd"]
-                            Capital.objects.create(
+                            rec = Capital.objects.create(
                                 cash_in=item["egp"],
                                 libyan_cash=item["lyd"],
                                 exchange_rate=item["rate"],
@@ -956,6 +966,7 @@ def import_balance(request):
                                 in_type="إيداع",
                                 client=client,
                             )
+                            created_records.append(rec)
                             created += 1
                         except Exception as e:
                             errors.append(f"خطأ في سطر: EGP={item.get('egp', '?')}, السعر={item.get('rate', '?')} - {e}")
@@ -979,7 +990,16 @@ def import_balance(request):
                                 messages.warning(request, f"  {i}. {err}")
                             if len(errors) > 5:
                                 messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
-                    return redirect("import_balance")
+                    return render(request, "import_balance.html", {
+                        "title": "استيراد أرصدة خارجية",
+                        "clients": clients,
+                        "created_records": created_records,
+                        "selected_client_id": selected_client_id,
+                        "selected_date": selected_date,
+                        "cap_count": Capital.objects.count(),
+                        "cap_total_egp": Capital.objects.aggregate(t=Sum("cash_in"))["t"] or 0,
+                        "balance_alerts": ImportAlert.objects.filter(import_type="balance")[:10],
+                    })
                 else:
                     results = parsed
     balance_alerts = ImportAlert.objects.filter(import_type="balance")[:10]
