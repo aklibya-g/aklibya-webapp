@@ -192,8 +192,12 @@ def transactions(request):
     total_egp_val = agg["total_egp"] or 0
     total_lyd_val = agg["total_lyd"] or 0
     avg_rate = round(total_egp_val / total_lyd_val, 3) if total_lyd_val else 0
+    filtered_count = qs.count()
+    total_count = Database.objects.count()
 
     clients, total_egp_clients = _get_clients_with_remaining()
+
+    is_filtered = bool(q or date_from or date_to or year or month_from or month_to)
 
     return render(request, "transactions_list.html", {
         "title": "الحوالات",
@@ -210,6 +214,9 @@ def transactions(request):
         "clients": clients,
         "total_egp_clients": total_egp_clients,
         "order": order,
+        "filtered_count": filtered_count,
+        "total_count": total_count,
+        "is_filtered": is_filtered,
     })
 
 
@@ -342,8 +349,12 @@ def capital_list(request):
     total_egp_val = agg["total_egp"] or 0
     total_lyd_val = agg["total_lyd"] or 0
     avg_rate = round(total_egp_val / total_lyd_val, 3) if total_lyd_val else 0
+    filtered_count = qs.count()
+    total_count = Capital.objects.count()
 
     clients = ClientBalance.objects.all().order_by("name")
+
+    is_filtered = bool(q or date_from or date_to or client_id or year or month_from or month_to)
 
     return render(request, "capital_list.html", {
         "title": "الأرصدة",
@@ -360,6 +371,9 @@ def capital_list(request):
         "total_lyd": total_lyd_val,
         "avg_rate": avg_rate,
         "order": order,
+        "filtered_count": filtered_count,
+        "total_count": total_count,
+        "is_filtered": is_filtered,
     })
 
 

@@ -38,12 +38,23 @@
 </div>
 
 <div class="stat-card p-3 mb-3">
-    <div class="d-flex gap-3 flex-wrap">
-        <span><strong>إجمالي EGP:</strong> {{ total_egp|fmt }}</span>
+    <div class="d-flex gap-3 flex-wrap align-items-center">
+        {% if is_filtered %}
+        <span style="background:var(--warning-bg);color:var(--warning);padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:700">
+            <i class="bi bi-funnel-fill"></i> فلتر: {{ filtered_count }} من {{ total_count }} رصيد
+        </span>
         <span class="text-muted">|</span>
-        <span><strong>متوسط السعر:</strong> {{ avg_rate|floatformat:"-3u" }}</span>
+        {% else %}
+        <span style="background:#ecfdf5;color:#059669;padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:700">
+            <i class="bi bi-wallet2"></i> {{ total_count }} رصيد
+        </span>
         <span class="text-muted">|</span>
-        <span><strong>إجمالي LYD:</strong> {{ total_lyd|fmt }}</span>
+        {% endif %}
+        <span><strong style="color:var(--primary)">{{ total_egp|fmt }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">EGP</span></span>
+        <span class="text-muted">|</span>
+        <span><strong style="color:var(--success)">{{ total_lyd|fmt }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">LYD</span></span>
+        <span class="text-muted">|</span>
+        <span><strong>{{ avg_rate|floatformat:"-3u" }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">متوسط السعر</span></span>
     </div>
 </div>
 
