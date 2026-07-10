@@ -183,10 +183,15 @@
                         <td style="font-weight:800;color:var(--primary)">{{ r.amount_egp|fmt }}</td>
                         <td>{{ r.exchange_rate|floatformat:"-3u" }}</td>
                         <td style="font-weight:800;color:#059669">{{ r.amount_lyd|fmt }}</td>
-                        <td>
-                            <button type="button" class="btn btn-outline-danger btn-sm removeRow" title="حذف هذه الحوالة" style="border-radius:8px;padding:4px 8px">
-                                <i class="bi bi-x-lg" style="font-size:.75rem"></i>
-                            </button>
+                        <td onclick="event.stopPropagation()">
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-outline-primary btn-sm editRow" title="تعديل" style="border-radius:8px;padding:4px 8px">
+                                    <i class="bi bi-pencil" style="font-size:.75rem"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm removeRow" title="حذف" style="border-radius:8px;padding:4px 8px">
+                                    <i class="bi bi-x-lg" style="font-size:.75rem"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -205,7 +210,71 @@
         </div>
     </form>
 </div>
+
+<div class="modal fade" id="editRowModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px;border:none">
+    <div class="modal-header" style="border-bottom:1px solid var(--border);padding:16px 20px">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil text-primary"></i> تعديل الحوالة</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+        <input type="hidden" id="editRowIdx">
+        <div class="mb-3"><label class="ie-label">رقم المحمول</label><input type="text" id="editPhone" class="ie-input" dir="ltr"></div>
+        <div class="mb-3"><label class="ie-label">نوع التحويل</label><select id="editType" class="ie-select"><option>كاش</option><option>فودافون كاش</option><option>انستا باي</option><option>تحويل بنكي</option><option>صك</option></select></div>
+        <div class="mb-3"><label class="ie-label">المبلغ مصري</label><input type="number" id="editEgp" class="ie-input" step="0.01"></div>
+        <div class="mb-3"><label class="ie-label">سعر الصرف</label><input type="number" id="editRate" class="ie-input" step="0.01"></div>
+        <div class="mb-0"><label class="ie-label">المبلغ ليبي</label><input type="number" id="editLyd" class="ie-input" step="0.01" readonly style="background:#f0f0f0"></div>
+    </div>
+    <div class="modal-footer" style="border-top:1px solid var(--border);padding:12px 20px">
+        <button type="button" class="btn btn-success fw-bold" onclick="saveEditRow()" style="border-radius:8px"><i class="bi bi-check-lg"></i> حفظ</button>
+        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius:8px">إلغاء</button>
+    </div>
+</div></div></div>
+
 <script>
+document.getElementById('editEgp').addEventListener('input', function() {
+    var rate = parseFloat(document.getElementById('editRate').value) || 0;
+    var egp = parseFloat(this.value) || 0;
+    document.getElementById('editLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
+});
+document.getElementById('editRate').addEventListener('input', function() {
+    var egp = parseFloat(document.getElementById('editEgp').value) || 0;
+    var rate = parseFloat(this.value) || 0;
+    document.getElementById('editLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
+});
+document.querySelectorAll('.editRow').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        document.getElementById('editRowIdx').value = idx;
+        document.getElementById('editPhone').value = row.dataset.phone || '';
+        document.getElementById('editType').value = row.dataset.type || 'كاش';
+        document.getElementById('editEgp').value = row.dataset.egp || '';
+        document.getElementById('editRate').value = row.dataset.rate || '';
+        document.getElementById('editLyd').value = row.dataset.lyd || '';
+        new bootstrap.Modal(document.getElementById('editRowModal')).show();
+    });
+});
+function saveEditRow() {
+    var idx = parseInt(document.getElementById('editRowIdx').value);
+    var row = document.querySelectorAll('#previewBody tr')[idx];
+    var phone = document.getElementById('editPhone').value;
+    var type = document.getElementById('editType').value;
+    var egp = parseFloat(document.getElementById('editEgp').value) || 0;
+    var rate = parseFloat(document.getElementById('editRate').value) || 0;
+    var lyd = rate > 0 ? (egp / rate).toFixed(2) : '0';
+    row.dataset.phone = phone;
+    row.dataset.type = type;
+    row.dataset.egp = egp;
+    row.dataset.rate = rate;
+    row.dataset.lyd = lyd;
+    var cells = row.querySelectorAll('td');
+    cells[1].textContent = phone || '-';
+    cells[2].textContent = type;
+    cells[3].textContent = Number(egp).toLocaleString('en');
+    cells[4].textContent = rate;
+    cells[5].textContent = Number(lyd).toLocaleString('en');
+    bootstrap.Modal.getInstance(document.getElementById('editRowModal')).hide();
+}
 document.querySelectorAll('.removeRow').forEach(function(btn) {
     btn.addEventListener('click', function() {
         this.closest('tr').remove();

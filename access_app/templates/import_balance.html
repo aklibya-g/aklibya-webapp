@@ -197,10 +197,15 @@
                         <td style="font-weight:800;color:var(--primary)">{{ r.egp|fmt }}</td>
                         <td>{{ r.rate|floatformat:"-3u" }}</td>
                         <td style="font-weight:800;color:#059669">{{ r.lyd|fmt }}</td>
-                        <td>
-                            <button type="button" class="btn btn-outline-danger btn-sm removeBalanceRow" title="حذف هذا الرصيد" style="border-radius:8px;padding:4px 8px">
-                                <i class="bi bi-x-lg" style="font-size:.75rem"></i>
-                            </button>
+                        <td onclick="event.stopPropagation()">
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-outline-primary btn-sm editBalanceRow" title="تعديل" style="border-radius:8px;padding:4px 8px">
+                                    <i class="bi bi-pencil" style="font-size:.75rem"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm removeBalanceRow" title="حذف" style="border-radius:8px;padding:4px 8px">
+                                    <i class="bi bi-x-lg" style="font-size:.75rem"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -215,7 +220,71 @@
         </div>
     </form>
 </div>
+
+<div class="modal fade" id="editBalanceModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px;border:none">
+    <div class="modal-header" style="border-bottom:1px solid var(--border);padding:16px 20px">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil text-primary"></i> تعديل الرصيد</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+        <input type="hidden" id="editBalIdx">
+        <div class="mb-3"><label class="ie-label">الاسم</label><input type="text" id="editBalName" class="ie-input"></div>
+        <div class="mb-3"><label class="ie-label">التاريخ</label><input type="date" id="editBalDate" class="ie-input"></div>
+        <div class="mb-3"><label class="ie-label">المبلغ مصري</label><input type="number" id="editBalEgp" class="ie-input" step="0.01"></div>
+        <div class="mb-3"><label class="ie-label">سعر الصرف</label><input type="number" id="editBalRate" class="ie-input" step="0.01"></div>
+        <div class="mb-0"><label class="ie-label">المبلغ ليبي</label><input type="number" id="editBalLyd" class="ie-input" step="0.01" readonly style="background:#f0f0f0"></div>
+    </div>
+    <div class="modal-footer" style="border-top:1px solid var(--border);padding:12px 20px">
+        <button type="button" class="btn btn-success fw-bold" onclick="saveEditBalance()" style="border-radius:8px"><i class="bi bi-check-lg"></i> حفظ</button>
+        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius:8px">إلغاء</button>
+    </div>
+</div></div></div>
+
 <script>
+document.getElementById('editBalEgp').addEventListener('input', function() {
+    var rate = parseFloat(document.getElementById('editBalRate').value) || 0;
+    var egp = parseFloat(this.value) || 0;
+    document.getElementById('editBalLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
+});
+document.getElementById('editBalRate').addEventListener('input', function() {
+    var egp = parseFloat(document.getElementById('editBalEgp').value) || 0;
+    var rate = parseFloat(this.value) || 0;
+    document.getElementById('editBalLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
+});
+document.querySelectorAll('.editBalanceRow').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        document.getElementById('editBalIdx').value = idx;
+        document.getElementById('editBalName').value = row.dataset.client || '';
+        document.getElementById('editBalDate').value = row.dataset.date || '';
+        document.getElementById('editBalEgp').value = row.dataset.egp || '';
+        document.getElementById('editBalRate').value = row.dataset.rate || '';
+        document.getElementById('editBalLyd').value = row.dataset.lyd || '';
+        new bootstrap.Modal(document.getElementById('editBalanceModal')).show();
+    });
+});
+function saveEditBalance() {
+    var idx = parseInt(document.getElementById('editBalIdx').value);
+    var row = document.querySelectorAll('#previewBalanceBody tr')[idx];
+    var name = document.getElementById('editBalName').value;
+    var date = document.getElementById('editBalDate').value;
+    var egp = parseFloat(document.getElementById('editBalEgp').value) || 0;
+    var rate = parseFloat(document.getElementById('editBalRate').value) || 0;
+    var lyd = rate > 0 ? (egp / rate).toFixed(2) : '0';
+    row.dataset.client = name;
+    row.dataset.date = date;
+    row.dataset.egp = egp;
+    row.dataset.rate = rate;
+    row.dataset.lyd = lyd;
+    var cells = row.querySelectorAll('td');
+    cells[1].textContent = name || '-';
+    cells[2].textContent = date || '-';
+    cells[3].textContent = Number(egp).toLocaleString('en');
+    cells[4].textContent = rate;
+    cells[5].textContent = Number(lyd).toLocaleString('en');
+    bootstrap.Modal.getInstance(document.getElementById('editBalanceModal')).hide();
+}
 document.querySelectorAll('.removeBalanceRow').forEach(function(btn) {
     btn.addEventListener('click', function() {
         this.closest('tr').remove();
