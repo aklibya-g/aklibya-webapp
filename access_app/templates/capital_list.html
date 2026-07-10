@@ -136,6 +136,14 @@ function clearAll() {
 }
 function printPage() {
     var rows = document.querySelectorAll('.table-app tbody tr');
+    var totalCount = {{ total_count|default:"0" }};
+    var filteredCount = {{ filtered_count|default:"0" }};
+    var totalEGPServer = {{ total_egp|default:"0" }};
+    var totalLYDServer = {{ total_lyd|default:"0" }};
+    var avgRate = {{ avg_rate|default:"0" }};
+    var isFiltered = {% if is_filtered %}true{% else %}false{% endif %};
+    var displayCount = isFiltered ? filteredCount : totalCount;
+
     var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">';
     html += '<title>تقرير الأرصدة</title>';
     html += '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">';
@@ -159,32 +167,29 @@ function printPage() {
     html += '.btn-print{display:inline-block;padding:10px 30px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
     html += '@media print{body{padding:8mm 10mm}.btn-print{display:none!important}}';
     html += '</style></head><body>';
-    
-    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير الأرصدة</div></div>';
+
+    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير الأرصدة' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
-    html += '<span>عدد السجلات: ' + rows.length + '</span></div>';
-    
-    var totalEGP = 0, totalLYD = 0;
-    rows.forEach(function(r){
-        var cells = r.querySelectorAll('td');
-        if(cells.length > 3){
-            totalEGP += parseFloat(cells[3].textContent.replace(/,/g,'')) || 0;
-            totalLYD += parseFloat(cells[5].textContent.replace(/,/g,'')) || 0;
-        }
-    });
-    
+    html += '<span>عدد السجلات: ' + displayCount + '</span></div>';
+
     html += '<div class="stats">';
-    html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + rows.length + '</div></div>';
-    html += '<div class="stat-box"><div class="label">إجمالي المصري (EGP)</div><div class="val">' + totalEGP.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</div></div>';
-    html += '<div class="stat-box"><div class="label">إجمالي الليبي (LYD)</div><div class="val">' + totalLYD.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</div></div>';
+    html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + displayCount + '</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي المصري (EGP)</div><div class="val">' + totalEGPServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي الليبي (LYD)</div><div class="val">' + totalLYDServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
+    html += '<div class="stat-box"><div class="label">متوسط السعر</div><div class="val">' + avgRate + '</div></div>';
     html += '</div>';
-    
+
     html += '<table><thead><tr><th>#</th><th>التاريخ</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th>النوع</th><th>العميل</th></tr></thead><tbody>';
-    
+
     var idx = 1;
+    var sumEGP = 0, sumLYD = 0;
     rows.forEach(function(r){
         var cells = r.querySelectorAll('td');
         if(cells.length > 3){
+            var egp = parseFloat(cells[3].textContent.replace(/,/g,'')) || 0;
+            var lyd = parseFloat(cells[5].textContent.replace(/,/g,'')) || 0;
+            sumEGP += egp;
+            sumLYD += lyd;
             html += '<tr><td>' + idx + '</td>';
             html += '<td>' + cells[2].textContent + '</td>';
             html += '<td style="font-weight:800;color:#059669">' + cells[3].textContent + '</td>';
@@ -195,13 +200,13 @@ function printPage() {
             idx++;
         }
     });
-    
-    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + totalEGP.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + totalLYD.toLocaleString('ar-LY',{minimumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
-    
+
+    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
+
     html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
     html += '</body></html>';
-    
+
     var win = window.open('', '_blank');
     win.document.write(html);
     win.document.close();
