@@ -167,7 +167,12 @@
 <div class="ie-card green mt-4" style="border:2px solid #059669">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:#059669"></i> معاينة الأرصدة</h5>
-        <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> رصيد</span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" id="undoBalBtn" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:8px;display:none" onclick="undoBalanceAction()">
+                <i class="bi bi-arrow-counterclockwise"></i> تراجع
+            </button>
+            <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> رصيد</span>
+        </div>
     </div>
     <form method="POST" id="importBalanceForm">
         {% csrf_token %}
@@ -241,6 +246,66 @@
 </div></div></div>
 
 <script>
+var undoBalStack = [];
+function pushBalUndo(type, data) {
+    undoBalStack.push({type: type, data: data});
+    document.getElementById('undoBalBtn').style.display = 'inline-flex';
+}
+function undoBalanceAction() {
+    if (!undoBalStack.length) return;
+    var action = undoBalStack.pop();
+    if (!undoBalStack.length) document.getElementById('undoBalBtn').style.display = 'none';
+    if (action.type === 'delete') {
+        var tbody = document.getElementById('previewBalanceBody');
+        var rows = tbody.querySelectorAll('tr');
+        var refRow = rows[action.data.idx] || null;
+        var tr = document.createElement('tr');
+        tr.dataset.client = action.data.client;
+        tr.dataset.date = action.data.date;
+        tr.dataset.egp = action.data.egp;
+        tr.dataset.rate = action.data.rate;
+        tr.dataset.lyd = action.data.lyd;
+        tr.innerHTML = '<td style="font-weight:600"></td><td style="font-weight:700">' + (action.data.client||'-') + '</td><td>' + (action.data.date||'-') + '</td><td style="font-weight:800;color:var(--primary)">' + Number(action.data.egp).toLocaleString('en') + '</td><td>' + action.data.rate + '</td><td style="font-weight:800;color:#059669">' + Number(action.data.lyd).toLocaleString('en') + '</td><td onclick="event.stopPropagation()"><div class="d-flex gap-1"><button type="button" class="btn btn-outline-primary btn-sm editBalanceRow" title="تعديل" style="border-radius:8px;padding:4px 8px"><i class="bi bi-pencil" style="font-size:.75rem"></i></button><button type="button" class="btn btn-outline-danger btn-sm removeBalanceRow" title="حذف" style="border-radius:8px;padding:4px 8px"><i class="bi bi-x-lg" style="font-size:.75rem"></i></button></div></td>';
+        if (refRow) tbody.insertBefore(tr, refRow); else tbody.appendChild(tr);
+        rebindBalRowEvents(tr);
+        updateBalancePreview();
+    } else if (action.type === 'edit') {
+        var rows = document.querySelectorAll('#previewBalanceBody tr');
+        var row = rows[action.data.idx];
+        if (!row) return;
+        row.dataset.client = action.data.old.client;
+        row.dataset.date = action.data.old.date;
+        row.dataset.egp = action.data.old.egp;
+        row.dataset.rate = action.data.old.rate;
+        row.dataset.lyd = action.data.old.lyd;
+        var cells = row.querySelectorAll('td');
+        cells[1].textContent = action.data.old.client || '-';
+        cells[2].textContent = action.data.old.date || '-';
+        cells[3].textContent = Number(action.data.old.egp).toLocaleString('en');
+        cells[4].textContent = action.data.old.rate;
+        cells[5].textContent = Number(action.data.old.lyd).toLocaleString('en');
+    }
+}
+function rebindBalRowEvents(tr) {
+    tr.querySelector('.editBalanceRow').addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        document.getElementById('editBalIdx').value = idx;
+        document.getElementById('editBalName').value = row.dataset.client || '';
+        document.getElementById('editBalDate').value = row.dataset.date || '';
+        document.getElementById('editBalEgp').value = row.dataset.egp || '';
+        document.getElementById('editBalRate').value = row.dataset.rate || '';
+        document.getElementById('editBalLyd').value = row.dataset.lyd || '';
+        new bootstrap.Modal(document.getElementById('editBalanceModal')).show();
+    });
+    tr.querySelector('.removeBalanceRow').addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        pushBalUndo('delete', {idx: idx, client: row.dataset.client, date: row.dataset.date, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd});
+        row.remove();
+        updateBalancePreview();
+    });
+}
 document.getElementById('editBalEgp').addEventListener('input', function() {
     var rate = parseFloat(document.getElementById('editBalRate').value) || 0;
     var egp = parseFloat(this.value) || 0;
@@ -267,11 +332,13 @@ document.querySelectorAll('.editBalanceRow').forEach(function(btn) {
 function saveEditBalance() {
     var idx = parseInt(document.getElementById('editBalIdx').value);
     var row = document.querySelectorAll('#previewBalanceBody tr')[idx];
+    var old = {client: row.dataset.client, date: row.dataset.date, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd};
     var name = document.getElementById('editBalName').value;
     var date = document.getElementById('editBalDate').value;
     var egp = parseFloat(document.getElementById('editBalEgp').value) || 0;
     var rate = parseFloat(document.getElementById('editBalRate').value) || 0;
     var lyd = rate > 0 ? (egp / rate).toFixed(2) : '0';
+    pushBalUndo('edit', {idx: idx, old: old, new: {client: name, date: date, egp: egp, rate: rate, lyd: lyd}});
     row.dataset.client = name;
     row.dataset.date = date;
     row.dataset.egp = egp;
@@ -287,7 +354,10 @@ function saveEditBalance() {
 }
 document.querySelectorAll('.removeBalanceRow').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        this.closest('tr').remove();
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        pushBalUndo('delete', {idx: idx, client: row.dataset.client, date: row.dataset.date, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd});
+        row.remove();
         updateBalancePreview();
     });
 });

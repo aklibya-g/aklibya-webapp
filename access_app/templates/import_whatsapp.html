@@ -154,7 +154,12 @@
 <div class="ie-card green mt-4" style="border:2px solid #059669">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:#059669"></i> معاينة الحوالات</h5>
-        <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> حوالة</span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" id="undoBtn" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:8px;display:none" onclick="undoAction()">
+                <i class="bi bi-arrow-counterclockwise"></i> تراجع
+            </button>
+            <span class="ie-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">{{ results|length }}</span> حوالة</span>
+        </div>
     </div>
     <form method="POST" id="importForm">
         {% csrf_token %}
@@ -231,6 +236,66 @@
 </div></div></div>
 
 <script>
+var undoStack = [];
+function pushUndo(type, data) {
+    undoStack.push({type: type, data: data});
+    document.getElementById('undoBtn').style.display = 'inline-flex';
+}
+function undoAction() {
+    if (!undoStack.length) return;
+    var action = undoStack.pop();
+    if (!undoStack.length) document.getElementById('undoBtn').style.display = 'none';
+    if (action.type === 'delete') {
+        var tbody = document.getElementById('previewBody');
+        var rows = tbody.querySelectorAll('tr');
+        var refRow = rows[action.data.idx] || null;
+        var tr = document.createElement('tr');
+        tr.dataset.phone = action.data.phone;
+        tr.dataset.type = action.data.type;
+        tr.dataset.egp = action.data.egp;
+        tr.dataset.rate = action.data.rate;
+        tr.dataset.lyd = action.data.lyd;
+        tr.innerHTML = '<td style="font-weight:600"></td><td dir="ltr" style="font-weight:700">' + (action.data.phone||'-') + '</td><td>' + action.data.type + '</td><td style="font-weight:800;color:var(--primary)">' + Number(action.data.egp).toLocaleString('en') + '</td><td>' + action.data.rate + '</td><td style="font-weight:800;color:#059669">' + Number(action.data.lyd).toLocaleString('en') + '</td><td onclick="event.stopPropagation()"><div class="d-flex gap-1"><button type="button" class="btn btn-outline-primary btn-sm editRow" title="تعديل" style="border-radius:8px;padding:4px 8px"><i class="bi bi-pencil" style="font-size:.75rem"></i></button><button type="button" class="btn btn-outline-danger btn-sm removeRow" title="حذف" style="border-radius:8px;padding:4px 8px"><i class="bi bi-x-lg" style="font-size:.75rem"></i></button></div></td>';
+        if (refRow) tbody.insertBefore(tr, refRow); else tbody.appendChild(tr);
+        rebindRowEvents(tr);
+        updatePreview();
+    } else if (action.type === 'edit') {
+        var rows = document.querySelectorAll('#previewBody tr');
+        var row = rows[action.data.idx];
+        if (!row) return;
+        row.dataset.phone = action.data.old.phone;
+        row.dataset.type = action.data.old.type;
+        row.dataset.egp = action.data.old.egp;
+        row.dataset.rate = action.data.old.rate;
+        row.dataset.lyd = action.data.old.lyd;
+        var cells = row.querySelectorAll('td');
+        cells[1].textContent = action.data.old.phone || '-';
+        cells[2].textContent = action.data.old.type;
+        cells[3].textContent = Number(action.data.old.egp).toLocaleString('en');
+        cells[4].textContent = action.data.old.rate;
+        cells[5].textContent = Number(action.data.old.lyd).toLocaleString('en');
+    }
+}
+function rebindRowEvents(tr) {
+    tr.querySelector('.editRow').addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        document.getElementById('editRowIdx').value = idx;
+        document.getElementById('editPhone').value = row.dataset.phone || '';
+        document.getElementById('editType').value = row.dataset.type || 'كاش';
+        document.getElementById('editEgp').value = row.dataset.egp || '';
+        document.getElementById('editRate').value = row.dataset.rate || '';
+        document.getElementById('editLyd').value = row.dataset.lyd || '';
+        new bootstrap.Modal(document.getElementById('editRowModal')).show();
+    });
+    tr.querySelector('.removeRow').addEventListener('click', function() {
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        pushUndo('delete', {idx: idx, phone: row.dataset.phone, type: row.dataset.type, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd});
+        row.remove();
+        updatePreview();
+    });
+}
 document.getElementById('editEgp').addEventListener('input', function() {
     var rate = parseFloat(document.getElementById('editRate').value) || 0;
     var egp = parseFloat(this.value) || 0;
@@ -257,11 +322,13 @@ document.querySelectorAll('.editRow').forEach(function(btn) {
 function saveEditRow() {
     var idx = parseInt(document.getElementById('editRowIdx').value);
     var row = document.querySelectorAll('#previewBody tr')[idx];
+    var old = {phone: row.dataset.phone, type: row.dataset.type, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd};
     var phone = document.getElementById('editPhone').value;
     var type = document.getElementById('editType').value;
     var egp = parseFloat(document.getElementById('editEgp').value) || 0;
     var rate = parseFloat(document.getElementById('editRate').value) || 0;
     var lyd = rate > 0 ? (egp / rate).toFixed(2) : '0';
+    pushUndo('edit', {idx: idx, old: old, new: {phone: phone, type: type, egp: egp, rate: rate, lyd: lyd}});
     row.dataset.phone = phone;
     row.dataset.type = type;
     row.dataset.egp = egp;
@@ -277,7 +344,10 @@ function saveEditRow() {
 }
 document.querySelectorAll('.removeRow').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        this.closest('tr').remove();
+        var row = this.closest('tr');
+        var idx = Array.from(row.parentNode.children).indexOf(row);
+        pushUndo('delete', {idx: idx, phone: row.dataset.phone, type: row.dataset.type, egp: row.dataset.egp, rate: row.dataset.rate, lyd: row.dataset.lyd});
+        row.remove();
         updatePreview();
     });
 });
