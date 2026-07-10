@@ -201,7 +201,7 @@ def transactions(request):
 
     return render(request, "transactions_list.html", {
         "title": "الحوالات",
-        "transactions": qs[:500],
+        "transactions": qs,
         "q": q,
         "date_from": date_from,
         "date_to": date_to,
@@ -358,7 +358,7 @@ def capital_list(request):
 
     return render(request, "capital_list.html", {
         "title": "الأرصدة",
-        "capitals": qs[:500],
+        "capitals": qs,
         "clients": clients,
         "q": q,
         "date_from": date_from,
