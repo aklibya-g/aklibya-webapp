@@ -87,95 +87,152 @@ function extractMessages() {
   const sendBtn = document.getElementById("yma-send-btn");
 
   statusEl.className = "yma-status yma-loading";
-  statusEl.textContent = "جاري استخراج الرسائل...";
+  statusEl.textContent = "جاري تحميل جميع الرسائل (سكرول تلقائي)...";
 
-  setTimeout(() => {
-    try {
-      const messages = getWhatsAppMessages();
-      if (!messages || messages.length === 0) {
-        statusEl.className = "yma-status yma-error";
-        statusEl.textContent = "لم يتم العثور على رسائل. حدد الرسائل أولاً (Ctrl+A)";
-        return;
-      }
+  // First, scroll to top to load ALL messages
+  scrollToTopThenExtract(statusEl, previewEl, sendBtn);
+}
 
-      const text = messages.join("\n\n");
-      const activeType = document.querySelector(".yma-type-btn.active").dataset.type;
-      const detectedType = activeType === "auto" ? detectType(text) : activeType;
+function scrollToTopThenExtract(statusEl, previewEl, sendBtn) {
+  const chatArea = document.querySelector('#main > div:last-child > div:last-child');
+  if (!chatArea) {
+    statusEl.className = "yma-status yma-error";
+    statusEl.textContent = "لم يتم العثور على المحادثة. افتح محادثة أولاً.";
+    return;
+  }
 
-      statusEl.className = "yma-status yma-success";
-      statusEl.textContent = `تم استخراج ${messages.length} رسالة — نوع: ${detectedType === "transfer" ? "حوالات" : "أرصدة"}`;
+  let scrollCount = 0;
+  const maxScrolls = 100;
+  let prevMsgCount = 0;
+  let stableCount = 0;
 
-      previewEl.innerHTML = `
-        <div class="yma-preview-header">
-          <span>📄 ${messages.length} رسالة</span>
-          <span class="yma-badge ${detectedType === "transfer" ? "yma-badge-transfer" : "yma-badge-balance"}">${detectedType === "transfer" ? "حوالات" : "أرصدة"}</span>
-        </div>
-        <div class="yma-preview-text">${escapeHtml(text).substring(0, 500)}${text.length > 500 ? "..." : ""}</div>
-        <textarea class="yma-textarea" id="yma-extracted-text">${escapeHtml(text)}</textarea>
-      `;
+  function scrollStep() {
+    chatArea.scrollTop = 0;
+    scrollCount++;
 
-      sendBtn.style.display = "flex";
-      sendBtn.dataset.type = detectedType;
-      sendBtn.dataset.text = text;
-      sendBtn.dataset.count = messages.length;
-    } catch (e) {
-      statusEl.className = "yma-status yma-error";
-      statusEl.textContent = "خطأ في الاستخراج: " + e.message;
+    const currentMsgCount = document.querySelectorAll('div[data-testid="msg-container"]').length;
+
+    if (currentMsgCount === prevMsgCount) {
+      stableCount++;
+    } else {
+      stableCount = 0;
     }
-  }, 300);
+    prevMsgCount = currentMsgCount;
+
+    statusEl.textContent = `جاري تحميل الرسائل... (${currentMsgCount} رسالة) [${scrollCount}]`;
+
+    if (stableCount >= 5 || scrollCount >= maxScrolls) {
+      // Done scrolling - now extract
+      setTimeout(() => {
+        doExtract(statusEl, previewEl, sendBtn);
+      }, 500);
+    } else {
+      setTimeout(scrollStep, 400);
+    }
+  }
+
+  // Start scrolling
+  chatArea.scrollTop = 0;
+  setTimeout(scrollStep, 300);
+}
+
+function doExtract(statusEl, previewEl, sendBtn) {
+  try {
+    const messages = getWhatsAppMessages();
+    if (!messages || messages.length === 0) {
+      statusEl.className = "yma-status yma-error";
+      statusEl.textContent = "لم يتم العثور على رسائل.";
+      return;
+    }
+
+    const text = messages.join("\n\n");
+    const activeType = document.querySelector(".yma-type-btn.active").dataset.type;
+    const detectedType = activeType === "auto" ? detectType(text) : activeType;
+
+    statusEl.className = "yma-status yma-success";
+    statusEl.textContent = `✅ تم استخراج ${messages.length} رسالة — نوع: ${detectedType === "transfer" ? "حوالات" : "أرصدة"}`;
+
+    previewEl.innerHTML = `
+      <div class="yma-preview-header">
+        <span>📄 ${messages.length} رسالة</span>
+        <span class="yma-badge ${detectedType === "transfer" ? "yma-badge-transfer" : "yma-badge-balance"}">${detectedType === "transfer" ? "حوالات" : "أرصدة"}</span>
+      </div>
+      <div class="yma-preview-text">${escapeHtml(text).substring(0, 500)}${text.length > 500 ? "..." : ""}</div>
+      <textarea class="yma-textarea" id="yma-extracted-text">${escapeHtml(text)}</textarea>
+    `;
+
+    sendBtn.style.display = "flex";
+    sendBtn.dataset.type = detectedType;
+    sendBtn.dataset.text = text;
+    sendBtn.dataset.count = messages.length;
+  } catch (e) {
+    statusEl.className = "yma-status yma-error";
+    statusEl.textContent = "خطأ في الاستخراج: " + e.message;
+  }
 }
 
 function getWhatsAppMessages() {
   const messages = [];
+  const seen = new Set();
 
-  // Method 1: Get messages from the chat panel
+  // Method 1: Get messages from msg containers
   const msgContainers = document.querySelectorAll('div[data-testid="msg-container"]');
-
   if (msgContainers.length > 0) {
     msgContainers.forEach((container) => {
       const textEl = container.querySelector("span.selectable-text, span._ao3q");
       if (textEl) {
         const text = textEl.innerText.trim();
-        if (text && text.length > 2) {
-          // Get timestamp if available
-          const timeEl = container.querySelector("div[data-testid] span._ao3q:last-child, span._11JPr");
-          const time = timeEl ? timeEl.innerText.trim() : "";
-          // Get sender info from the message bubble
-          const bubble = container.closest('.message-in, .message-out, [data-testid="bubble"]');
-          const isIncoming = bubble ? bubble.classList.contains("message-in") || bubble.querySelector('[data-testid="msg-dblcheck"]') === null : false;
-          
-          const prefix = isIncoming ? "" : "";
-          messages.push(prefix + text);
+        if (text && text.length > 1 && !seen.has(text)) {
+          seen.add(text);
+          messages.push(text);
         }
       }
     });
   }
 
-  // Method 2: Fallback - get all text from the main chat area
+  // Method 2: Get from message bubbles directly
   if (messages.length === 0) {
-    const chatArea = document.querySelector("#main > div:last-child > div:last-child");
-    if (chatArea) {
-      const spans = chatArea.querySelectorAll("span.selectable-text, span._ao3q");
+    const bubbles = document.querySelectorAll('[data-testid="bubble"]');
+    bubbles.forEach((bubble) => {
+      const textEl = bubble.querySelector("span.selectable-text, span._ao3q");
+      if (textEl) {
+        const text = textEl.innerText.trim();
+        if (text && text.length > 1 && !seen.has(text)) {
+          seen.add(text);
+          messages.push(text);
+        }
+      }
+    });
+  }
+
+  // Method 3: Get from conversation panel
+  if (messages.length === 0) {
+    const panel = document.querySelector('[data-testid="conversation-panel-messages"]');
+    if (panel) {
+      const spans = panel.querySelectorAll("span.selectable-text, span._ao3q");
       spans.forEach((span) => {
         const text = span.innerText.trim();
-        if (text && text.length > 2) {
+        if (text && text.length > 1 && !seen.has(text)) {
+          seen.add(text);
           messages.push(text);
         }
       });
     }
   }
 
-  // Method 3: Try to get from the copy-able messages
+  // Method 4: Broad fallback - get all innerText from main area
   if (messages.length === 0) {
-    const allSpans = document.querySelectorAll('[data-testid="conversation-panel-messages"] span');
-    const seen = new Set();
-    allSpans.forEach((span) => {
-      const text = span.innerText.trim();
-      if (text && text.length > 5 && !seen.has(text)) {
-        seen.add(text);
-        messages.push(text);
-      }
-    });
+    const mainArea = document.querySelector("#main");
+    if (mainArea) {
+      const spans = mainArea.querySelectorAll("span");
+      spans.forEach((span) => {
+        const text = span.innerText.trim();
+        if (text && text.length > 5 && !seen.has(text) && !/^\d{1,2}:\d{2}$/.test(text)) {
+          seen.add(text);
+          messages.push(text);
+        }
+      });
+    }
   }
 
   return messages;
