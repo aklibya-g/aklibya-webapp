@@ -16,9 +16,12 @@ def clean_emoji(text):
 
 
 def is_phone_line(text):
-    digits = re.sub(r"[^\d]", "", text)
-    if len(digits) >= 10 and (digits.startswith("01") or digits.startswith("00")):
-        return digits
+    m = re.search(r'(?<!\d)(01\d{9})(?!\d)', text)
+    if m:
+        return m.group(1)
+    m = re.search(r'(?<!\d)(00\d{10,})(?!\d)', text)
+    if m:
+        return m.group(1)
     return None
 
 
@@ -257,6 +260,22 @@ def parse_whatsapp_block(block, block_raw=None):
                 p = embedded.group(1)
         if p and not phone:
             phone = p
+            if amount_egp is None:
+                egp = extract_egp_from_line(line)
+                if egp:
+                    amount_egp = egp
+                else:
+                    remaining = re.sub(r'(?<!\d)(01\d{9})(?!\d)', '', line)
+                    remaining = re.sub(r'\b(تحويل|فودافون\s*كاش|كاش|فات|م)\b', '', remaining)
+                    nums = re.findall(r'(\d{2,8})', remaining)
+                    for n in nums:
+                        try:
+                            v = float(n)
+                            if v >= 50:
+                                amount_egp = v
+                                break
+                        except ValueError:
+                            pass
             continue
 
         if not transfer_type:
