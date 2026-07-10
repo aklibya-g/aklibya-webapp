@@ -77,7 +77,7 @@
                 </thead>
                 <tbody>
                     {% for c in capitals %}
-                    <tr>
+                    <tr style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_capital' c.id %}'">
                         <td><input type="checkbox" name="ids" value="{{ c.id }}" class="row-check"></td>
                         <td>{{ c.id }}</td>
                         <td>{{ c.date|date:"Y-m-d" }}</td>
@@ -87,7 +87,7 @@
                         <td>{{ c.in_type|default:"-" }}</td>
                         <td>{{ c.client.name|default:"-" }}</td>
                         <td>{{ c.remarks|truncatechars:20|default:"" }}</td>
-                        <td>
+                        <td onclick="event.stopPropagation()">
                             <div class="d-flex gap-1">
                                 <a href="{% url 'edit_capital' c.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
                                 <a href="{% url 'delete_capital' c.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('حذف هذا الرصيد؟')"><i class="bi bi-trash"></i></a>

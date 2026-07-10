@@ -94,7 +94,7 @@
                 </thead>
                 <tbody>
                     {% for t in transactions %}
-                    <tr>
+                    <tr style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_transaction' t.id %}'">
                         <td><input type="checkbox" name="ids" value="{{ t.id }}" class="row-check"></td>
                         <td>{{ t.order_number|default:t.id }}</td>
                         <td>{{ t.date|date:"Y-m-d" }}</td>
@@ -105,7 +105,7 @@
                         <td>{{ t.transfer_amount|fmt }}</td>
                         <td>{{ t.transfer_type.Transfer_type|default:"-" }}</td>
                         <td>{{ t.remarks|truncatechars:30|default:"" }}</td>
-                        <td>
+                        <td onclick="event.stopPropagation()">
                             <div class="d-flex gap-1">
                                 <a href="{% url 'edit_transaction' t.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
                                 <a href="{% url 'transaction_receipt' t.id %}" class="btn btn-outline-info btn-sm" target="_blank"><i class="bi bi-printer"></i></a>
