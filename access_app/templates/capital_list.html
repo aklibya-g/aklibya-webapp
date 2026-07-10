@@ -204,12 +204,17 @@ function printPage() {
     html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
 
     html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
-    html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
+    html += '<div style="text-align:center" id="printBtnWrap"><button class="btn-print" onclick="window.print()" style="display:none">طباعة</button></div>';
     html += '</body></html>';
-
+    
     var win = window.open('', '_blank');
     win.document.write(html);
     win.document.close();
+    win.onload = function() {
+        var btn = win.document.getElementById('printBtnWrap');
+        if (btn) btn.querySelector('button').style.display = 'inline-block';
+        win.focus();
+    };
 }
 function toggleSort() {
     var params = new URLSearchParams(window.location.search);
