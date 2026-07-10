@@ -62,4 +62,6 @@ urlpatterns = [
     path('expenses/import/', views.import_expenses_excel, name='import_expenses_excel'),
     path('api/toggle-maintenance/', views.toggle_maintenance, name='toggle_maintenance'),
     path('import-alerts/', views.import_alerts, name='import_alerts'),
+    path('smart-import/', views.smart_import, name='smart_import'),
+    path('api/smart-detect/', views.api_smart_detect, name='api_smart_detect'),
 ]

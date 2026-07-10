@@ -2139,3 +2139,53 @@ def import_alerts(request):
         "alerts": alerts,
         "unread_count": unread_count,
     })
+
+
+def smart_import(request):
+    clients = ClientBalance.objects.all().order_by("name")
+    return render(request, "smart_import.html", {
+        "title": "استيراد ذكي من الواتساب",
+        "clients": clients,
+        "today": dt.now().date(),
+    })
+
+
+@csrf_exempt
+def api_smart_detect(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+    text = request.POST.get("text", "").strip()
+    content_type = request.POST.get("type", "")
+    if not text:
+        return JsonResponse({"error": "no text"}, status=400)
+
+    if content_type == "balance":
+        parsed = parse_balance_lines(text)
+        results = []
+        for item in parsed:
+            results.append({
+                "egp": item.get("egp", 0),
+                "rate": item.get("rate", 0),
+                "lyd": item.get("lyd", 0),
+            })
+        return JsonResponse({"results": results, "type": "balance", "count": len(results)})
+    else:
+        parsed = parse_whatsapp_text(text)
+        last_rate = None
+        for item in parsed:
+            if item.get("exchange_rate"):
+                last_rate = item["exchange_rate"]
+            elif last_rate:
+                item["exchange_rate"] = last_rate
+                if item.get("amount_egp") and last_rate > 0:
+                    item["amount_lyd"] = round(item["amount_egp"] / last_rate, 2)
+        results = []
+        for item in parsed:
+            results.append({
+                "receiver_tele": item.get("receiver_tele", ""),
+                "transfer_type": item.get("transfer_type", "كاش"),
+                "amount_egp": item.get("amount_egp", 0),
+                "exchange_rate": item.get("exchange_rate", 0),
+                "amount_lyd": item.get("amount_lyd", 0),
+            })
+        return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
