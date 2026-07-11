@@ -200,8 +200,8 @@
                 <div class="smart-panel-body">
                     <div class="balance-selector">
                         <div class="balance-field">
-                            <label>تاريخ الاستيراد</label>
-                            <input type="date" id="smartTransferDate" value="{{ today|date:'Y-m-d' }}">
+                            <label>تاريخ الاستيراد <span style="color:red">*</span></label>
+                            <input type="date" id="smartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
                         </div>
                     </div>
                 </div>
@@ -215,8 +215,8 @@
                 <div class="smart-panel-body">
                     <div class="balance-selector">
                         <div class="balance-field">
-                            <label>صاحب الرصيد</label>
-                            <select id="smartClientId">
+                            <label>صاحب الرصيد <span style="color:red">*</span></label>
+                            <select id="smartClientId" required>
                                 <option value="">-- اختر العميل --</option>
                                 {% for c in clients %}
                                 <option value="{{ c.id }}">{{ c.name }}</option>
@@ -224,8 +224,8 @@
                             </select>
                         </div>
                         <div class="balance-field">
-                            <label>التاريخ</label>
-                            <input type="date" id="smartDate" value="{{ today|date:'Y-m-d' }}">
+                            <label>التاريخ <span style="color:red">*</span></label>
+                            <input type="date" id="smartDate" value="{{ today|date:'Y-m-d' }}" required>
                         </div>
                     </div>
                 </div>
@@ -283,8 +283,8 @@
                 <div class="smart-panel-body">
                     <div class="balance-selector">
                         <div class="balance-field">
-                            <label>تاريخ الاستيراد</label>
-                            <input type="date" id="pasteSmartTransferDate" value="{{ today|date:'Y-m-d' }}">
+                            <label>تاريخ الاستيراد <span style="color:red">*</span></label>
+                            <input type="date" id="pasteSmartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
                         </div>
                     </div>
                 </div>
@@ -296,8 +296,8 @@
                 <div class="smart-panel-body">
                     <div class="balance-selector">
                         <div class="balance-field">
-                            <label>صاحب الرصيد</label>
-                            <select id="pasteSmartClientId">
+                            <label>صاحب الرصيد <span style="color:red">*</span></label>
+                            <select id="pasteSmartClientId" required>
                                 <option value="">-- اختر العميل --</option>
                                 {% for c in clients %}
                                 <option value="{{ c.id }}">{{ c.name }}</option>
@@ -305,8 +305,8 @@
                             </select>
                         </div>
                         <div class="balance-field">
-                            <label>التاريخ</label>
-                            <input type="date" id="pasteSmartDate" value="{{ today|date:'Y-m-d' }}">
+                            <label>التاريخ <span style="color:red">*</span></label>
+                            <input type="date" id="pasteSmartDate" value="{{ today|date:'Y-m-d' }}" required>
                         </div>
                     </div>
                 </div>
@@ -646,6 +646,7 @@ function confirmSmartImport() {
     if (smartResults.length === 0) return;
     if (smartType === 'transfer') {
         var transferDate = document.getElementById('smartTransferDate').value || document.getElementById('pasteSmartTransferDate').value || '';
+        if (!transferDate) { alert('الرجاء اختيار تاريخ الاستيراد'); return; }
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = '{% url "import_whatsapp" %}';
@@ -655,7 +656,8 @@ function confirmSmartImport() {
     } else {
         var clientId = document.getElementById('smartClientId').value || document.getElementById('pasteSmartClientId').value;
         var date = document.getElementById('smartDate').value || document.getElementById('pasteSmartDate').value;
-        if (!clientId) { showUploadStatus('error', 'الرجاء اختيار صاحب الرصيد'); return; }
+        if (!clientId) { alert('الرجاء اختيار صاحب الرصيد'); return; }
+        if (!date) { alert('الرجاء اختيار التاريخ'); return; }
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = '{% url "import_balance" %}';
