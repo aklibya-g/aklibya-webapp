@@ -607,6 +607,13 @@ def import_whatsapp(request):
     results = []
     raw_text = ""
     use_prev_rate = request.POST.get("use_prev_rate") or request.GET.get("use_prev_rate")
+    import_date_str = request.POST.get("import_date", "")
+    import_date = None
+    if import_date_str:
+        try:
+            import_date = datetime.strptime(import_date_str, "%Y-%m-%d")
+        except ValueError:
+            import_date = None
     if request.method == "POST":
         use_prev_rate = request.POST.get("use_prev_rate")
         if "text_file" in request.FILES:
@@ -670,7 +677,7 @@ def import_whatsapp(request):
                             transfered_amount=amount_egp,
                             transfer_type=tt,
                             order_number=f"{order_num_prefix}{order_num_seq:03d}",
-                            date=datetime.now(),
+                            date=import_date or datetime.now(),
                             time=datetime.now(),
                             from_source=from_whatsapp,
                         )

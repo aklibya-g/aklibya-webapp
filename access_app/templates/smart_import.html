@@ -192,6 +192,21 @@
                 </div>
             </div>
 
+            <!-- Transfer Settings -->
+            <div class="smart-panel" id="transferSettings" style="display:none">
+                <div class="smart-panel-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff">
+                    <h6 style="color:#fff"><i class="bi bi-arrow-left-right"></i> إعدادات الحوالات</h6>
+                </div>
+                <div class="smart-panel-body">
+                    <div class="balance-selector">
+                        <div class="balance-field">
+                            <label>تاريخ الاستيراد</label>
+                            <input type="date" id="smartTransferDate" value="{{ today|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Balance Settings -->
             <div class="smart-panel" id="balanceSettings" style="display:none">
                 <div class="smart-panel-header" style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
@@ -258,6 +273,19 @@
                     <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
                         <div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div>
                         <p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p>
+                    </div>
+                </div>
+            </div>
+            <div class="smart-panel" id="pasteTransferSettings" style="display:none">
+                <div class="smart-panel-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff">
+                    <h6 style="color:#fff"><i class="bi bi-arrow-left-right"></i> إعدادات الحوالات</h6>
+                </div>
+                <div class="smart-panel-body">
+                    <div class="balance-selector">
+                        <div class="balance-field">
+                            <label>تاريخ الاستيراد</label>
+                            <input type="date" id="pasteSmartTransferDate" value="{{ today|date:'Y-m-d' }}">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -448,6 +476,8 @@ function analyzeAndRender(text, source) {
     (source === 'upload' ? showUploadStatus : showPasteStatus)('loading', 'جاري التحليل...');
     document.getElementById('balanceSettings').style.display = type === 'balance' ? 'block' : 'none';
     document.getElementById('pasteBalanceSettings').style.display = type === 'balance' ? 'block' : 'none';
+    document.getElementById('transferSettings').style.display = type === 'transfer' ? 'block' : 'none';
+    document.getElementById('pasteTransferSettings').style.display = type === 'transfer' ? 'block' : 'none';
 
     var formData = new FormData();
     formData.append('text', text);
@@ -615,10 +645,11 @@ function smartUndo() {
 function confirmSmartImport() {
     if (smartResults.length === 0) return;
     if (smartType === 'transfer') {
+        var transferDate = document.getElementById('smartTransferDate').value || document.getElementById('pasteSmartTransferDate').value || '';
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = '{% url "import_whatsapp" %}';
-        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(smartResults).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1"><input type="hidden" name="use_prev_rate" value="1">';
+        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(smartResults).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1"><input type="hidden" name="use_prev_rate" value="1"><input type="hidden" name="import_date" value="' + transferDate + '">';
         document.body.appendChild(form);
         form.submit();
     } else {
@@ -652,6 +683,8 @@ function resetAll() {
     document.getElementById('pastePreviewBadge').style.display = 'none';
     document.getElementById('balanceSettings').style.display = 'none';
     document.getElementById('pasteBalanceSettings').style.display = 'none';
+    document.getElementById('transferSettings').style.display = 'none';
+    document.getElementById('pasteTransferSettings').style.display = 'none';
     document.getElementById('analyzeBtn').disabled = true;
     document.getElementById('previewBody').innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div><p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p></div>';
     document.getElementById('pastePreviewBody').innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div><p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p></div>';
