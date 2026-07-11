@@ -160,7 +160,13 @@
                     </div>
                     <div id="fileInfo" style="display:none;margin-top:12px;padding:12px;background:#ecfdf5;border:10px;border-radius:10px;font-size:.85rem;font-weight:600;color:#059669;border:1px solid #a7f3d0"></div>
                     <div id="statusBox" class="smart-status info" style="display:none"></div>
-                    <div style="margin-top:12px;display:flex;gap:10px">
+                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap">النوع:</label>
+                        <select id="manualType" style="padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:.82rem;font-weight:600;background:#fff;min-width:130px">
+                            <option value="auto">تلقائي</option>
+                            <option value="transfer">حوالات</option>
+                            <option value="balance">أرصدة</option>
+                        </select>
                         <button class="smart-btn smart-btn-primary flex-fill" style="justify-content:center" id="analyzeBtn" onclick="analyzeFile()" disabled>
                             <i class="bi bi-search"></i> تحليل ومعاينة
                         </button>
@@ -248,7 +254,13 @@
                 <div class="smart-panel-body">
                     <textarea id="pasteArea" class="smart-textarea" placeholder="🔍 الصق رسائل الواتساب هنا...&#10;&#10;سيتم التعرف تلقائياً على نوع الرسائل:&#10;• حوالات (حوالة + هاتف + مبلغ) → استيراد حوالات&#10;• أرصدة (جنيه مصري + سعر) → استيراد أرصدة"></textarea>
                     <div id="pasteStatusBox" class="smart-status info" style="display:none"></div>
-                    <div style="margin-top:12px;display:flex;gap:10px">
+                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap">النوع:</label>
+                        <select id="pasteManualType" style="padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:.82rem;font-weight:600;background:#fff;min-width:130px">
+                            <option value="auto">تلقائي</option>
+                            <option value="transfer">حوالات</option>
+                            <option value="balance">أرصدة</option>
+                        </select>
                         <button class="smart-btn smart-btn-primary flex-fill" style="justify-content:center" onclick="analyzeText()">
                             <i class="bi bi-search"></i> تحليل ومعاينة
                         </button>
@@ -378,6 +390,8 @@ function hideGuide() { document.getElementById('guideOverlay').classList.remove(
 function showGuideType(type) {
     document.getElementById('guideTransfer').style.display = type === 'transfer' ? 'block' : 'none';
     document.getElementById('guideBalance').style.display = type === 'balance' ? 'block' : 'none';
+    document.getElementById('manualType').value = type;
+    document.getElementById('pasteManualType').value = type;
     var tb = document.getElementById('guideTransferBtn');
     var bb = document.getElementById('guideBalanceBtn');
     if (type === 'transfer') {
@@ -457,16 +471,19 @@ function analyzeText() {
 }
 
 function analyzeAndRender(text, source) {
-    var type = detectType(text);
+    var manualVal = source === 'upload' ? document.getElementById('manualType').value : document.getElementById('pasteManualType').value;
+    var isManual = manualVal !== 'auto';
+    var type = isManual ? manualVal : detectType(text);
     smartType = type;
     var badgeEl = source === 'upload' ? document.getElementById('detectBadge') : document.getElementById('pasteDetectBadge');
     badgeEl.style.display = 'inline-flex';
+    var tag = isManual ? ' <span style="font-size:.65rem;background:rgba(255,255,255,.25);padding:1px 6px;border-radius:4px">يدوي</span>' : '';
     if (type === 'transfer') {
         badgeEl.className = 'detect-badge detect-transfer';
-        badgeEl.innerHTML = '<i class="bi bi-arrow-left-right"></i> حوالات';
+        badgeEl.innerHTML = '<i class="bi bi-arrow-left-right"></i> حوالات' + tag;
     } else if (type === 'balance') {
         badgeEl.className = 'detect-badge detect-balance';
-        badgeEl.innerHTML = '<i class="bi bi-wallet2"></i> أرصدة';
+        badgeEl.innerHTML = '<i class="bi bi-wallet2"></i> أرصدة' + tag;
     } else {
         badgeEl.className = 'detect-badge detect-unknown';
         badgeEl.innerHTML = '<i class="bi bi-question-circle"></i> غير محدد';
