@@ -105,7 +105,7 @@
                 </thead>
                 <tbody>
                     {% for t in transactions %}
-                    <tr style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_transaction' t.id %}'">
+                    <tr id="{% if forloop.first %}firstRow{% endif %}{% if forloop.last %}lastRow{% endif %}" style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_transaction' t.id %}'">
                         <td><input type="checkbox" name="ids" value="{{ t.id }}" class="row-check"></td>
                         <td>{{ t.order_number|default:t.id }}</td>
                         <td>{{ t.date|date:"Y-m-d" }}</td>
@@ -132,6 +132,12 @@
         </div>
     </div>
 </form>
+
+<!-- Floating nav buttons -->
+<div id="navBtns" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999;opacity:0;transition:opacity .3s">
+    <button type="button" onclick="document.getElementById('firstRow').scrollIntoView({behavior:'smooth',block:'start'})" title="الحوالة الأولى" style="width:44px;height:44px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'"><i class="bi bi-arrow-up"></i></button>
+    <button type="button" onclick="document.getElementById('lastRow').scrollIntoView({behavior:'smooth',block:'end'})" title="الحوالة الأخيرة" style="width:44px;height:44px;border-radius:50%;border:none;background:#059669;color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'"><i class="bi bi-arrow-down"></i></button>
+</div>
 
 <form id="clearAllForm" method="post" action="{% url 'clear_transactions' %}">
     {% csrf_token %}
@@ -243,4 +249,10 @@ function printPage() {
 .table-app thead th { font-size: 0.8rem !important; padding: 8px 10px !important; }
 .table-app tbody td { padding: 8px 10px !important; }
 </style>
+<script>
+window.addEventListener('scroll', function() {
+    var btns = document.getElementById('navBtns');
+    if (btns) btns.style.opacity = window.scrollY > 300 ? '1' : '0';
+});
+</script>
 {% endblock %}

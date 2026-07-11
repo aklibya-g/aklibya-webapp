@@ -88,7 +88,7 @@
                 </thead>
                 <tbody>
                     {% for c in capitals %}
-                    <tr style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_capital' c.id %}'">
+                    <tr id="{% if forloop.first %}firstRow{% endif %}{% if forloop.last %}lastRow{% endif %}" style="cursor:pointer" onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='A'&&event.target.tagName!=='I'&&!event.target.closest('a'))window.location='{% url 'edit_capital' c.id %}'">
                         <td><input type="checkbox" name="ids" value="{{ c.id }}" class="row-check"></td>
                         <td>{{ c.id }}</td>
                         <td>{{ c.date|date:"Y-m-d" }}</td>
@@ -113,6 +113,12 @@
         </div>
     </div>
 </form>
+
+<!-- Floating nav buttons -->
+<div id="navBtns" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999;opacity:0;transition:opacity .3s">
+    <button type="button" onclick="document.getElementById('firstRow').scrollIntoView({behavior:'smooth',block:'start'})" title="أول رصيد" style="width:44px;height:44px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'"><i class="bi bi-arrow-up"></i></button>
+    <button type="button" onclick="document.getElementById('lastRow').scrollIntoView({behavior:'smooth',block:'end'})" title="آخر رصيد" style="width:44px;height:44px;border-radius:50%;border:none;background:#059669;color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'"><i class="bi bi-arrow-down"></i></button>
+</div>
 
 <form id="clearAllForm" method="post" action="{% url 'clear_capital' %}">
     {% csrf_token %}
@@ -216,5 +222,11 @@ function printPage() {
         win.focus();
     };
 }
+</script>
+<script>
+window.addEventListener('scroll', function() {
+    var btns = document.getElementById('navBtns');
+    if (btns) btns.style.opacity = window.scrollY > 300 ? '1' : '0';
+});
 </script>
 {% endblock %}
