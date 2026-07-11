@@ -47,10 +47,10 @@
         {% endif %}
         <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
     </form>
-    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSort()">
+    <a href="?q={{ q|urlencode }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}&order={% if order == 'desc' %}asc{% else %}desc{% endif %}" class="btn btn-outline-secondary btn-sm" style="text-decoration:none">
         <i class="bi bi-sort-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
         {% if order == 'desc' %}تنازلي{% else %}تصاعدي{% endif %}
-    </button>
+    </a>
 </div>
 
 <div class="stat-card p-3 mb-3">
@@ -236,12 +236,6 @@ function printPage() {
         if (btn) btn.querySelector('button').style.display = 'inline-block';
         win.focus();
     };
-}
-function toggleSort() {
-    var params = new URLSearchParams(window.location.search);
-    var current = params.get('order') || 'desc';
-    params.set('order', current === 'desc' ? 'asc' : 'desc');
-    window.location.search = params.toString();
 }
 </script>
 <style>
