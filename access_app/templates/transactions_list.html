@@ -157,7 +157,15 @@ function deleteSelected() {
 }
 function clearAll() {
     if (!confirm('هل أنت متأكد من حذف جميع الحوالات؟')) return;
-    document.getElementById('clearAllForm').submit();
+    var form = document.getElementById('clearAllForm');
+    var csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch(form.action, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest'},
+        body: new FormData(form),
+        redirect: 'follow'
+    }).then(function() { window.location.href = '/transactions/'; })
+      .catch(function() { form.submit(); });
 }
 function printPage() {
     var rows = document.querySelectorAll('.table-app tbody tr');
