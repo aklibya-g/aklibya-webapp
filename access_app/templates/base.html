@@ -263,6 +263,9 @@
                         <i class="bi bi-bell-fill" style="color:#f59e0b;"></i> تنبيهات الاستيراد
                         {% if import_alerts_unread %}<span style="background:#dc2626;color:#fff;font-size:.6rem;padding:2px 6px;border-radius:8px;margin-right:6px;font-weight:700">{{ import_alerts_unread }}</span>{% endif %}
                     </a>
+                    {% if current_user.is_admin %}
+                    <a href="{% url 'backups_list' %}" class="nav-item" style="padding:7px 10px;{% if '/backups/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-cloud-arrow-up" style="color:#06b6d4;"></i> النسخ الاحتياطية</a>
+                    {% endif %}
                     <form method="POST" action="{% url 'toggle_maintenance' %}" style="margin:0">
                         {% csrf_token %}
                         <button type="submit" class="nav-item" style="width:100%;border:none;background:none;text-align:right;padding:7px 10px;cursor:pointer;font-family:Cairo,sans-serif;color:{% if maintenance_mode %}#dc2626{% else %}var(--sidebar-text){% endif %}">

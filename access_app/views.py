@@ -1,4 +1,6 @@
 import json
+import os
+import csv
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -12,6 +14,104 @@ from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSo
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
+
+BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backups")
+
+
+def _ensure_backup_dir():
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+
+
+def _backup_transactions(label="auto"):
+    _ensure_backup_dir()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"transactions_{label}_{timestamp}.csv"
+    filepath = os.path.join(BACKUP_DIR, filename)
+    qs = Database.objects.all().order_by("id")
+    if not qs.exists():
+        return None
+    field_names = [f.name for f in Database._meta.get_fields() if hasattr(f, 'column')]
+    with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        writer.writerow(field_names)
+        for obj in qs:
+            writer.writerow([getattr(obj, fn, '') for fn in field_names])
+    return filename
+
+
+def _backup_capital(label="auto"):
+    _ensure_backup_dir()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"capital_{label}_{timestamp}.csv"
+    filepath = os.path.join(BACKUP_DIR, filename)
+    qs = Capital.objects.all().order_by("id")
+    if not qs.exists():
+        return None
+    field_names = [f.name for f in Capital._meta.get_fields() if hasattr(f, 'column')]
+    with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        writer.writerow(field_names)
+        for obj in qs:
+            writer.writerow([getattr(obj, fn, '') for fn in field_names])
+    return filename
+
+
+def _restore_transactions(filepath):
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        count = 0
+        for row in reader:
+            data = {}
+            for k, v in row.items():
+                if k == 'id':
+                    continue
+                if k in ('date', 'time'):
+                    try:
+                        data[k] = datetime.strptime(v, "%Y-%m-%d").date() if k == 'date' else datetime.strptime(v, "%H:%M:%S").time() if v else None
+                    except (ValueError, TypeError):
+                        data[k] = None
+                elif k in ('transfer_amount', 'transfered_amount', 'exchange_rate'):
+                    try:
+                        data[k] = float(v) if v else 0
+                    except ValueError:
+                        data[k] = 0
+                else:
+                    data[k] = v if v else ''
+            try:
+                Database.objects.create(**data)
+                count += 1
+            except Exception:
+                pass
+        return count
+
+
+def _restore_capital(filepath):
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        count = 0
+        for row in reader:
+            data = {}
+            for k, v in row.items():
+                if k == 'id':
+                    continue
+                if k in ('date', 'time'):
+                    try:
+                        data[k] = datetime.strptime(v, "%Y-%m-%d").date() if k == 'date' else datetime.strptime(v, "%H:%M:%S").time() if v else None
+                    except (ValueError, TypeError):
+                        data[k] = None
+                elif k in ('cash_in', 'cash_out', 'libyan_cash', 'libyan_withdraw', 'exchange_rate'):
+                    try:
+                        data[k] = float(v) if v else 0
+                    except ValueError:
+                        data[k] = 0
+                else:
+                    data[k] = v if v else ''
+            try:
+                Capital.objects.create(**data)
+                count += 1
+            except Exception:
+                pass
+        return count
 
 
 def login_view(request):
@@ -285,25 +385,33 @@ def bulk_delete_capital(request):
 
 def clear_all_transactions(request):
     from django.db import transaction
+    backup_file = _backup_transactions("before_clear")
     with transaction.atomic():
         ids = list(Database.objects.values_list("id", flat=True))
         for obj in Database.objects.filter(id__in=ids):
             _reverse_transaction_balance(obj)
         count = len(ids)
         Database.objects.filter(id__in=ids).delete()
-    messages.success(request, f"✅ تم مسح {count} حوالة بالكامل واستعادة جميع الأرصدة.")
+    msg = f"✅ تم مسح {count} حوالة بالكامل واستعادة جميع الأرصدة."
+    if backup_file:
+        msg += f" (النسخة الاحتياطية: {backup_file})"
+    messages.success(request, msg)
     return redirect("transactions")
 
 
 def clear_all_capital(request):
     from django.db import transaction
+    backup_file = _backup_capital("before_clear")
     with transaction.atomic():
         ids = list(Capital.objects.values_list("id", flat=True))
         for obj in Capital.objects.filter(id__in=ids):
             _reverse_capital_balance(obj)
         count = len(ids)
         Capital.objects.filter(id__in=ids).delete()
-    messages.success(request, f"✅ تم مسح {count} رصيد بالكامل وتحديث الأرصدة.")
+    msg = f"✅ تم مسح {count} رصيد بالكامل وتحديث الأرصدة."
+    if backup_file:
+        msg += f" (النسخة الاحتياطية: {backup_file})"
+    messages.success(request, msg)
     return redirect("capital_list")
 
 
@@ -2336,3 +2444,81 @@ def api_extension_receive(request):
             "amount_lyd": i.get("amount_lyd",0),
         } for i in parsed]
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
+
+
+@login_required_custom
+def backups_list(request):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية")
+        return redirect("index")
+    _ensure_backup_dir()
+    files = []
+    for fn in os.listdir(BACKUP_DIR):
+        if fn.endswith('.csv'):
+            fp = os.path.join(BACKUP_DIR, fn)
+            stat = os.stat(fp)
+            ftype = "حوالات" if fn.startswith("transactions") else "أرصدة"
+            files.append({
+                "name": fn,
+                "type": ftype,
+                "size": f"{stat.st_size / 1024:.1f} KB",
+                "date": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+            })
+    files.sort(key=lambda x: x["date"], reverse=True)
+    return render(request, "backups_list.html", {
+        "title": "النسخ الاحتياطية",
+        "backups": files,
+    })
+
+
+@login_required_custom
+def backup_restore(request, filename):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية")
+        return redirect("index")
+    filepath = os.path.join(BACKUP_DIR, filename)
+    if not os.path.exists(filepath):
+        messages.error(request, "الملف غير موجود")
+        return redirect("backups_list")
+    if filename.startswith("transactions"):
+        count = _restore_transactions(filepath)
+        messages.success(request, f"✅ تم استعادة {count} حوالة من النسخة الاحتياطية: {filename}")
+        return redirect("transactions")
+    elif filename.startswith("capital"):
+        count = _restore_capital(filepath)
+        messages.success(request, f"✅ تم استعادة {count} رصيد من النسخة الاحتياطية: {filename}")
+        return redirect("capital_list")
+    else:
+        messages.error(request, "نوع ملف غير معروف")
+        return redirect("backups_list")
+
+
+@login_required_custom
+def backup_download(request, filename):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية")
+        return redirect("index")
+    filepath = os.path.join(BACKUP_DIR, filename)
+    if not os.path.exists(filepath):
+        messages.error(request, "الملف غير موجود")
+        return redirect("backups_list")
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
+        response = HttpResponse(f.read(), content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+@login_required_custom
+def backup_delete(request, filename):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية")
+        return redirect("index")
+    filepath = os.path.join(BACKUP_DIR, filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        messages.success(request, f"تم حذف النسخة الاحتياطية: {filename}")
+    return redirect("backups_list")

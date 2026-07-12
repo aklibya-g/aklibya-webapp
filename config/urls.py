@@ -65,4 +65,8 @@ urlpatterns = [
     path('smart-import/', views.smart_import, name='smart_import'),
     path('api/smart-detect/', views.api_smart_detect, name='api_smart_detect'),
     path('api/extension-receive/', views.api_extension_receive, name='api_extension_receive'),
+    path('backups/', views.backups_list, name='backups_list'),
+    path('backups/restore/<str:filename>/', views.backup_restore, name='backup_restore'),
+    path('backups/download/<str:filename>/', views.backup_download, name='backup_download'),
+    path('backups/delete/<str:filename>/', views.backup_delete, name='backup_delete'),
 ]
