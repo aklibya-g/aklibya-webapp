@@ -170,6 +170,15 @@
             <label style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-calendar3"></i> تاريخ الاستيراد:</label>
             <input type="date" name="import_date" value="{% now 'Y-m-d' %}" style="padding:8px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600">
         </div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <label style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-person"></i>خصم من / صاحب الحوالة:</label>
+            <select name="client_id" required style="padding:8px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600;min-width:200px">
+                <option value="">-- اختر الشخص --</option>
+                {% for c in clients %}
+                <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="border-radius:12px;overflow:hidden">
                 <thead style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
@@ -209,7 +218,7 @@
         </div>
         <div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:16px;margin-top:16px;font-size:.88rem">
             <i class="bi bi-info-circle" style="color:var(--primary)"></i>
-            سيتم خصم <strong><span id="previewCountMsg">{{ results|length }}</span> حوالة</strong> من رصيد أحمد ياسين المصري وإضافة المبلغ الليبي لرصيده.
+            سيتم خصم <strong><span id="previewCountMsg">{{ results|length }}</span> حوالة</strong> من رصيد <span id="clientNamePreview">أحمد ياسين المصري</span> وإضافة المبلغ الليبي لرصيده.
         </div>
         <div style="display:flex;gap:10px;margin-top:16px">
             <button class="ie-btn ie-btn-success flex-fill" type="submit" name="confirm" value="1" style="justify-content:center">
@@ -240,6 +249,12 @@
 </div></div></div>
 
 <script>
+document.querySelectorAll('select[name="client_id"]').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+        var opt = this.options[this.selectedIndex];
+        document.getElementById('clientNamePreview').textContent = (opt && opt.text && opt.text.indexOf('--') === -1) ? opt.text : 'أحمد ياسين المصري';
+    });
+});
 var undoStack = [];
 function pushUndo(type, data) {
     undoStack.push({type: type, data: data});

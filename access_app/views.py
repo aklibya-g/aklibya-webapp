@@ -646,7 +646,11 @@ def import_whatsapp(request):
             messages.error(request, "لم يتم التعرف على أي حوالة صالحة. تأكد من تنسيق النص.")
         else:
             if "confirm" in request.POST:
-                ahmed = ClientBalance.objects.filter(name__contains="أحمد ياسين").first()
+                sender_client_id = request.POST.get("client_id")
+                if sender_client_id:
+                    ahmed = ClientBalance.objects.filter(id=sender_client_id).first()
+                else:
+                    ahmed = ClientBalance.objects.filter(name__contains="أحمد ياسين").first()
                 from_whatsapp, _ = FromSource.objects.get_or_create(from_field="واتساب")
                 created = 0
                 errors = []
@@ -661,7 +665,7 @@ def import_whatsapp(request):
                         amount_egp = item["amount_egp"]
                         if ahmed:
                             if ahmed.egp_balance < amount_egp:
-                                errors.append(f"رقم {item['receiver_tele']}: رصيد أحمد ياسين المصري غير كافٍ ({ahmed.egp_balance:.2f} < {amount_egp:.2f})")
+                                errors.append(f"رقم {item['receiver_tele']}: رصيد {ahmed.name} غير كافٍ ({ahmed.egp_balance:.2f} < {amount_egp:.2f})")
                                 continue
                             ahmed.egp_balance -= amount_egp
                             ahmed.lyd_balance += amount_lyd
@@ -688,8 +692,9 @@ def import_whatsapp(request):
                         errors.append(f"خطأ: {e}")
 
                 if created:
+                    client_label = ahmed.name if ahmed else "أحمد ياسين"
                     word = "حوالة" if created == 1 else "حوالات"
-                    messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد أحمد ياسين.")
+                    messages.success(request, f"✅ تم استيراد {created} {word} بنجاح وخصمها من رصيد {client_label}.")
                 if not created and not errors:
                     messages.warning(request, "⚠️ لم يتم استيراد أي حوالة. تأكد من صحة البيانات.")
                 if errors:

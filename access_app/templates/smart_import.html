@@ -206,6 +206,15 @@
                 <div class="smart-panel-body">
                     <div class="balance-selector">
                         <div class="balance-field">
+                            <label>خصم من / صاحب الحوالة <span style="color:red">*</span></label>
+                            <select id="smartTransferClient" required>
+                                <option value="">-- اختر الشخص --</option>
+                                {% for c in clients %}
+                                <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="balance-field">
                             <label>تاريخ الاستيراد <span style="color:red">*</span></label>
                             <input type="date" id="smartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
                         </div>
@@ -303,6 +312,15 @@
                 </div>
                 <div class="smart-panel-body">
                     <div class="balance-selector">
+                        <div class="balance-field">
+                            <label>خصم من / صاحب الحوالة <span style="color:red">*</span></label>
+                            <select id="pasteSmartTransferClient" required>
+                                <option value="">-- اختر الشخص --</option>
+                                {% for c in clients %}
+                                <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <div class="balance-field">
                             <label>تاريخ الاستيراد <span style="color:red">*</span></label>
                             <input type="date" id="pasteSmartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
@@ -607,7 +625,10 @@ function renderPreview(source) {
     html += '</tbody></table></div>';
 
     if (smartType === 'transfer') {
-        html += '<div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:14px;margin-top:16px;font-size:.85rem"><i class="bi bi-info-circle" style="color:var(--primary)"></i> سيتم خصم <strong>' + smartResults.length + ' حوالة</strong> من رصيد أحمد ياسين المصري</div>';
+        var clientSelect = source === 'upload' ? document.getElementById('smartTransferClient') : document.getElementById('pasteSmartTransferClient');
+        var clientName = clientSelect && clientSelect.options[clientSelect.selectedIndex] ? clientSelect.options[clientSelect.selectedIndex].text : 'أحمد ياسين';
+        if (!clientName || clientName.indexOf('--') > -1) clientName = 'أحمد ياسين';
+        html += '<div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:14px;margin-top:16px;font-size:.85rem"><i class="bi bi-info-circle" style="color:var(--primary)"></i> سيتم خصم <strong>' + smartResults.length + ' حوالة</strong> من رصيد ' + clientName + '</div>';
     }
     html += '<div style="display:flex;gap:10px;margin-top:16px">';
     html += '<button class="smart-btn smart-btn-success flex-fill" style="justify-content:center" onclick="confirmSmartImport()"><i class="bi bi-check-lg"></i> تأكيد استيراد ' + smartResults.length + ' ' + (smartType === 'transfer' ? 'حوالة' : 'رصيد') + '</button>';
@@ -714,14 +735,16 @@ function confirmSmartImport() {
     if (smartResults.length === 0) return;
     if (smartType === 'transfer') {
         var transferDate = document.getElementById('smartTransferDate').value || document.getElementById('pasteSmartTransferDate').value || '';
+        var clientId = document.getElementById('smartTransferClient').value || document.getElementById('pasteSmartTransferClient').value || '';
         if (!transferDate) { alert('الرجاء اختيار تاريخ الاستيراد'); return; }
+        if (!clientId) { alert('الرجاء اختيار الشخص المخصوم منه الحوالة'); return; }
         var usePrev = (document.getElementById('usePrevRate').checked || document.getElementById('pasteUsePrevRate').checked) ? '1' : '0';
         var resultsToSend = JSON.parse(JSON.stringify(smartResults));
         if (usePrev === '1') { fillMissingRates(resultsToSend); }
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = '{% url "import_whatsapp" %}';
-        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(resultsToSend).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1"><input type="hidden" name="use_prev_rate" value="' + usePrev + '"><input type="hidden" name="import_date" value="' + transferDate + '">';
+        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(resultsToSend).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1"><input type="hidden" name="use_prev_rate" value="' + usePrev + '"><input type="hidden" name="import_date" value="' + transferDate + '"><input type="hidden" name="client_id" value="' + clientId + '">';
         document.body.appendChild(form);
         form.submit();
     } else {
