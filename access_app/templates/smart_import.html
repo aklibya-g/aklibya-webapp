@@ -600,14 +600,15 @@ function renderPreview(source) {
     html += '</tr></thead><tbody>';
     for (var i = 0; i < smartResults.length; i++) {
         var r = smartResults[i];
-        html += '<tr><td style="font-weight:600">' + (i + 1) + '</td>';
+        var rowBg = r._rateFilled ? 'background:linear-gradient(90deg,#fffbeb,#fef3c7);border-left:3px solid #d97706' : '';
+        html += '<tr style="' + rowBg + '"><td style="font-weight:600">' + (i + 1) + '</td>';
         if (smartType === 'transfer') {
             html += '<td dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
             html += '<td>' + (r.transfer_type || 'كاش') + '</td>';
             html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
             var rateDisplay = r.exchange_rate || 0;
             if (r._rateFilled) {
-                html += '<td style="color:#d97706;font-weight:700" title="سعر مأخوذ من الحوالة السابقة">' + rateDisplay + ' <span style="font-size:.65rem;background:#fef3c7;padding:1px 5px;border-radius:4px;color:#92400e">تلقائي</span></td>';
+                html += '<td style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:6px" title="سعر مأخوذ من الحوالة السابقة">⚡ ' + rateDisplay + '</td>';
             } else {
                 html += '<td>' + rateDisplay + '</td>';
             }
