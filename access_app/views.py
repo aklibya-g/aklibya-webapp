@@ -2197,14 +2197,6 @@ def api_smart_detect(request):
         return JsonResponse({"results": results, "type": "balance", "count": len(results)})
     else:
         parsed = parse_whatsapp_text(text)
-        last_rate = None
-        for item in parsed:
-            if item.get("exchange_rate"):
-                last_rate = item["exchange_rate"]
-            elif last_rate:
-                item["exchange_rate"] = last_rate
-                if item.get("amount_egp") and last_rate > 0:
-                    item["amount_lyd"] = round(item["amount_egp"] / last_rate, 2)
         results = []
         for item in parsed:
             results.append({
