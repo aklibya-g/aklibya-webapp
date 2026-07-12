@@ -797,46 +797,83 @@ def _is_skip_line(ln):
 
 def _extract_egp(ln):
     """Try to extract EGP amount from a single line. Returns float or None."""
-    # Pattern 1: "القيمة:XXX" or "القيمة XXX" or "القيمه:XXX" (with or without colon/space)
+    # Clean: remove all non-digit, non-comma, non-dot, non-Arabic-char chars except الف/مليون
+    # First check for استلام pattern - extract number after it, clean any attached letters
+    m = re.search(r'استلام\s*(\d[\d,\.]*)', ln)
+    if m:
+        raw = m.group(1).replace(",", "")
+        try:
+            v = float(raw)
+            # Check for ألف/مليون multiplier
+            if re.search(r'الف', ln) and v < 10000:
+                v *= 1000
+            if v >= 10:
+                return v
+        except ValueError:
+            pass
+
+    # Pattern: "القيمة:XXX" or "القيمة XXX"
     m = re.search(r'القيمو?ه?ة?[:\s]*(\d[\d,\.]*)', ln)
     if m:
-        raw = m.group(1).replace(",", "").replace(".", "")
+        raw = m.group(1).replace(",", "")
         try:
             v = float(raw)
-            if v >= 100:
+            if v >= 10:
                 return v
         except ValueError:
             pass
 
-    # Pattern 2: "XXX جنيه مصري" - number before جنيه
+    # Pattern: "XXX جنيه مصري"
     m = re.search(r'(\d[\d,\.]*)\s*جنيه\s*مصري', ln)
     if m:
-        raw = m.group(1).replace(",", "").replace(".", "")
+        raw = m.group(1).replace(",", "")
         try:
             v = float(raw)
-            if v >= 100:
+            if v >= 10:
                 return v
         except ValueError:
             pass
 
-    # Pattern 3: "XXXج م" or "XXX ج م" (shorthand for جنيه مصري)
+    # Pattern: "XXXج م" or "XXX ج م"
     m = re.search(r'(\d[\d,\.]*)\s*ج\s*م', ln)
     if m:
-        raw = m.group(1).replace(",", "").replace(".", "")
+        raw = m.group(1).replace(",", "")
         try:
             v = float(raw)
-            if v >= 100:
+            if v >= 10:
                 return v
         except ValueError:
             pass
 
-    # Pattern 4: "حول له XXX" or "حول XXX"
+    # Pattern: "XXXالف" or "XXX الف"
+    m = re.search(r'(\d[\d,\.]*)\s*الف', ln)
+    if m:
+        raw = m.group(1).replace(",", "")
+        try:
+            v = float(raw) * 1000
+            if v >= 10:
+                return v
+        except ValueError:
+            pass
+
+    # Pattern: "XXXمليون" or "XXX مليون"
+    m = re.search(r'(\d[\d,\.]*)\s*مليون', ln)
+    if m:
+        raw = m.group(1).replace(",", "")
+        try:
+            v = float(raw) * 1000000
+            if v >= 10:
+                return v
+        except ValueError:
+            pass
+
+    # Pattern: "حول له XXX"
     m = re.search(r'حول\s+له?\s+(\d[\d,\.]*)', ln)
     if m:
-        raw = m.group(1).replace(",", "").replace(".", "")
+        raw = m.group(1).replace(",", "")
         try:
             v = float(raw)
-            if v >= 100:
+            if v >= 10:
                 return v
         except ValueError:
             pass
@@ -846,8 +883,8 @@ def _extract_egp(ln):
 
 def _extract_rate(ln):
     """Try to extract exchange rate from a single line. Returns float or None."""
-    # Pattern 1: "سعر X" or "سعر: X"
-    m = re.search(r'سعر[:\s]*(\d+[\.,]?\d*)', ln)
+    # Pattern 1: "سعر X" or "سعر: X" - clean any attached symbols
+    m = re.search(r'سعر[:\s]*(\d[\d,\.]*)', ln)
     if m:
         r_str = m.group(1).replace(",", ".")
         try:
@@ -857,7 +894,7 @@ def _extract_rate(ln):
         except ValueError:
             pass
 
-    # Pattern 2: "X♻️" (rate followed by recycling symbol)
+    # Pattern 2: "X♻️"
     m = re.search(r'(\d+[\.,]?\d*)\s*♻', ln)
     if m:
         r_str = m.group(1).replace(",", ".")
@@ -868,8 +905,19 @@ def _extract_rate(ln):
         except ValueError:
             pass
 
-    # Pattern 3: "X🇾🇪" or "X🇪🇬" (rate followed by flag emoji)
+    # Pattern 3: "X🇾🇪" or "X🇪🇬" - clean flag emoji
     m = re.search(r'(\d+[\.,]?\d*)\s*[\U0001f1e6-\U0001f1ff]{2}', ln)
+    if m:
+        r_str = m.group(1).replace(",", ".")
+        try:
+            v = float(r_str)
+            if 3 < v < 10:
+                return v
+        except ValueError:
+            pass
+
+    # Pattern 4: standalone rate number (when سعر is on separate line)
+    m = re.match(r'^\s*(\d+[\.,]?\d*)\s*$', ln)
     if m:
         r_str = m.group(1).replace(",", ".")
         try:
@@ -883,18 +931,15 @@ def _extract_rate(ln):
 
 
 def parse_balance_lines(text):
-    """Parse WhatsApp balance messages. Extracts EGP amount and rate from each block."""
+    """Parse WhatsApp balance messages. Extracts EGP amount and rate from each block.
+    
+    Format: each message has 'استلام XXX' (EGP amount) and 'سعر X' (rate).
+    Numbers may have attached letters like '400الف' (=400,000) or '76200🇾🇪' (=LYD).
+    """
     text = _ar_to_western(text)
 
     # Split into blocks using WhatsApp timestamp patterns
-    # Matches: [7:31 AM], [14:30], [7:31 ص], etc.
-    blocks = re.split(r'\[?\d{1,2}:\d{2}(?:\s*[APapمص])?\]?\s*', text)
-    # Also split on phone number lines that appear at block boundaries
-    extra_split = []
-    for block in blocks:
-        parts = re.split(r'\n(\d{10,15})\s*\n', block)
-        extra_split.extend(parts)
-    blocks = extra_split
+    blocks = re.split(r'\[?\d{1,2}[/-]\d{1,2},?\s*\d{1,2}:\d{2}(?:\s*(?:am|pm|ص|م))?\]?\s*', text)
 
     results = []
     for block in blocks:
@@ -905,53 +950,50 @@ def parse_balance_lines(text):
         lines = block.split('\n')
         egp = None
         rate = None
+        lyd_direct = None
 
         for line in lines:
             ln = line.strip()
             if not ln:
                 continue
-            if _is_skip_line(ln):
-                continue
 
-            # Try to extract EGP
+            # Extract EGP from 'استلام' line
             if egp is None:
                 egp = _extract_egp(ln)
 
-            # Try to extract rate
+            # Extract rate from 'سعر' line or standalone number
             if rate is None:
                 rate = _extract_rate(ln)
 
-        # If we still don't have EGP, try a fallback: look for any 3-8 digit number
-        # on a line that mentions جنيه/ج/ Egyptian context
-        if egp is None:
-            for line in lines:
-                ln = line.strip()
-                if not ln or _is_skip_line(ln):
-                    continue
-                if 'جنيه' in ln or 'جنيه' in ln or 'مصري' in ln:
-                    m = re.search(r'(?:^|[\s:])(\d{3,8})(?:[\s:]|$)', ln)
-                    if m:
-                        raw = m.group(1)
-                        if not raw.startswith("00"):
-                            try:
-                                v = float(raw)
-                                if v >= 100:
-                                    egp = v
-                                    break
-                            except ValueError:
-                                pass
+            # Check for LYD direct amount (e.g., "76200🇾🇪")
+            if lyd_direct is None and egp is None:
+                m = re.search(r'(\d[\d,\.]*)\s*🇾🇪', ln)
+                if m:
+                    raw = m.group(1).replace(",", "")
+                    try:
+                        v = float(raw)
+                        if v >= 10:
+                            lyd_direct = v
+                    except ValueError:
+                        pass
+
+        # If no EGP found but have LYD direct + rate, calculate EGP
+        if egp is None and lyd_direct is not None and rate is not None and rate > 0:
+            egp = round(lyd_direct * rate, 2)
 
         if egp is None or rate is None:
             continue
 
-        # Sanity check
-        if egp <= rate:
+        # Sanity check - skip nonsensical results
+        if egp < 10:
             continue
+
+        final_lyd = lyd_direct if lyd_direct is not None else round(egp / rate, 2)
 
         results.append({
             "egp": egp,
             "rate": rate,
-            "lyd": round(egp / rate, 2),
+            "lyd": final_lyd,
         })
 
     return results
