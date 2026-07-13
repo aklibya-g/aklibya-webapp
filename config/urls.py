@@ -63,6 +63,7 @@ urlpatterns = [
     path('api/toggle-maintenance/', views.toggle_maintenance, name='toggle_maintenance'),
     path('import-alerts/', views.import_alerts, name='import_alerts'),
     path('smart-import/', views.smart_import, name='smart_import'),
+    path('clear-all-alerts/', views.clear_all_alerts, name='clear_all_alerts'),
     path('api/smart-detect/', views.api_smart_detect, name='api_smart_detect'),
     path('api/extension-receive/', views.api_extension_receive, name='api_extension_receive'),
     path('backups/', views.backups_list, name='backups_list'),

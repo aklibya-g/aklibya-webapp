@@ -2368,6 +2368,18 @@ def smart_import(request):
     })
 
 
+def clear_all_alerts(request):
+    if request.method != "POST":
+        return redirect("smart_import")
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "غير مصرح")
+        return redirect("smart_import")
+    ImportAlert.objects.all().delete()
+    messages.success(request, "تم حذف جميع التنبيهات")
+    return redirect("smart_import")
+
+
 @csrf_exempt
 def api_smart_detect(request):
     if request.method != "POST":

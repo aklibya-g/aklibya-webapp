@@ -49,16 +49,16 @@
 .si-type-pill[data-type="balance"].active{background:#ecfdf5;color:#059669;border:1px solid rgba(5,150,105,.2)}
 
 /* Preview table - compact */
-.si-preview{width:100%;border-collapse:collapse;font-size:.78rem}
-.si-preview th{background:var(--bg);padding:8px 10px;font-weight:700;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
-.si-preview td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+.si-preview{width:100%;border-collapse:collapse;font-size:.88rem;letter-spacing:.2px}
+.si-preview th{background:var(--bg);padding:10px 10px;font-weight:800;font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:center}
+.si-preview td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;text-align:center}
 .si-preview tr:hover{background:var(--primary-bg)}
-.si-preview .actions-col{width:50px;text-align:center}
-.si-preview .num-col{width:35px;text-align:center;font-weight:600}
-.si-preview .phone-col{min-width:110px}
-.si-preview .type-col{min-width:70px}
-.si-preview .egp-col,.si-preview .lyd-col{min-width:80px;text-align:left;font-weight:800}
-.si-preview .rate-col{min-width:55px;text-align:center}
+.si-preview .actions-col{width:44px;text-align:center}
+.si-preview .num-col{width:32px;text-align:center;font-weight:700;color:var(--text-muted)}
+.si-preview .phone-col{min-width:110px;text-align:center;font-weight:700;letter-spacing:.3px}
+.si-preview .type-col{min-width:60px;text-align:center}
+.si-preview .egp-col,.si-preview .lyd-col{min-width:75px;text-align:center;font-weight:800}
+.si-preview .rate-col{min-width:50px;text-align:center}
 
 /* Status */
 .si-status{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;margin-top:12px;font-size:.85rem;font-weight:600}
@@ -242,7 +242,15 @@
     <div class="si-card" style="border-top:4px solid #dc2626">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-bell-fill" style="color:#f59e0b"></i> تنبيهات الاستيراد</h5>
-            <span class="si-badge" style="background:#fee2e2;color:#dc2626">{{ all_alerts|length }} تنبيه</span>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="si-badge" style="background:#fee2e2;color:#dc2626">{{ all_alerts|length }} تنبيه</span>
+                <form method="post" action="{% url 'clear_all_alerts' %}" style="margin:0" onsubmit="return confirm('هل أنت متأكد من حذف جميع التنبيهات؟')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius:8px;padding:4px 12px;font-size:.78rem;font-weight:700">
+                        <i class="bi bi-trash3"></i> مسح الكل
+                    </button>
+                </form>
+            </div>
         </div>
         {% for alert in all_alerts %}
         <div style="background:{% if not alert.is_read %}var(--danger-bg){% else %}var(--bg){% endif %};border:1px solid {% if not alert.is_read %}rgba(220,38,38,0.2){% else %}var(--border){% endif %};border-radius:12px;padding:14px;margin-bottom:10px;{% if not alert.is_read %}border-right:3px solid #dc2626;{% endif %}">
