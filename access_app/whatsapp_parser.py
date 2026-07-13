@@ -96,9 +96,11 @@ def extract_egp_from_line(line):
 
 def extract_rate_from_line(line):
     if re.search(r'\d{1,2}:\d{2}\s*(pm|am)', line, re.IGNORECASE):
-        return None
+        if not re.search(r'سعر', line):
+            return None
     if re.search(r'\[\d{2}/\d{2}', line):
-        return None
+        if not re.search(r'سعر', line):
+            return None
     line_norm = line.replace("\u060c", ".")
 
     m = re.search(r'سعر[:\s]*(\d+\.?\d*)', line_norm)
