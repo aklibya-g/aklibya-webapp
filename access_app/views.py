@@ -1158,7 +1158,8 @@ def import_balance(request):
         selected_client_id = request.POST.get("client_id")
         selected_date_str = request.POST.get("import_date", "").strip()
         selected_date = dt.strptime(selected_date_str, "%Y-%m-%d").date() if selected_date_str else None
-        if raw_text and selected_client_id:
+        has_filtered = "filtered_results" in request.POST and request.POST.get("filtered_results")
+        if has_filtered or (raw_text and selected_client_id):
             client_name = ClientBalance.objects.filter(id=selected_client_id).values_list("name", flat=True).first()
             if "filtered_results" in request.POST and request.POST["filtered_results"]:
                 try:
