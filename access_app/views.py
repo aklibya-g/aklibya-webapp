@@ -2355,6 +2355,7 @@ def smart_import(request):
     db_total_egp = Database.objects.aggregate(s=Sum("transfered_amount"))["s"] or 0
     cap_count = Capital.objects.count()
     cap_total_egp = Capital.objects.aggregate(s=Sum("cash_in"))["s"] or 0
+    all_alerts = ImportAlert.objects.all()[:50]
     return render(request, "smart_import.html", {
         "title": "استيراد ذكي",
         "clients": clients,
@@ -2363,6 +2364,7 @@ def smart_import(request):
         "db_total_egp": db_total_egp,
         "cap_count": cap_count,
         "cap_total_egp": cap_total_egp,
+        "all_alerts": all_alerts,
     })
 
 

@@ -131,6 +131,7 @@
     <button class="si-tab active" onclick="switchTab('export')"><span class="ti">📤</span> تصدير للجهاز</button>
     <button class="si-tab" onclick="switchTab('file')"><span class="ti">📥</span> استيراد من جهاز</button>
     <button class="si-tab" onclick="switchTab('wa')"><span class="ti">💬</span> استيراد من واتساب</button>
+    <button class="si-tab" onclick="switchTab('alerts')" style="position:relative"><span class="ti">🔔</span> تنبيهات{% if import_alerts_unread %}<span style="position:absolute;top:4px;left:8px;background:#dc2626;color:#fff;font-size:.6rem;padding:2px 6px;border-radius:8px;font-weight:700">{{ import_alerts_unread }}</span>{% endif %}</button>
 </div>
 
 <!-- TAB 1: Export -->
@@ -233,6 +234,49 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- TAB 4: Alerts -->
+<div class="si-panel" id="panel-alerts">
+    {% if all_alerts %}
+    <div class="si-card" style="border-top:4px solid #dc2626">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-bell-fill" style="color:#f59e0b"></i> تنبيهات الاستيراد</h5>
+            <span class="si-badge" style="background:#fee2e2;color:#dc2626">{{ all_alerts|length }} تنبيه</span>
+        </div>
+        {% for alert in all_alerts %}
+        <div style="background:{% if not alert.is_read %}var(--danger-bg){% else %}var(--bg){% endif %};border:1px solid {% if not alert.is_read %}rgba(220,38,38,0.2){% else %}var(--border){% endif %};border-radius:12px;padding:14px;margin-bottom:10px;{% if not alert.is_read %}border-right:3px solid #dc2626;{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#fff;background:{% if alert.import_type == 'whatsapp' %}linear-gradient(135deg,#25d366,#128c7e){% else %}linear-gradient(135deg,#059669,#34d399){% endif %}">
+                        <i class="bi {% if alert.import_type == 'whatsapp' %}bi-whatsapp{% else %}bi-wallet2{% endif %}"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:.85rem;font-weight:700">{% if alert.import_type == 'whatsapp' %}استيراد واتساب{% else %}استيراد أرصدة{% endif %}</div>
+                        <div style="font-size:.75rem;color:var(--text-muted)">{{ alert.created_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if alert.total_items %}<span class="si-badge" style="background:var(--primary-bg);color:var(--primary)">الكل: {{ alert.total_items }}</span>{% endif %}
+                    <span class="si-badge" style="background:#d1fae5;color:#059669">ناجح: {{ alert.success_count }}</span>
+                    <span class="si-badge" style="background:#fee2e2;color:#dc2626">فاشل: {{ alert.failed_count }}</span>
+                </div>
+            </div>
+            {% if alert.failed_details %}
+            <div style="font-size:.8rem;color:var(--text);white-space:pre-line;background:var(--card-bg);padding:10px;border-radius:8px;margin-top:8px;border:1px solid var(--border);line-height:1.8">{{ alert.failed_details }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="si-card">
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+            <div style="font-size:3rem;margin-bottom:12px;opacity:.4">🔔</div>
+            <p style="font-size:.95rem;font-weight:600">لا توجد تنبيهات</p>
+            <p style="font-size:.82rem">ستظهر هنا تنبيهات فشل الاستيراد</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Preview Panel (shared) -->
@@ -686,6 +730,11 @@ document.getElementById('waPasteArea').addEventListener('paste', function() {
             settingsBar.classList.remove('sticky');
         }
     });
+    // Auto-switch to alerts tab if URL hash is #alerts
+    if (window.location.hash === '#alerts') {
+        var alertTab = document.querySelectorAll('.si-tab')[3];
+        if (alertTab) { alertTab.click(); }
+    }
 })();
 </script>
 {% endblock %}

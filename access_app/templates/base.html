@@ -259,7 +259,7 @@
                 <div class="sec-box" style="margin-top:8px">
                     <div class="nav-section" style="color:#8b5cf6;padding:4px 8px 6px;">إدارة النظام</div>
                     <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
-                    <a href="{% url 'import_alerts' %}" class="nav-item" style="padding:7px 10px;{% if '/import-alerts/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
+                    <a href="{% url 'smart_import' %}#alerts" class="nav-item" style="padding:7px 10px;{% if '/smart-import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
                         <i class="bi bi-bell-fill" style="color:#f59e0b;"></i> تنبيهات الاستيراد
                         {% if import_alerts_unread %}<span style="background:#dc2626;color:#fff;font-size:.6rem;padding:2px 6px;border-radius:8px;margin-right:6px;font-weight:700">{{ import_alerts_unread }}</span>{% endif %}
                     </a>
