@@ -1,770 +1,310 @@
 {% extends "base.html" %}
 {% load app_tags %}
-{% block title %}استيراد ذكي من الواتساب{% endblock %}
+{% load l10n %}
+{% block title %}استيراد ذكي{% endblock %}
 {% block content %}
 <style>
-.smart-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:calc(100vh - 200px)}
-.smart-panel{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
-.smart-panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
-.smart-panel-header h6{font-size:.9rem;font-weight:800;margin:0;display:flex;align-items:center;gap:8px}
-.smart-panel-body{padding:20px}
-.smart-textarea{width:100%;min-height:220px;border:2px solid var(--border);border-radius:12px;padding:16px;font-family:Cairo,sans-serif;font-size:.9rem;resize:vertical;background:var(--card-bg);color:var(--text);transition:border-color .2s;line-height:1.8}
-.smart-textarea:focus{outline:none;border-color:var(--primary)}
-.smart-textarea::placeholder{color:var(--text-muted);font-size:.85rem}
-.smart-btn{padding:10px 20px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
-.smart-btn-primary{background:var(--primary);color:#fff}.smart-btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
-.smart-btn-success{background:#059669;color:#fff}.smart-btn-success:hover{background:#047857}
-.smart-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.smart-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
-.detect-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:700;animation:fadeSlide .3s ease}
-.detect-transfer{background:#eef2ff;color:#4f46e5;border:1px solid rgba(79,70,229,.2)}
-.detect-balance{background:#ecfdf5;color:#059669;border:1px solid rgba(5,150,105,.2)}
-.detect-unknown{background:#fef3c7;color:#d97706;border:1px solid rgba(217,119,6,.2)}
-@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.si-tabs{display:flex;gap:4px;background:var(--card-bg);border-radius:14px;padding:5px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.si-tab{flex:1;padding:14px 12px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.88rem;font-weight:700;color:var(--text-muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px}
+.si-tab:hover{background:var(--primary-bg);color:var(--primary)}
+.si-tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.3)}
+.si-tab .ti{font-size:1.2rem}
+.si-panel{display:none;animation:fadeSlide .3s ease}
+.si-panel.active{display:block}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.si-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.si-card::before{content:'';position:absolute;top:0;right:0;left:0;height:4px}
+.si-card.green::before{background:linear-gradient(90deg,#059669,#34d399)}
+.si-card.blue::before{background:linear-gradient(90deg,#2563eb,#60a5fa)}
+.si-card.amber::before{background:linear-gradient(90deg,#d97706,#fbbf24)}
+.si-card h5{font-size:1rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.si-zone{border:2.5px dashed var(--border);border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .3s;background:var(--bg)}
+.si-zone:hover{border-color:var(--primary);background:var(--primary-bg)}
+.si-zone input[type=file]{display:none}
+.si-zone .icon{font-size:2.5rem;margin-bottom:10px;display:block}
+.si-zone p{font-weight:600;color:var(--text-muted);margin:0}
+.si-zone small{color:var(--text-muted);font-size:.78rem}
+.si-btn{padding:12px 24px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.si-btn-primary{background:var(--primary);color:#fff}.si-btn-primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.si-btn-success{background:#059669;color:#fff}.si-btn-success:hover{background:#047857}
+.si-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.si-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.si-textarea{width:100%;border:2px solid var(--border);border-radius:12px;padding:16px;font-family:Cairo,sans-serif;font-size:.9rem;resize:vertical;min-height:180px;background:var(--bg);color:var(--text);transition:border-color .2s;line-height:1.8}
+.si-textarea:focus{outline:none;border-color:var(--primary)}
+.si-textarea::placeholder{color:var(--text-muted);font-size:.85rem}
+.si-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
+.si-label{font-weight:700;font-size:.85rem;color:var(--text);margin-bottom:6px;display:block}
+.si-input{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600;background:var(--bg);color:var(--text)}
+.si-input:focus{outline:none;border-color:var(--primary)}
+.si-select{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600;background:var(--bg);color:var(--text);appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:left 12px center;background-size:16px 12px}
+.si-select:focus{outline:none;border-color:var(--primary)}
+
+/* Settings bar */
+.si-settings{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-sm);margin-bottom:20px}
+.si-settings label{font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap}
+.si-type-pills{display:flex;gap:4px;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--border)}
+.si-type-pill{padding:8px 18px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;color:var(--text-muted);transition:all .25s;display:flex;align-items:center;gap:6px}
+.si-type-pill.active{box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.si-type-pill[data-type="transfer"].active{background:#eef2ff;color:#4f46e5;border:1px solid rgba(79,70,229,.2)}
+.si-type-pill[data-type="balance"].active{background:#ecfdf5;color:#059669;border:1px solid rgba(5,150,105,.2)}
+
+/* Preview table */
+.si-preview{width:100%;border-collapse:collapse;font-size:.82rem}
+.si-preview th{background:var(--bg);padding:10px 12px;font-weight:700;font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
+.si-preview td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.si-preview tr:hover{background:var(--primary-bg)}
+
+/* Status */
+.si-status{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;margin-top:12px;font-size:.85rem;font-weight:600}
+.si-status.loading{background:var(--info-bg);color:var(--info)}
+.si-status.success{background:#ecfdf5;color:#059669}
+.si-status.error{background:#fef2f2;color:#dc2626}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .pulse{animation:pulse 1.5s ease infinite}
-.smart-status{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;margin-top:12px;font-size:.85rem;font-weight:600}
-.smart-status.loading{background:var(--info-bg);color:var(--info)}
-.smart-status.success{background:#ecfdf5;color:#059669}
-.smart-status.error{background:#fef2f2;color:#dc2626}
-.preview-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.preview-table th{background:var(--bg);padding:10px 12px;font-weight:700;font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
-.preview-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
-.preview-table tr:hover{background:var(--primary-bg)}
-.preview-table tbody tr:last-child td{border-bottom:none}
-.badge-count{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
-.balance-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.balance-field label{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:6px;display:block}
-.balance-field input,.balance-field select{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;font-weight:600;background:var(--bg);color:var(--text)}
-.balance-field input:focus,.balance-field select:focus{outline:none;border-color:var(--primary)}
 
-/* Steps guide */
-.step-card{display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;transition:all .2s}
-.step-card:hover{border-color:var(--primary);background:var(--primary-bg)}
-.step-num{width:36px;height:36px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;flex-shrink:0}
-.step-card.balance-step .step-num{background:#059669}
-.step-card.transfer-step .step-num{background:#4f46e5}
-.step-text h6{font-size:.85rem;font-weight:700;margin:0 0 3px}
-.step-text p{font-size:.78rem;color:var(--text-muted);margin:0}
+/* Detect badge */
+.si-detect{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:700;animation:fadeSlide .3s ease}
+.si-detect-transfer{background:#eef2ff;color:#4f46e5;border:1px solid rgba(79,70,229,.2)}
+.si-detect-balance{background:#ecfdf5;color:#059669;border:1px solid rgba(5,150,105,.2)}
+.si-detect-unknown{background:#fef3c7;color:#d97706;border:1px solid rgba(217,119,6,.2)}
 
-/* Drag-drop zone */
-.drop-zone{border:3px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;background:var(--bg)}
-.drop-zone:hover,.drop-zone.dragover{border-color:var(--primary);background:var(--primary-bg);transform:scale(1.01)}
-.drop-zone .icon{font-size:3rem;margin-bottom:12px;display:block}
-.drop-zone h6{font-weight:700;font-size:.95rem;margin-bottom:6px}
-.drop-zone p{color:var(--text-muted);font-size:.82rem;margin:0}
-.drop-zone input[type=file]{display:none}
+/* Rate filled highlight */
+.rate-filled{background:linear-gradient(90deg,#fffbeb,#fef3c7);border-left:3px solid #d97706}
 
-/* Tabs */
-.smart-tabs{display:flex;gap:4px;background:var(--card-bg);border-radius:12px;padding:4px;border:1px solid var(--border);margin-bottom:16px}
-.smart-tab{flex:1;padding:10px 16px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;color:var(--text-muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:6px}
-.smart-tab:hover{background:var(--primary-bg);color:var(--primary)}
-.smart-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.3)}
-.smart-tab-panel{display:none}.smart-tab-panel.active{display:block}
-
-/* Guide popup */
-.guide-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.guide-overlay.show{display:flex}
-.guide-box{background:var(--card-bg);border-radius:20px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;max-height:80vh;overflow-y:auto}
-.guide-box .close-btn{position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);color:var(--text-muted);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
-
-@media(max-width:992px){.smart-layout{grid-template-columns:1fr}}
+@media(max-width:992px){.si-settings{flex-direction:column;align-items:stretch}}
 </style>
 
 <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
     <div class="d-flex align-items-center gap-2">
         <i class="bi bi-stars fs-4" style="color:#4f46e5"></i>
-        <h5 class="mb-0 fw-bold">استيراد ذكي من الواتساب</h5>
+        <h5 class="mb-0 fw-bold">استيراد ذكي</h5>
     </div>
     <div class="d-flex gap-2">
-        <button class="smart-btn smart-btn-outline" style="font-size:.78rem;padding:7px 14px" onclick="showGuide()"><i class="bi bi-question-circle"></i> دليل الاستخدام</button>
-        <a href="{% url 'import_whatsapp' %}" class="smart-btn smart-btn-outline" style="font-size:.78rem;padding:7px 14px"><i class="bi bi-arrow-left"></i> حوالات</a>
-        <a href="{% url 'import_balance' %}" class="smart-btn smart-btn-outline" style="font-size:.78rem;padding:7px 14px"><i class="bi bi-arrow-left"></i> أرصدة</a>
+        <a href="{% url 'transactions' %}" class="si-btn si-btn-outline" style="font-size:.78rem;padding:7px 14px"><i class="bi bi-arrow-left"></i> حوالات</a>
+        <a href="{% url 'capital_list' %}" class="si-btn si-btn-outline" style="font-size:.78rem;padding:7px 14px"><i class="bi bi-arrow-left"></i> أرصدة</a>
     </div>
 </div>
 
-<!-- Tabs: Upload / Paste -->
-<div class="smart-tabs">
-    <button class="smart-tab active" onclick="switchTab('upload')"><i class="bi bi-file-earmark-arrow-up"></i> رفع ملف تكست (موثوق)</button>
-    <button class="smart-tab" onclick="switchTab('paste')"><i class="bi bi-clipboard"></i> لصق نص</button>
+<!-- Settings Bar -->
+<div class="si-settings">
+    <div class="d-flex align-items-center gap-2">
+        <label><i class="bi bi-tag"></i> النوع</label>
+        <div class="si-type-pills">
+            <button class="si-type-pill active" data-type="transfer" onclick="setType('transfer')"><i class="bi bi-arrow-left-right"></i> حوالات</button>
+            <button class="si-type-pill" data-type="balance" onclick="setType('balance')"><i class="bi bi-wallet2"></i> أرصدة</button>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <label id="clientLabel"><i class="bi bi-person"></i> <span id="clientLabelText">خصم من</span></label>
+        <select id="siClient" class="si-select" style="min-width:200px;padding:8px 12px;font-size:.82rem;border-width:1px">
+            <option value="">-- اختر الشخص --</option>
+            {% for c in clients %}
+            <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <label><i class="bi bi-calendar3"></i> التاريخ</label>
+        <input type="date" id="siDate" value="{{ today|date:'Y-m-d' }}" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:600;background:var(--card-bg);color:var(--text)">
+    </div>
+    <div id="prevRateWrap" class="d-flex align-items-center gap-2" style="padding:6px 12px;background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe">
+        <div class="form-check form-switch" style="margin:0">
+            <input class="form-check-input" type="checkbox" id="siPrevRate" checked style="width:38px;height:20px;cursor:pointer;accent-color:#4f46e5">
+        </div>
+        <div>
+            <label for="siPrevRate" style="font-weight:700;font-size:.78rem;color:#4f46e5;cursor:pointer;margin:0">سعر الحوالة السابقة</label>
+        </div>
+    </div>
+    <button type="button" onclick="playNotifSound();window.scrollTo({top:0,behavior:'smooth'})" style="margin-left:auto;padding:8px 14px;border-radius:10px;border:2px solid #d97706;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#78350f;font-weight:800;font-size:.78rem;cursor:pointer;font-family:Cairo;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <i class="bi bi-bell-fill"></i> صوت + للأعلى
+    </button>
 </div>
 
-<!-- TAB: Upload .txt file -->
-<div class="smart-tab-panel active" id="panel-upload">
-    <div class="smart-layout">
-        <div style="display:flex;flex-direction:column;gap:16px">
-            <!-- Guide Steps for Transfer -->
-            <div class="smart-panel">
-                <div class="smart-panel-header" style="background:linear-gradient(135deg,#25d366,#128c7e);color:#fff">
-                    <h6 style="color:#fff"><i class="bi bi-whatsapp"></i> كيف تصدر المحادثة من الواتساب</h6>
-                </div>
-                <div class="smart-panel-body">
-                    <div style="display:flex;gap:8px;margin-bottom:14px">
-                        <button class="smart-tab active" id="guideTransferBtn" onclick="showGuideType('transfer')" style="flex:1;padding:8px;border-radius:8px;border:2px solid #4f46e5;background:#eef2ff;color:#4f46e5;font-weight:700;font-size:.8rem;cursor:pointer;font-family:Cairo">حوالات</button>
-                        <button class="smart-tab" id="guideBalanceBtn" onclick="showGuideType('balance')" style="flex:1;padding:8px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--text-muted);font-weight:700;font-size:.8rem;cursor:pointer;font-family:Cairo">أرصدة</button>
-                    </div>
+<!-- Tabs -->
+<div class="si-tabs">
+    <button class="si-tab active" onclick="switchTab('export')"><span class="ti">📤</span> تصدير للجهاز</button>
+    <button class="si-tab" onclick="switchTab('file')"><span class="ti">📥</span> استيراد من جهاز</button>
+    <button class="si-tab" onclick="switchTab('wa')"><span class="ti">💬</span> استيراد من واتساب</button>
+</div>
 
-                    <div id="guideTransfer">
-                        <div class="step-card transfer-step">
-                            <div class="step-num">1</div>
-                            <div class="step-text"><h6>افتح محادثة الواتساب</h6><p>من الموبايل، افتح المحادثة اللي فيها الحوالات</p></div>
-                        </div>
-                        <div class="step-card transfer-step">
-                            <div class="step-num">2</div>
-                            <div class="step-text"><h6>اختر الرسائل</h6><p>اضغط مطولاً على رسالة ← ثم حدد باقي الرسائل</p></div>
-                        </div>
-                        <div class="step-card transfer-step">
-                            <div class="step-num">3</div>
-                            <div class="step-text"><h6>صدّر المحادثة</h6><p>← اضغط النقاط الثلاث <strong>⋮</strong> ← <strong>تصدير المحادثة</strong> ← بدون وسائط</p></div>
-                        </div>
-                        <div class="step-card transfer-step">
-                            <div class="step-num">4</div>
-                            <div class="step-text"><h6>ارفع الملف هنا</h6><p>سيتم التعرف تلقائياً على الحوالات</p></div>
-                        </div>
+<!-- TAB 1: Export -->
+<div class="si-panel active" id="panel-export">
+    <div class="si-card green">
+        <h5><span style="font-size:1.4rem">📤</span> تصدير البيانات لجهاز الكمبيوتر</h5>
+        <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:20px">تحميل جميع السجلات كملف Excel يمكنك فتحه على أي جهاز</p>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+                <div id="exportStats" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+                        <div id="exportCount" style="font-size:1.8rem;font-weight:900;color:var(--primary)">0</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">إجمالي السجلات</div>
                     </div>
-
-                    <div id="guideBalance" style="display:none">
-                        <div class="step-card balance-step">
-                            <div class="step-num">1</div>
-                            <div class="step-text"><h6>افتح محادثة الواتساب</h6><p>من الموبايل، افتح المحادثة اللي فيها أرصدة</p></div>
-                        </div>
-                        <div class="step-card balance-step">
-                            <div class="step-num">2</div>
-                            <div class="step-text"><h6>اختر الرسائل</h6><p>اضغط مطولاً على رسالة ← ثم حدد باقي الرسائل</p></div>
-                        </div>
-                        <div class="step-card balance-step">
-                            <div class="step-num">3</div>
-                            <div class="step-text"><h6>صدّر المحادثة</h6><p>← اضغط النقاط الثلاث <strong>⋮</strong> ← <strong>تصدير المحادثة</strong> ← بدون وسائط</p></div>
-                        </div>
-                        <div class="step-card balance-step">
-                            <div class="step-num">4</div>
-                            <div class="step-text"><h6>ارفع الملف هنا</h6><p>سيتم التعرف تلقائياً على الأرصدة</p></div>
-                        </div>
+                    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+                        <div id="exportEgp" style="font-size:1.8rem;font-weight:900;color:#059669">0</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px" id="exportEgpLabel">المبلغ المصري (EGP)</div>
                     </div>
                 </div>
             </div>
-
-            <!-- Upload Zone -->
-            <div class="smart-panel">
-                <div class="smart-panel-header">
-                    <h6><i class="bi bi-cloud-arrow-up" style="color:var(--primary)"></i> رفع ملف التصدير</h6>
-                    <div id="detectBadge" class="detect-badge detect-unknown" style="display:none">
-                        <i class="bi bi-question-circle"></i> <span id="detectText">...</span>
-                    </div>
-                </div>
-                <div class="smart-panel-body">
-                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('txtFile').click()">
-                        <span class="icon">📄</span>
-                        <h6>اسحب ملف التصدير هنا أو اضغط للاختيار</h6>
-                        <p>الملفات المدعومة: .txt فقط</p>
-                        <input type="file" name="text_file" id="txtFile" accept=".txt" onchange="handleFile(this)">
-                    </div>
-                    <div id="fileInfo" style="display:none;margin-top:12px;padding:12px;background:#ecfdf5;border:10px;border-radius:10px;font-size:.85rem;font-weight:600;color:#059669;border:1px solid #a7f3d0"></div>
-                    <div id="statusBox" class="smart-status info" style="display:none"></div>
-                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
-                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap">النوع:</label>
-                        <select id="manualType" style="padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:.82rem;font-weight:600;background:#fff;min-width:130px">
-                            <option value="auto">تلقائي</option>
-                            <option value="transfer">حوالات</option>
-                            <option value="balance">أرصدة</option>
-                        </select>
-                        <button class="smart-btn smart-btn-primary flex-fill" style="justify-content:center" id="analyzeBtn" onclick="analyzeFile()" disabled>
-                            <i class="bi bi-search"></i> تحليل ومعاينة
-                        </button>
-                    </div>
-                </div>
+            <div>
+                <a id="exportLink" href="{% url 'export_transfers' %}" class="si-btn si-btn-success" style="font-size:1rem;padding:16px 32px">
+                    <i class="bi bi-download" style="font-size:1.3rem"></i> تحميل ملف Excel
+                </a>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Preview -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-            <div class="smart-panel" id="previewPanel" style="flex:1">
-                <div class="smart-panel-header">
-                    <h6><i class="bi bi-eye" style="color:#059669"></i> المعاينة</h6>
-                    <div class="d-flex gap-2 align-items-center">
-                        <button type="button" id="undoSmartBtn" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:8px;display:none" onclick="smartUndo()">
-                            <i class="bi bi-arrow-counterclockwise"></i> تراجع
-                        </button>
-                        <span id="previewBadge" class="badge-count" style="display:none;background:#d1fae5;color:#059669">
-                            <span id="previewCount">0</span> <span id="previewLabel">عنصر</span>
-                        </span>
+<!-- TAB 2: Import from file -->
+<div class="si-panel" id="panel-file">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="si-card blue">
+            <h5><span style="font-size:1.4rem">📄</span> رفع ملف تكست</h5>
+            <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px">ارفع ملف التصدير من الواتساب (.txt)</p>
+            <div class="si-zone" id="dropZone" onclick="document.getElementById('txtFile').click()">
+                <span class="icon">📄</span>
+                <p>اسحب الملف هنا أو اضغط للاختيار</p>
+                <small>الملفات المدعومة: .txt فقط</small>
+                <input type="file" name="text_file" id="txtFile" accept=".txt" onchange="handleFile(this)">
+            </div>
+            <div id="fileInfo" style="display:none;margin-top:12px;padding:12px;background:#ecfdf5;border-radius:10px;font-size:.85rem;font-weight:600;color:#059669;border:1px solid #a7f3d0"></div>
+            <div id="fileStatus" class="si-status" style="display:none"></div>
+            <button class="si-btn si-btn-primary w-100 mt-3" style="justify-content:center" id="analyzeBtn" onclick="analyzeFile()" disabled>
+                <i class="bi bi-search"></i> تحليل ومعاينة
+            </button>
+        </div>
+
+        <div class="si-card" style="border-top:4px solid #8b5cf6">
+            <h5><span style="font-size:1.4rem">📋</span> لصق النص مباشرة</h5>
+            <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px">الصق رسائل الواتساب هنا</p>
+            <textarea id="pasteArea" class="si-textarea" placeholder="🔍 الصق رسائل الواتساب هنا...&#10;&#10;سيتم التعرف تلقائياً على نوع الرسائل:&#10;• حوالات (حوالة + هاتف + مبلغ)&#10;• أرصدة (جنيه مصري + سعر)"></textarea>
+            <div id="pasteStatus" class="si-status" style="display:none"></div>
+            <button class="si-btn si-btn-primary w-100 mt-3" style="justify-content:center" onclick="analyzeText()">
+                <i class="bi bi-search"></i> تحليل ومعاينة
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: Import from WhatsApp -->
+<div class="si-panel" id="panel-wa">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="si-card amber">
+            <h5><span style="font-size:1.4rem">💬</span> استيراد من محادثة واتساب</h5>
+            <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px">ارفع ملف تكست أو لصق النص من محادثات الواتساب</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+                    <h6 style="font-size:.88rem;font-weight:700;margin-bottom:12px"><i class="bi bi-file-earmark-text" style="color:#d97706"></i> رفع ملف</h6>
+                    <div class="si-zone" onclick="this.querySelector('input').click()" style="padding:24px">
+                        <span class="icon" style="font-size:1.8rem">📄</span>
+                        <p style="font-size:.82rem">اختر ملف .txt</p>
+                        <input type="file" accept=".txt" onchange="handleWaFile(this)">
                     </div>
+                    <div id="waFileInfo" style="display:none;margin-top:8px;font-size:.8rem;font-weight:600;color:#059669"></div>
                 </div>
-                <div class="smart-panel-body" id="previewBody" style="min-height:400px">
-                    <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
-                        <div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div>
-                        <p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p>
-                        <p style="font-size:.78rem">ارفع ملف التصدير من الواتساب وسيتم التعرف تلقائياً</p>
-                    </div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+                    <h6 style="font-size:.88rem;font-weight:700;margin-bottom:12px"><i class="bi bi-clipboard" style="color:#d97706"></i> لصق النص</h6>
+                    <textarea id="waPasteArea" class="si-textarea" style="min-height:120px" placeholder="الصق رسائل الواتساب هنا..."></textarea>
                 </div>
             </div>
-
-            <!-- Transfer Settings -->
-            <div class="smart-panel" id="transferSettings" style="display:none">
-                <div class="smart-panel-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff">
-                    <h6 style="color:#fff"><i class="bi bi-arrow-left-right"></i> إعدادات الحوالات</h6>
-                </div>
-                <div class="smart-panel-body">
-                    <div class="balance-selector">
-                        <div class="balance-field">
-                            <label>خصم من / صاحب الحوالة <span style="color:red">*</span></label>
-                            <select id="smartTransferClient" required>
-                                <option value="">-- اختر الشخص --</option>
-                                {% for c in clients %}
-                                <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="balance-field">
-                            <label>تاريخ الاستيراد <span style="color:red">*</span></label>
-                            <input type="date" id="smartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
-                        </div>
-                    </div>
-                    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe">
-                        <div class="form-check form-switch" style="margin:0">
-                            <input class="form-check-input" type="checkbox" id="usePrevRate" checked style="width:42px;height:22px;cursor:pointer;accent-color:#4f46e5">
-                        </div>
-                        <div>
-                            <label for="usePrevRate" style="font-weight:700;font-size:.82rem;color:#4f46e5;cursor:pointer;margin:0">استخدام سعر الصرف من الحوالة السابقة</label>
-                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">الحوالات بدون سعر صرف تأخذ سعر آخر حوالة</div>
-                        </div>
-                    </div>
-                    <button type="button" onclick="playNotifSound();window.scrollTo({top:0,behavior:'smooth'})" style="margin-top:10px;padding:8px 16px;border-radius:10px;border:2px solid #d97706;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#78350f;font-weight:800;font-size:.82rem;cursor:pointer;font-family:Cairo;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        <i class="bi bi-bell-fill"></i> تنبيه صوتي + للأعلى
-                    </button>
-                </div>
+            <div id="waStatus" class="si-status" style="display:none"></div>
+            <div id="waDetectBadge" class="si-detect si-detect-unknown" style="display:none;margin-top:12px">
+                <i class="bi bi-question-circle"></i> <span id="waDetectText">...</span>
             </div>
+            <button class="si-btn si-btn-primary w-100 mt-3" style="justify-content:center" id="waAnalyzeBtn" onclick="analyzeWa()" disabled>
+                <i class="bi bi-search"></i> تحليل ومعاينة
+            </button>
+        </div>
 
-            <!-- Balance Settings -->
-            <div class="smart-panel" id="balanceSettings" style="display:none">
-                <div class="smart-panel-header" style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
-                    <h6 style="color:#fff"><i class="bi bi-wallet2"></i> إعدادات الأرصدة</h6>
-                </div>
-                <div class="smart-panel-body">
-                    <div class="balance-selector">
-                        <div class="balance-field">
-                            <label>صاحب الرصيد <span style="color:red">*</span></label>
-                            <select id="smartClientId" required>
-                                <option value="">-- اختر العميل --</option>
-                                {% for c in clients %}
-                                <option value="{{ c.id }}">{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="balance-field">
-                            <label>التاريخ <span style="color:red">*</span></label>
-                            <input type="date" id="smartDate" value="{{ today|date:'Y-m-d' }}" required>
-                        </div>
-                    </div>
+        <div>
+            <div class="si-card" style="border-top:4px solid var(--primary)">
+                <h5><i class="bi bi-lightbulb" style="color:#d97706"></i> نصائح سريعة</h5>
+                <div style="font-size:.85rem;color:var(--text-muted);line-height:2.2">
+                    <div>• <strong>حوالات:</strong> تعرف تلقائياً على الأرقام والمبالغ</div>
+                    <div>• <strong>أرصدة:</strong> تعرف على جنيه مصري + سعر صرف</div>
+                    <div>• <strong>السعر السابق:</strong> يملأ تلقائياً الحوالات بدون سعر</div>
+                    <div>• <strong>تعديل:</strong> اضغط على أي صف لتعديله قبل الاستيراد</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- TAB: Paste text -->
-<div class="smart-tab-panel" id="panel-paste">
-    <div class="smart-layout">
-        <div style="display:flex;flex-direction:column;gap:16px">
-            <div class="smart-panel">
-                <div class="smart-panel-header">
-                    <h6><i class="bi bi-clipboard2-data" style="color:var(--primary)"></i> لصق النص مباشرة</h6>
-                    <div id="pasteDetectBadge" class="detect-badge detect-unknown" style="display:none">
-                        <i class="bi bi-question-circle"></i> <span id="pasteDetectText">...</span>
-                    </div>
-                </div>
-                <div class="smart-panel-body">
-                    <textarea id="pasteArea" class="smart-textarea" placeholder="🔍 الصق رسائل الواتساب هنا...&#10;&#10;سيتم التعرف تلقائياً على نوع الرسائل:&#10;• حوالات (حوالة + هاتف + مبلغ) → استيراد حوالات&#10;• أرصدة (جنيه مصري + سعر) → استيراد أرصدة"></textarea>
-                    <div id="pasteStatusBox" class="smart-status info" style="display:none"></div>
-                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
-                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap">النوع:</label>
-                        <select id="pasteManualType" style="padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:.82rem;font-weight:600;background:#fff;min-width:130px">
-                            <option value="auto">تلقائي</option>
-                            <option value="transfer">حوالات</option>
-                            <option value="balance">أرصدة</option>
-                        </select>
-                        <button class="smart-btn smart-btn-primary flex-fill" style="justify-content:center" onclick="analyzeText()">
-                            <i class="bi bi-search"></i> تحليل ومعاينة
-                        </button>
-                    </div>
-                </div>
-            </div>
+<!-- Preview Panel (shared) -->
+<div class="si-card mt-4" id="previewCard" style="display:none;border:2px solid var(--primary)">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0" style="font-size:1rem"><i class="bi bi-eye" style="color:var(--primary)"></i> معاينة البيانات</h5>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" id="undoBtn" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:8px;display:none" onclick="smartUndo()">
+                <i class="bi bi-arrow-counterclockwise"></i> تراجع
+            </button>
+            <span id="detectBadgeBottom" class="si-detect si-detect-transfer" style="display:none"></span>
+            <span class="si-badge" style="background:#d1fae5;color:#059669"><span id="previewCount">0</span> <span id="previewLabel">عنصر</span></span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:16px">
-            <div class="smart-panel" style="flex:1">
-                <div class="smart-panel-header">
-                    <h6><i class="bi bi-eye" style="color:#059669"></i> المعاينة</h6>
-                    <div class="d-flex gap-2 align-items-center">
-                        <button type="button" id="pasteUndoBtn" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:8px;display:none" onclick="smartUndo()">
-                            <i class="bi bi-arrow-counterclockwise"></i> تراجع
-                        </button>
-                        <span id="pastePreviewBadge" class="badge-count" style="display:none;background:#d1fae5;color:#059669">
-                            <span id="pastePreviewCount">0</span> <span id="pastePreviewLabel">عنصر</span>
-                        </span>
-                    </div>
-                </div>
-                <div class="smart-panel-body" id="pastePreviewBody" style="min-height:400px">
-                    <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
-                        <div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div>
-                        <p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p>
-                    </div>
-                </div>
-            </div>
-            <div class="smart-panel" id="pasteTransferSettings" style="display:none">
-                <div class="smart-panel-header" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff">
-                    <h6 style="color:#fff"><i class="bi bi-arrow-left-right"></i> إعدادات الحوالات</h6>
-                </div>
-                <div class="smart-panel-body">
-                    <div class="balance-selector">
-                        <div class="balance-field">
-                            <label>خصم من / صاحب الحوالة <span style="color:red">*</span></label>
-                            <select id="pasteSmartTransferClient" required>
-                                <option value="">-- اختر الشخص --</option>
-                                {% for c in clients %}
-                                <option value="{{ c.id }}" {% if c.name == 'أحمد ياسين المصري' %}selected{% endif %}>{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="balance-field">
-                            <label>تاريخ الاستيراد <span style="color:red">*</span></label>
-                            <input type="date" id="pasteSmartTransferDate" value="{{ today|date:'Y-m-d' }}" required>
-                        </div>
-                    </div>
-                    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe">
-                        <div class="form-check form-switch" style="margin:0">
-                            <input class="form-check-input" type="checkbox" id="pasteUsePrevRate" checked style="width:42px;height:22px;cursor:pointer;accent-color:#4f46e5">
-                        </div>
-                        <div>
-                            <label for="pasteUsePrevRate" style="font-weight:700;font-size:.82rem;color:#4f46e5;cursor:pointer;margin:0">استخدام سعر الصرف من الحوالة السابقة</label>
-                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">الحوالات بدون سعر صرف تأخذ سعر آخر حوالة</div>
-                        </div>
-                    </div>
-                    <button type="button" onclick="playNotifSound();window.scrollTo({top:0,behavior:'smooth'})" style="margin-top:10px;padding:8px 16px;border-radius:10px;border:2px solid #d97706;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#78350f;font-weight:800;font-size:.82rem;cursor:pointer;font-family:Cairo;display:flex;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        <i class="bi bi-bell-fill"></i> تنبيه صوتي + للأعلى
-                    </button>
-                </div>
-            </div>
-            <div class="smart-panel" id="pasteBalanceSettings" style="display:none">
-                <div class="smart-panel-header" style="background:linear-gradient(135deg,#059669,#34d399);color:#fff">
-                    <h6 style="color:#fff"><i class="bi bi-wallet2"></i> إعدادات الأرصدة</h6>
-                </div>
-                <div class="smart-panel-body">
-                    <div class="balance-selector">
-                        <div class="balance-field">
-                            <label>صاحب الرصيد <span style="color:red">*</span></label>
-                            <select id="pasteSmartClientId" required>
-                                <option value="">-- اختر العميل --</option>
-                                {% for c in clients %}
-                                <option value="{{ c.id }}">{{ c.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="balance-field">
-                            <label>التاريخ <span style="color:red">*</span></label>
-                            <input type="date" id="pasteSmartDate" value="{{ today|date:'Y-m-d' }}" required>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="si-preview">
+            <thead id="previewHead"></thead>
+            <tbody id="previewBody"></tbody>
+        </table>
+    </div>
+    <div id="previewInfo" style="display:none;background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:14px;margin-top:16px;font-size:.85rem"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="si-btn si-btn-success flex-fill" style="justify-content:center" onclick="confirmImport()">
+            <i class="bi bi-check-lg"></i> تأكيد استيراد <span id="confirmCount">0</span> <span id="confirmLabel">عنصر</span>
+        </button>
+        <button class="si-btn si-btn-outline" onclick="resetAll()">إلغاء</button>
     </div>
 </div>
 
 <!-- Edit Modal -->
-<div class="modal fade" id="smartEditModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px;border:none">
+<div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px;border:none">
     <div class="modal-header" style="border-bottom:1px solid var(--border);padding:16px 20px">
-        <h6 class="modal-title fw-bold"><i class="bi bi-pencil text-primary"></i> <span id="smartModalTitle">تعديل</span></h6>
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil text-primary"></i> <span id="editModalTitle">تعديل</span></h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body" style="padding:20px">
-        <input type="hidden" id="smartEditIdx">
-        <input type="hidden" id="smartEditSource">
-        <div id="smartEditFields"></div>
+        <input type="hidden" id="editIdx">
+        <div id="editFields"></div>
     </div>
     <div class="modal-footer" style="border-top:1px solid var(--border);padding:12px 20px">
-        <button type="button" class="btn btn-success fw-bold" onclick="saveSmartEdit()" style="border-radius:8px"><i class="bi bi-check-lg"></i> حفظ</button>
+        <button type="button" class="btn btn-success fw-bold" onclick="saveEdit()" style="border-radius:8px"><i class="bi bi-check-lg"></i> حفظ</button>
         <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius:8px">إلغاء</button>
     </div>
 </div></div></div>
 
-<!-- Guide Overlay -->
-<div class="guide-overlay" id="guideOverlay" onclick="if(event.target===this)hideGuide()">
-    <div class="guide-box">
-        <button class="close-btn" onclick="hideGuide()"><i class="bi bi-x-lg"></i></button>
-        <h5 style="font-weight:800;margin-bottom:16px"><i class="bi bi-whatsapp" style="color:#25d366"></i> دليل التصدير من الواتساب</h5>
-        <div class="step-card transfer-step">
-            <div class="step-num">1</div>
-            <div class="step-text"><h6>افتح الواتساب على الموبايل</h6><p>ادخل المحادثة اللي فيها الحوالات أو الأرصدة</p></div>
-        </div>
-        <div class="step-card transfer-step">
-            <div class="step-num">2</div>
-            <div class="step-text"><h6>اختر الرسائل</h6><p>اضغط مطولاً على رسالة وحددها ← ثم حدد باقي الرسائل المطلوبة</p></div>
-        </div>
-        <div class="step-card transfer-step">
-            <div class="step-num">3</div>
-            <div class="step-text"><h6>صدّر المحادثة</h6><p>اضغط النقاط الثلاث <strong>⋮</strong> ← <strong>تصدير المحادثة</strong> ← اختر <strong>بدون وسائط</strong></p></div>
-        </div>
-        <div class="step-card transfer-step">
-            <div class="step-num">4</div>
-            <div class="step-text"><h6>ارفع الملف</h6><p>س يتم التعرف تلقائياً على نوع الرسائل (حوالات أو أرصدة)</p></div>
-        </div>
-        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;margin-top:16px;font-size:.82rem;color:#065f46">
-            <i class="bi bi-lightbulb" style="color:#059669"></i> <strong>ملاحظة:</strong> التصدير بيدك كل الرسائل بدون حدود — أكتر من النسخ العادي!
-        </div>
-    </div>
-</div>
-
 <script>
-var smartType = null;
+var smartType = 'transfer';
 var smartResults = [];
 var smartUndoStack = [];
 var currentFileText = null;
+var waFileText = null;
+
+function setType(t) {
+    smartType = t;
+    document.querySelectorAll('.si-type-pill').forEach(function(p) {
+        p.classList.toggle('active', p.dataset.type === t);
+    });
+    document.getElementById('clientLabelText').textContent = t === 'transfer' ? 'خصم من' : 'صاحب الرصيد';
+    document.getElementById('prevRateWrap').style.display = t === 'transfer' ? 'flex' : 'none';
+    updateExportStats();
+}
 
 function switchTab(tab) {
-    document.querySelectorAll('.smart-tab').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.smart-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.si-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.si-panel').forEach(function(p) { p.classList.remove('active'); });
     event.currentTarget.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
 }
 
-function showGuide() { document.getElementById('guideOverlay').classList.add('show'); }
-function hideGuide() { document.getElementById('guideOverlay').classList.remove('show'); }
-
-function showGuideType(type) {
-    document.getElementById('guideTransfer').style.display = type === 'transfer' ? 'block' : 'none';
-    document.getElementById('guideBalance').style.display = type === 'balance' ? 'block' : 'none';
-    document.getElementById('manualType').value = type;
-    document.getElementById('pasteManualType').value = type;
-    var tb = document.getElementById('guideTransferBtn');
-    var bb = document.getElementById('guideBalanceBtn');
-    if (type === 'transfer') {
-        tb.style.borderColor = '#4f46e5'; tb.style.background = '#eef2ff'; tb.style.color = '#4f46e5';
-        bb.style.borderColor = 'var(--border)'; bb.style.background = 'transparent'; bb.style.color = 'var(--text-muted)';
+function updateExportStats() {
+    var isTransfer = smartType === 'transfer';
+    document.getElementById('exportLink').href = isTransfer ? '{% url "export_transfers" %}' : '{% url "export_capital" %}';
+    document.getElementById('exportEgpLabel').textContent = isTransfer ? 'المبلغ المصري (EGP)' : 'إجمالي المصري (EGP)';
+    if (isTransfer) {
+        document.getElementById('exportCount').textContent = '{{ db_count|default:"0"|unlocalize }}';
+        document.getElementById('exportEgp').textContent = '{{ db_total_egp|default:"0"|unlocalize }}';
     } else {
-        bb.style.borderColor = '#059669'; bb.style.background = '#ecfdf5'; bb.style.color = '#059669';
-        tb.style.borderColor = 'var(--border)'; tb.style.background = 'transparent'; tb.style.color = 'var(--text-muted)';
-    }
-}
-
-// Drag and drop
-var dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
-dropZone.addEventListener('drop', function(e) {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    var files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith('.txt')) {
-        document.getElementById('txtFile').files = files;
-        handleFile(document.getElementById('txtFile'));
-    }
-});
-
-function handleFile(input) {
-    if (input.files.length > 0) {
-        var file = input.files[0];
-        document.getElementById('fileInfo').style.display = 'block';
-        document.getElementById('fileInfo').innerHTML = '<i class="bi bi-file-earmark-text"></i> ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB) <span style="color:#059669;margin-right:8px">✓</span>';
-        document.getElementById('analyzeBtn').disabled = false;
-        // Read file
-        var reader = new FileReader();
-        reader.onload = function(e) { currentFileText = e.target.result; };
-        reader.readAsText(file, 'UTF-8');
-    }
-}
-
-function detectType(text) {
-    var t = text.toLowerCase();
-    var balanceScore = 0, transferScore = 0;
-    if (t.indexOf('جنيه') > -1) balanceScore += 3;
-    if (t.indexOf('مصري') > -1) balanceScore += 2;
-    if (t.indexOf('ج م') > -1) balanceScore += 3;
-    if (t.indexOf('سعر') > -1) balanceScore += 2;
-    if (t.indexOf('القيمة') > -1 || t.indexOf('القيمه') > -1) balanceScore += 3;
-    if (t.indexOf('♻') > -1) balanceScore += 2;
-    if (t.indexOf('حوالة') > -1) transferScore += 3;
-    if (t.indexOf('حواله') > -1) transferScore += 3;
-    if (t.indexOf('كاش') > -1) transferScore += 2;
-    if (t.indexOf('فودافون') > -1) transferScore += 3;
-    if (t.indexOf('فادفون') > -1 || t.indexOf('فدفون') > -1) transferScore += 3;
-    if (t.indexOf('انستا') > -1 || t.indexOf('باي') > -1) transferScore += 2;
-    if (t.indexOf('تحويل بنكي') > -1) transferScore += 3;
-    if (t.indexOf('صك') > -1) transferScore += 2;
-    if (/01\d{9}/.test(text)) transferScore += 2;
-    if (/(\d)[،,.](\d{2})\b/.test(text)) transferScore += 1;
-    if (balanceScore > transferScore && balanceScore >= 3) return 'balance';
-    if (transferScore >= 2) return 'transfer';
-    if (balanceScore >= 3) return 'balance';
-    return 'unknown';
-}
-
-function analyzeFile() {
-    if (!currentFileText) {
-        showUploadStatus('error', 'الرجاء اختيار ملف أولاً');
-        return;
-    }
-    var text = currentFileText.trim();
-    analyzeAndRender(text, 'upload');
-}
-
-function analyzeText() {
-    var text = document.getElementById('pasteArea').value.trim();
-    if (!text) { showPasteStatus('error', 'الرجاء لصق نص أولاً'); return; }
-    analyzeAndRender(text, 'paste');
-}
-
-function analyzeAndRender(text, source) {
-    var manualVal = source === 'upload' ? document.getElementById('manualType').value : document.getElementById('pasteManualType').value;
-    var isManual = manualVal !== 'auto';
-    var type = isManual ? manualVal : detectType(text);
-    smartType = type;
-    var badgeEl = source === 'upload' ? document.getElementById('detectBadge') : document.getElementById('pasteDetectBadge');
-    badgeEl.style.display = 'inline-flex';
-    var tag = isManual ? ' <span style="font-size:.65rem;background:rgba(255,255,255,.25);padding:1px 6px;border-radius:4px">يدوي</span>' : '';
-    if (type === 'transfer') {
-        badgeEl.className = 'detect-badge detect-transfer';
-        badgeEl.innerHTML = '<i class="bi bi-arrow-left-right"></i> حوالات' + tag;
-    } else if (type === 'balance') {
-        badgeEl.className = 'detect-badge detect-balance';
-        badgeEl.innerHTML = '<i class="bi bi-wallet2"></i> أرصدة' + tag;
-    } else {
-        badgeEl.className = 'detect-badge detect-unknown';
-        badgeEl.innerHTML = '<i class="bi bi-question-circle"></i> غير محدد';
-        (source === 'upload' ? showUploadStatus : showPasteStatus)('error', 'لم يتم التعرف على نوع الرسائل. تأكد من أن الملف يحتوي على حوالات أو أرصدة.');
-        return;
-    }
-    (source === 'upload' ? showUploadStatus : showPasteStatus)('loading', 'جاري التحليل...');
-    document.getElementById('balanceSettings').style.display = type === 'balance' ? 'block' : 'none';
-    document.getElementById('pasteBalanceSettings').style.display = type === 'balance' ? 'block' : 'none';
-    document.getElementById('transferSettings').style.display = type === 'transfer' ? 'block' : 'none';
-    document.getElementById('pasteTransferSettings').style.display = type === 'transfer' ? 'block' : 'none';
-
-    var formData = new FormData();
-    formData.append('text', text);
-    formData.append('type', type);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-    fetch('/api/smart-detect/', { method: 'POST', body: formData })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.results && data.results.length > 0) {
-            smartResults = data.results;
-            smartUndoStack = [];
-            (source === 'upload' ? document.getElementById('undoSmartBtn') : document.getElementById('pasteUndoBtn')).style.display = 'none';
-            var msg = 'تم التعرف على ' + data.results.length + ' ' + (type === 'transfer' ? 'حوالة' : 'رصيد');
-            if (type === 'transfer') {
-                var usePrev = source === 'upload' ? document.getElementById('usePrevRate').checked : document.getElementById('pasteUsePrevRate').checked;
-                if (usePrev) {
-                    var filled = fillMissingRates(smartResults);
-                    if (filled > 0) { msg += ' (' + filled + ' تم أخذ سعرها من الحوالة السابقة)'; }
-                }
-            }
-            (source === 'upload' ? showUploadStatus : showPasteStatus)('success', msg);
-            renderPreview(source);
-        } else {
-            (source === 'upload' ? showUploadStatus : showPasteStatus)('error', 'لم يتم التعرف على أي بيانات صالحة. تأكد من تنسيق الرسائل.');
-            smartResults = [];
-            renderPreview(source);
-        }
-    })
-    .catch(function() { (source === 'upload' ? showUploadStatus : showPasteStatus)('error', 'خطأ في الاتصال بالخادم'); });
-}
-
-function showUploadStatus(type, msg) {
-    var box = document.getElementById('statusBox');
-    box.style.display = 'flex';
-    box.className = 'smart-status ' + type;
-    box.innerHTML = '<i class="bi ' + (type === 'loading' ? 'bi-arrow-repeat pulse' : type === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + '"></i> ' + msg;
-}
-function showPasteStatus(type, msg) {
-    var box = document.getElementById('pasteStatusBox');
-    box.style.display = 'flex';
-    box.className = 'smart-status ' + type;
-    box.innerHTML = '<i class="bi ' + (type === 'loading' ? 'bi-arrow-repeat pulse' : type === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + '"></i> ' + msg;
-}
-
-function renderPreview(source) {
-    var body = document.getElementById(source === 'upload' ? 'previewBody' : 'pastePreviewBody');
-    var badge = document.getElementById(source === 'upload' ? 'previewBadge' : 'pastePreviewBadge');
-    var countEl = document.getElementById(source === 'upload' ? 'previewCount' : 'pastePreviewCount');
-    var labelEl = document.getElementById(source === 'upload' ? 'previewLabel' : 'pastePreviewLabel');
-
-    if (smartResults.length === 0) {
-        badge.style.display = 'none';
-        body.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div><p style="font-size:.9rem;font-weight:600">لا توجد نتائج</p></div>';
-        return;
-    }
-    badge.style.display = 'inline-flex';
-    countEl.textContent = smartResults.length;
-    labelEl.textContent = smartType === 'transfer' ? 'حوالة' : 'رصيد';
-
-    var html = '<div class="table-responsive"><table class="preview-table"><thead><tr>';
-    if (smartType === 'transfer') {
-        html += '<th>#</th><th>رقم المحمول</th><th>نوع التحويل</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th>';
-    } else {
-        html += '<th>#</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th>';
-    }
-    html += '</tr></thead><tbody>';
-    for (var i = 0; i < smartResults.length; i++) {
-        var r = smartResults[i];
-        var rowBg = r._rateFilled ? 'background:linear-gradient(90deg,#fffbeb,#fef3c7);border-left:3px solid #d97706' : '';
-        html += '<tr style="' + rowBg + '"><td style="font-weight:600">' + (i + 1) + '</td>';
-        if (smartType === 'transfer') {
-            html += '<td dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
-            html += '<td>' + (r.transfer_type || 'كاش') + '</td>';
-            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
-            var rateDisplay = r.exchange_rate || 0;
-            if (r._rateFilled) {
-                html += '<td style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:6px" title="سعر مأخوذ من الحوالة السابقة">⚡ ' + rateDisplay + '</td>';
-            } else {
-                html += '<td>' + rateDisplay + '</td>';
-            }
-            html += '<td style="font-weight:800;color:#059669">' + fmt(r.amount_lyd) + '</td>';
-        } else {
-            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.egp) + '</td>';
-            html += '<td>' + (r.rate || 0) + '</td>';
-            html += '<td style="font-weight:800;color:#059669">' + fmt(r.lyd) + '</td>';
-        }
-        html += '<td onclick="event.stopPropagation()"><div class="d-flex gap-1">';
-        html += '<button type="button" class="btn btn-outline-primary btn-sm" onclick="editSmartRow(' + i + ')" title="تعديل" style="border-radius:8px;padding:4px 8px"><i class="bi bi-pencil" style="font-size:.75rem"></i></button>';
-        html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSmartRow(' + i + ')" title="حذف" style="border-radius:8px;padding:4px 8px"><i class="bi bi-x-lg" style="font-size:.75rem"></i></button>';
-        html += '</div></td></tr>';
-    }
-    html += '</tbody></table></div>';
-
-    if (smartType === 'transfer') {
-        var clientSelect = source === 'upload' ? document.getElementById('smartTransferClient') : document.getElementById('pasteSmartTransferClient');
-        var clientName = clientSelect && clientSelect.options[clientSelect.selectedIndex] ? clientSelect.options[clientSelect.selectedIndex].text : 'أحمد ياسين';
-        if (!clientName || clientName.indexOf('--') > -1) clientName = 'أحمد ياسين';
-        html += '<div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;padding:14px;margin-top:16px;font-size:.85rem"><i class="bi bi-info-circle" style="color:var(--primary)"></i> سيتم خصم <strong>' + smartResults.length + ' حوالة</strong> من رصيد ' + clientName + '</div>';
-    }
-    html += '<div style="display:flex;gap:10px;margin-top:16px">';
-    html += '<button class="smart-btn smart-btn-success flex-fill" style="justify-content:center" onclick="confirmSmartImport()"><i class="bi bi-check-lg"></i> تأكيد استيراد ' + smartResults.length + ' ' + (smartType === 'transfer' ? 'حوالة' : 'رصيد') + '</button>';
-    html += '<button class="smart-btn smart-btn-outline" onclick="resetAll()">إلغاء</button>';
-    html += '</div>';
-    body.innerHTML = html;
-}
-
-function fillMissingRates(results) {
-    var lastRate = 0;
-    var filled = 0;
-    for (var i = 0; i < results.length; i++) {
-        var r = results[i];
-        if (r.exchange_rate && r.exchange_rate > 0) {
-            lastRate = r.exchange_rate;
-            r._rateFilled = false;
-        } else if (lastRate > 0) {
-            r.exchange_rate = lastRate;
-            r._rateFilled = true;
-            if (r.amount_egp && r.amount_egp > 0) {
-                r.amount_lyd = parseFloat((r.amount_egp / lastRate).toFixed(2));
-            }
-            filled++;
-        }
-    }
-    return filled;
-}
-
-function fmt(v) { return Number(v || 0).toLocaleString('en', {minimumFractionDigits: 0, maximumFractionDigits: 2}); }
-
-function editSmartRow(idx) {
-    var r = smartResults[idx];
-    document.getElementById('smartEditIdx').value = idx;
-    var fields = '';
-    if (smartType === 'transfer') {
-        document.getElementById('smartModalTitle').textContent = 'تعديل الحوالة';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">رقم المحمول</label><input type="text" id="sePhone" value="' + (r.receiver_tele || '') + '" dir="ltr" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem"></div>';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">نوع التحويل</label><select id="seType" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem"><option' + (r.transfer_type === 'كاش' ? ' selected' : '') + '>كاش</option><option' + (r.transfer_type === 'فودافون كاش' ? ' selected' : '') + '>فودافون كاش</option><option' + (r.transfer_type === 'انستا باي' ? ' selected' : '') + '>انستا باي</option><option' + (r.transfer_type === 'تحويل بنكي' ? ' selected' : '') + '>تحويل بنكي</option><option' + (r.transfer_type === 'صك' ? ' selected' : '') + '>صك</option></select></div>';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.amount_egp || '') + '" step="0.01" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem" oninput="calcSmartLyd()"></div>';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">سعر الصرف</label><input type="number" id="seRate" value="' + (r.exchange_rate || '') + '" step="0.01" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem" oninput="calcSmartLyd()"></div>';
-        fields += '<div class="mb-0"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.amount_lyd || '') + '" step="0.01" readonly style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem;background:#f0f0f0"></div>';
-    } else {
-        document.getElementById('smartModalTitle').textContent = 'تعديل الرصيد';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.egp || '') + '" step="0.01" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem" oninput="calcSmartLyd()"></div>';
-        fields += '<div class="mb-3"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">سعر الصرف</label><input type="number" id="seRate" value="' + (r.rate || '') + '" step="0.01" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem" oninput="calcSmartLyd()"></div>';
-        fields += '<div class="mb-0"><label style="font-weight:700;font-size:.85rem;display:block;margin-bottom:6px">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.lyd || '') + '" step="0.01" readonly style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:.9rem;background:#f0f0f0"></div>';
-    }
-    document.getElementById('smartEditFields').innerHTML = fields;
-    new bootstrap.Modal(document.getElementById('smartEditModal')).show();
-}
-
-function calcSmartLyd() {
-    var egp = parseFloat(document.getElementById('seEgp').value) || 0;
-    var rate = parseFloat(document.getElementById('seRate').value) || 0;
-    document.getElementById('seLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
-}
-
-function saveSmartEdit() {
-    var idx = parseInt(document.getElementById('smartEditIdx').value);
-    var old = JSON.parse(JSON.stringify(smartResults[idx]));
-    if (smartType === 'transfer') {
-        smartResults[idx].receiver_tele = document.getElementById('sePhone').value;
-        smartResults[idx].transfer_type = document.getElementById('seType').value;
-        smartResults[idx].amount_egp = parseFloat(document.getElementById('seEgp').value) || 0;
-        smartResults[idx].exchange_rate = parseFloat(document.getElementById('seRate').value) || 0;
-        smartResults[idx].amount_lyd = parseFloat(document.getElementById('seLyd').value) || 0;
-    } else {
-        smartResults[idx].egp = parseFloat(document.getElementById('seEgp').value) || 0;
-        smartResults[idx].rate = parseFloat(document.getElementById('seRate').value) || 0;
-        smartResults[idx].lyd = parseFloat(document.getElementById('seLyd').value) || 0;
-    }
-    smartUndoStack.push({type: 'edit', idx: idx, old: old});
-    document.getElementById('undoSmartBtn').style.display = 'inline-flex';
-    document.getElementById('pasteUndoBtn').style.display = 'inline-flex';
-    bootstrap.Modal.getInstance(document.getElementById('smartEditModal')).hide();
-    renderPreview('upload');
-    renderPreview('paste');
-}
-
-function removeSmartRow(idx) {
-    var old = JSON.parse(JSON.stringify(smartResults[idx]));
-    smartUndoStack.push({type: 'delete', idx: idx, old: old});
-    document.getElementById('undoSmartBtn').style.display = 'inline-flex';
-    document.getElementById('pasteUndoBtn').style.display = 'inline-flex';
-    smartResults.splice(idx, 1);
-    renderPreview('upload');
-    renderPreview('paste');
-}
-
-function smartUndo() {
-    if (!smartUndoStack.length) return;
-    var action = smartUndoStack.pop();
-    if (!smartUndoStack.length) {
-        document.getElementById('undoSmartBtn').style.display = 'none';
-        document.getElementById('pasteUndoBtn').style.display = 'none';
-    }
-    if (action.type === 'delete') { smartResults.splice(action.idx, 0, action.old); }
-    else if (action.type === 'edit') { smartResults[action.idx] = action.old; }
-    renderPreview('upload');
-    renderPreview('paste');
-}
-
-function confirmSmartImport() {
-    if (smartResults.length === 0) return;
-    if (smartType === 'transfer') {
-        var transferDate = document.getElementById('smartTransferDate').value || document.getElementById('pasteSmartTransferDate').value || '';
-        var clientId = document.getElementById('smartTransferClient').value || document.getElementById('pasteSmartTransferClient').value || '';
-        if (!transferDate) { alert('الرجاء اختيار تاريخ الاستيراد'); return; }
-        if (!clientId) { alert('الرجاء اختيار الشخص المخصوم منه الحوالة'); return; }
-        var usePrev = (document.getElementById('usePrevRate').checked || document.getElementById('pasteUsePrevRate').checked) ? '1' : '0';
-        var resultsToSend = JSON.parse(JSON.stringify(smartResults));
-        if (usePrev === '1') { fillMissingRates(resultsToSend); }
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{% url "import_whatsapp" %}';
-        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(resultsToSend).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1"><input type="hidden" name="use_prev_rate" value="' + usePrev + '"><input type="hidden" name="import_date" value="' + transferDate + '"><input type="hidden" name="client_id" value="' + clientId + '">';
-        document.body.appendChild(form);
-        form.submit();
-    } else {
-        var clientId = document.getElementById('smartClientId').value || document.getElementById('pasteSmartClientId').value;
-        var date = document.getElementById('smartDate').value || document.getElementById('pasteSmartDate').value;
-        if (!clientId) { alert('الرجاء اختيار صاحب الرصيد'); return; }
-        if (!date) { alert('الرجاء اختيار التاريخ'); return; }
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{% url "import_balance" %}';
-        form.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="client_id" value="' + clientId + '"><input type="hidden" name="import_date" value="' + date + '"><input type="hidden" name="filtered_results" value=\'' + JSON.stringify(smartResults).replace(/'/g, "&#39;") + '\'><input type="hidden" name="confirm" value="1">';
-        document.body.appendChild(form);
-        form.submit();
+        document.getElementById('exportCount').textContent = '{{ cap_count|default:"0"|unlocalize }}';
+        document.getElementById('exportEgp').textContent = '{{ cap_total_egp|default:"0"|unlocalize }}';
     }
 }
 
@@ -787,44 +327,346 @@ function playNotifSound() {
     } catch(e) {}
 }
 
+// ===== Drag & Drop (File tab) =====
+var dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.style.borderColor = 'var(--primary)'; dropZone.style.background = 'var(--primary-bg)'; });
+dropZone.addEventListener('dragleave', function() { dropZone.style.borderColor = ''; dropZone.style.background = ''; });
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.style.borderColor = '';
+    dropZone.style.background = '';
+    var files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.txt')) {
+        document.getElementById('txtFile').files = files;
+        handleFile(document.getElementById('txtFile'));
+    }
+});
+
+function handleFile(input) {
+    if (input.files.length > 0) {
+        var file = input.files[0];
+        document.getElementById('fileInfo').style.display = 'block';
+        document.getElementById('fileInfo').innerHTML = '<i class="bi bi-file-earmark-text"></i> ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB) ✓';
+        document.getElementById('analyzeBtn').disabled = false;
+        var reader = new FileReader();
+        reader.onload = function(e) { currentFileText = e.target.result; };
+        reader.readAsText(file, 'UTF-8');
+    }
+}
+
+function handleWaFile(input) {
+    if (input.files.length > 0) {
+        var file = input.files[0];
+        document.getElementById('waFileInfo').style.display = 'block';
+        document.getElementById('waFileInfo').innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + file.name;
+        var reader = new FileReader();
+        reader.onload = function(e) { waFileText = e.target.result; document.getElementById('waAnalyzeBtn').disabled = false; };
+        reader.readAsText(file, 'UTF-8');
+    }
+}
+
+function detectType(text) {
+    var t = text.toLowerCase();
+    var bal = 0, tr = 0;
+    if (t.indexOf('جنيه') > -1) bal += 3;
+    if (t.indexOf('مصري') > -1) bal += 2;
+    if (t.indexOf('ج م') > -1) bal += 3;
+    if (t.indexOf('سعر') > -1) bal += 2;
+    if (t.indexOf('القيمة') > -1 || t.indexOf('القيمه') > -1) bal += 3;
+    if (t.indexOf('♻') > -1) bal += 2;
+    if (t.indexOf('حوالة') > -1) tr += 3;
+    if (t.indexOf('حواله') > -1) tr += 3;
+    if (t.indexOf('كاش') > -1) tr += 2;
+    if (t.indexOf('فودافون') > -1) tr += 3;
+    if (t.indexOf('فادفون') > -1 || t.indexOf('فدفون') > -1) tr += 3;
+    if (t.indexOf('انستا') > -1 || t.indexOf('باي') > -1) tr += 2;
+    if (t.indexOf('تحويل بنكي') > -1) tr += 3;
+    if (t.indexOf('صك') > -1) tr += 2;
+    if (/01\d{9}/.test(text)) tr += 2;
+    if (/(\d)[،,.](\d{2})\b/.test(text)) tr += 1;
+    if (bal > tr && bal >= 3) return 'balance';
+    if (tr >= 2) return 'transfer';
+    if (bal >= 3) return 'balance';
+    return 'unknown';
+}
+
+// ===== Analyze functions =====
+function analyzeFile() {
+    if (!currentFileText) { showStatus('file', 'error', 'الرجاء اختيار ملف أولاً'); return; }
+    analyzeAndRender(currentFileText.trim(), 'file');
+}
+
+function analyzeText() {
+    var text = document.getElementById('pasteArea').value.trim();
+    if (!text) { showStatus('paste', 'error', 'الرجاء لصق نص أولاً'); return; }
+    analyzeAndRender(text, 'paste');
+}
+
+function analyzeWa() {
+    var text = waFileText ? waFileText.trim() : document.getElementById('waPasteArea').value.trim();
+    if (!text) { showStatus('wa', 'error', 'الرجاء رفع ملف أو لصق نص أولاً'); return; }
+    analyzeAndRender(text, 'wa');
+}
+
+function analyzeAndRender(text, source) {
+    smartType = document.querySelector('.si-type-pill.active').dataset.type;
+    var type = smartType;
+    showStatus(source, 'loading', 'جاري التحليل...');
+
+    var formData = new FormData();
+    formData.append('text', text);
+    formData.append('type', type);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token|unlocalize }}');
+
+    fetch('/api/smart-detect/', { method: 'POST', body: formData })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.results && data.results.length > 0) {
+            smartResults = data.results;
+            smartUndoStack = [];
+            document.getElementById('undoBtn').style.display = 'none';
+            var msg = 'تم التعرف على ' + data.results.length + ' ' + (type === 'transfer' ? 'حوالة' : 'رصيد');
+            if (type === 'transfer' && document.getElementById('siPrevRate').checked) {
+                var filled = fillMissingRates(smartResults);
+                if (filled > 0) msg += ' (' + filled + ' تم أخذ سعرها من الحوالة السابقة)';
+            }
+            showStatus(source, 'success', msg);
+            showPreview();
+        } else {
+            showStatus(source, 'error', 'لم يتم التعرف على أي بيانات صالحة');
+            smartResults = [];
+            hidePreview();
+        }
+    })
+    .catch(function() { showStatus(source, 'error', 'خطأ في الاتصال بالخادم'); });
+}
+
+function showStatus(source, type, msg) {
+    var id = source === 'file' ? 'fileStatus' : source === 'paste' ? 'pasteStatus' : 'waStatus';
+    var box = document.getElementById(id);
+    box.style.display = 'flex';
+    box.className = 'si-status ' + type;
+    var icon = type === 'loading' ? 'bi-arrow-repeat pulse' : type === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+    box.innerHTML = '<i class="bi ' + icon + '"></i> ' + msg;
+}
+
+function showPreview() {
+    var card = document.getElementById('previewCard');
+    card.style.display = 'block';
+    document.getElementById('previewCount').textContent = smartResults.length;
+    var lbl = smartType === 'transfer' ? 'حوالة' : 'رصيد';
+    document.getElementById('previewLabel').textContent = lbl;
+    document.getElementById('confirmCount').textContent = smartResults.length;
+    document.getElementById('confirmLabel').textContent = lbl;
+
+    var isTr = smartType === 'transfer';
+    var head = document.getElementById('previewHead');
+    var body = document.getElementById('previewBody');
+
+    if (isTr) {
+        head.innerHTML = '<tr><th>#</th><th>رقم المحمول</th><th>نوع التحويل</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th></tr>';
+    } else {
+        head.innerHTML = '<tr><th>#</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th></tr>';
+    }
+
+    var html = '';
+    for (var i = 0; i < smartResults.length; i++) {
+        var r = smartResults[i];
+        var rowBg = r._rateFilled ? 'class="rate-filled"' : '';
+        html += '<tr ' + rowBg + '><td style="font-weight:600">' + (i + 1) + '</td>';
+        if (isTr) {
+            html += '<td dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
+            html += '<td>' + (r.transfer_type || 'كاش') + '</td>';
+            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
+            if (r._rateFilled) {
+                html += '<td style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:6px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
+            } else {
+                html += '<td>' + (r.exchange_rate || 0) + '</td>';
+            }
+            html += '<td style="font-weight:800;color:#059669">' + fmt(r.amount_lyd) + '</td>';
+        } else {
+            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.egp) + '</td>';
+            html += '<td>' + (r.rate || 0) + '</td>';
+            html += '<td style="font-weight:800;color:#059669">' + fmt(r.lyd) + '</td>';
+        }
+        html += '<td onclick="event.stopPropagation()"><div class="d-flex gap-1">';
+        html += '<button type="button" class="btn btn-outline-primary btn-sm" onclick="editRow(' + i + ')" style="border-radius:8px;padding:4px 8px"><i class="bi bi-pencil" style="font-size:.75rem"></i></button>';
+        html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(' + i + ')" style="border-radius:8px;padding:4px 8px"><i class="bi bi-x-lg" style="font-size:.75rem"></i></button>';
+        html += '</div></td></tr>';
+    }
+    body.innerHTML = html;
+
+    // Info box
+    var info = document.getElementById('previewInfo');
+    if (isTr) {
+        var client = document.getElementById('siClient');
+        var clientName = client.options[client.selectedIndex] ? client.options[client.selectedIndex].text : 'أحمد ياسين';
+        if (!clientName || clientName.indexOf('--') > -1) clientName = 'أحمد ياسين';
+        info.style.display = 'block';
+        info.innerHTML = '<i class="bi bi-info-circle" style="color:var(--primary)"></i> سيتم خصم <strong>' + smartResults.length + ' حوالة</strong> من رصيد ' + clientName;
+    } else {
+        info.style.display = 'none';
+    }
+}
+
+function hidePreview() {
+    document.getElementById('previewCard').style.display = 'none';
+}
+
+function fillMissingRates(results) {
+    var lastRate = 0, filled = 0;
+    for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        if (r.exchange_rate && r.exchange_rate > 0) { lastRate = r.exchange_rate; r._rateFilled = false; }
+        else if (lastRate > 0) { r.exchange_rate = lastRate; r._rateFilled = true; if (r.amount_egp > 0) r.amount_lyd = parseFloat((r.amount_egp / lastRate).toFixed(2)); filled++; }
+    }
+    return filled;
+}
+
+function fmt(v) { return Number(v || 0).toLocaleString('en', {minimumFractionDigits: 0, maximumFractionDigits: 2}); }
+
+function editRow(idx) {
+    var r = smartResults[idx];
+    document.getElementById('editIdx').value = idx;
+    var isTr = smartType === 'transfer';
+    document.getElementById('editModalTitle').textContent = isTr ? 'تعديل الحوالة' : 'تعديل الرصيد';
+    var fields = '';
+    if (isTr) {
+        fields += '<div class="mb-3"><label class="si-label">رقم المحمول</label><input type="text" id="sePhone" value="' + (r.receiver_tele || '') + '" dir="ltr" class="si-input"></div>';
+        fields += '<div class="mb-3"><label class="si-label">نوع التحويل</label><select id="seType" class="si-select"><option' + (r.transfer_type === 'كاش' ? ' selected' : '') + '>كاش</option><option' + (r.transfer_type === 'فودافون كاش' ? ' selected' : '') + '>فودافون كاش</option><option' + (r.transfer_type === 'انستا باي' ? ' selected' : '') + '>انستا باي</option><option' + (r.transfer_type === 'تحويل بنكي' ? ' selected' : '') + '>تحويل بنكي</option><option' + (r.transfer_type === 'صك' ? ' selected' : '') + '>صك</option></select></div>';
+        fields += '<div class="mb-3"><label class="si-label">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.amount_egp || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + (r.exchange_rate || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.amount_lyd || '') + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
+    } else {
+        fields += '<div class="mb-3"><label class="si-label">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.egp || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + (r.rate || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.lyd || '') + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
+    }
+    document.getElementById('editFields').innerHTML = fields;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+function calcLyd() {
+    var egp = parseFloat(document.getElementById('seEgp').value) || 0;
+    var rate = parseFloat(document.getElementById('seRate').value) || 0;
+    document.getElementById('seLyd').value = rate > 0 ? (egp / rate).toFixed(2) : '';
+}
+
+function saveEdit() {
+    var idx = parseInt(document.getElementById('editIdx').value);
+    var old = JSON.parse(JSON.stringify(smartResults[idx]));
+    var isTr = smartType === 'transfer';
+    if (isTr) {
+        smartResults[idx].receiver_tele = document.getElementById('sePhone').value;
+        smartResults[idx].transfer_type = document.getElementById('seType').value;
+        smartResults[idx].amount_egp = parseFloat(document.getElementById('seEgp').value) || 0;
+        smartResults[idx].exchange_rate = parseFloat(document.getElementById('seRate').value) || 0;
+        smartResults[idx].amount_lyd = parseFloat(document.getElementById('seLyd').value) || 0;
+    } else {
+        smartResults[idx].egp = parseFloat(document.getElementById('seEgp').value) || 0;
+        smartResults[idx].rate = parseFloat(document.getElementById('seRate').value) || 0;
+        smartResults[idx].lyd = parseFloat(document.getElementById('seLyd').value) || 0;
+    }
+    smartUndoStack.push({type: 'edit', idx: idx, old: old});
+    document.getElementById('undoBtn').style.display = 'inline-flex';
+    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+    showPreview();
+}
+
+function removeRow(idx) {
+    smartUndoStack.push({type: 'delete', idx: idx, old: JSON.parse(JSON.stringify(smartResults[idx]))});
+    smartResults.splice(idx, 1);
+    document.getElementById('undoBtn').style.display = 'inline-flex';
+    if (smartResults.length === 0) { hidePreview(); } else { showPreview(); }
+}
+
+function smartUndo() {
+    if (!smartUndoStack.length) return;
+    var action = smartUndoStack.pop();
+    if (!smartUndoStack.length) document.getElementById('undoBtn').style.display = 'none';
+    if (action.type === 'delete') { smartResults.splice(action.idx, 0, action.old); }
+    else if (action.type === 'edit') { smartResults[action.idx] = action.old; }
+    showPreview();
+}
+
+function confirmImport() {
+    if (smartResults.length === 0) return;
+    var client = document.getElementById('siClient').value;
+    var date = document.getElementById('siDate').value;
+    if (!client) { alert('الرجاء اختيار الشخص'); return; }
+    if (!date) { alert('الرجاء اختيار التاريخ'); return; }
+
+    var isTr = smartType === 'transfer';
+    var resultsToSend = JSON.parse(JSON.stringify(smartResults));
+    if (isTr && document.getElementById('siPrevRate').checked) fillMissingRates(resultsToSend);
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = isTr ? '{% url "import_whatsapp" %}' : '{% url "import_balance" %}';
+    var html = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token|unlocalize }}">';
+    html += '<input type="hidden" name="filtered_results" value=\'' + JSON.stringify(resultsToSend).replace(/'/g, "&#39;") + '\'>';
+    html += '<input type="hidden" name="confirm" value="1">';
+    if (isTr) {
+        html += '<input type="hidden" name="use_prev_rate" value="' + (document.getElementById('siPrevRate').checked ? '1' : '0') + '">';
+        html += '<input type="hidden" name="import_date" value="' + date + '">';
+        html += '<input type="hidden" name="client_id" value="' + client + '">';
+    } else {
+        html += '<input type="hidden" name="client_id" value="' + client + '">';
+        html += '<input type="hidden" name="import_date" value="' + date + '">';
+    }
+    form.innerHTML = html;
+    document.body.appendChild(form);
+    form.submit();
+}
+
 function resetAll() {
     smartResults = [];
     smartUndoStack = [];
-    smartType = null;
     currentFileText = null;
+    waFileText = null;
     document.getElementById('txtFile').value = '';
     document.getElementById('fileInfo').style.display = 'none';
-    document.getElementById('statusBox').style.display = 'none';
-    document.getElementById('detectBadge').style.display = 'none';
+    document.getElementById('fileStatus').style.display = 'none';
     document.getElementById('pasteArea').value = '';
-    document.getElementById('pasteStatusBox').style.display = 'none';
-    document.getElementById('pasteDetectBadge').style.display = 'none';
-    document.getElementById('undoSmartBtn').style.display = 'none';
-    document.getElementById('pasteUndoBtn').style.display = 'none';
-    document.getElementById('previewBadge').style.display = 'none';
-    document.getElementById('pastePreviewBadge').style.display = 'none';
-    document.getElementById('balanceSettings').style.display = 'none';
-    document.getElementById('pasteBalanceSettings').style.display = 'none';
-    document.getElementById('transferSettings').style.display = 'none';
-    document.getElementById('pasteTransferSettings').style.display = 'none';
+    document.getElementById('pasteStatus').style.display = 'none';
+    document.getElementById('waPasteArea').value = '';
+    document.getElementById('waFileInfo').style.display = 'none';
+    document.getElementById('waStatus').style.display = 'none';
+    document.getElementById('waDetectBadge').style.display = 'none';
+    document.getElementById('undoBtn').style.display = 'none';
     document.getElementById('analyzeBtn').disabled = true;
-    document.getElementById('previewBody').innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div><p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p></div>';
-    document.getElementById('pastePreviewBody').innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:12px;opacity:.4">📋</div><p style="font-size:.9rem;font-weight:600">لم يتم تحليل أي رسائل بعد</p></div>';
+    document.getElementById('waAnalyzeBtn').disabled = true;
+    hidePreview();
 }
 
 // Auto-detect on paste
 document.getElementById('pasteArea').addEventListener('paste', function() {
     setTimeout(function() {
         var text = document.getElementById('pasteArea').value.trim();
+        if (text.length > 10) { analyzeAndRender(text, 'paste'); }
+    }, 200);
+});
+
+document.getElementById('waPasteArea').addEventListener('paste', function() {
+    setTimeout(function() {
+        var text = document.getElementById('waPasteArea').value.trim();
         if (text.length > 10) {
             var type = detectType(text);
-            var badge = document.getElementById('pasteDetectBadge');
+            var badge = document.getElementById('waDetectBadge');
             badge.style.display = 'inline-flex';
-            if (type === 'transfer') { badge.className = 'detect-badge detect-transfer'; badge.innerHTML = '<i class="bi bi-arrow-left-right"></i> حوالات'; }
-            else if (type === 'balance') { badge.className = 'detect-badge detect-balance'; badge.innerHTML = '<i class="bi bi-wallet2"></i> أرصدة'; }
-            else { badge.className = 'detect-badge detect-unknown'; badge.innerHTML = '<i class="bi bi-question-circle"></i> غير محدد'; }
+            if (type === 'transfer') { badge.className = 'si-detect si-detect-transfer'; badge.innerHTML = '<i class="bi bi-arrow-left-right"></i> حوالات'; }
+            else if (type === 'balance') { badge.className = 'si-detect si-detect-balance'; badge.innerHTML = '<i class="bi bi-wallet2"></i> أرصدة'; }
+            else { badge.className = 'si-detect si-detect-unknown'; badge.innerHTML = '<i class="bi bi-question-circle"></i> غير محدد'; }
+            waFileText = null;
+            document.getElementById('waAnalyzeBtn').disabled = false;
         }
-    }, 100);
+    }, 200);
 });
+
+// Load export stats on page load
+(function() {
+    document.getElementById('exportCount').textContent = '{{ db_count|default:"0"|unlocalize }}';
+    document.getElementById('exportEgp').textContent = '{{ db_total_egp|default:"0"|unlocalize }}';
+})();
 </script>
 {% endblock %}

@@ -2356,10 +2356,19 @@ def import_alerts(request):
 
 def smart_import(request):
     clients = ClientBalance.objects.all().order_by("name")
+    from django.db.models import Sum
+    db_count = Database.objects.count()
+    db_total_egp = Database.objects.aggregate(s=Sum("transfered_amount"))["s"] or 0
+    cap_count = Capital.objects.count()
+    cap_total_egp = Capital.objects.aggregate(s=Sum("cash_in"))["s"] or 0
     return render(request, "smart_import.html", {
-        "title": "استيراد ذكي من الواتساب",
+        "title": "استيراد ذكي",
         "clients": clients,
         "today": dt.now().date(),
+        "db_count": db_count,
+        "db_total_egp": db_total_egp,
+        "cap_count": cap_count,
+        "cap_total_egp": cap_total_egp,
     })
 
 
