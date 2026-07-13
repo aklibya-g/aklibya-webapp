@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load app_tags %}
+{% load l10n %}
 {% block title %}الحوالات{% endblock %}
 {% block page_title %}<i class="bi bi-arrow-left-right text-primary"></i> الحوالات{% endblock %}
 
@@ -169,11 +170,11 @@ function clearAll() {
 }
 function printPage() {
     var rows = document.querySelectorAll('.table-app tbody tr');
-    var totalCount = {{ total_count|default:"0" }};
-    var filteredCount = {{ filtered_count|default:"0" }};
-    var totalEGPServer = {{ total_egp|default:"0" }};
-    var totalLYDServer = {{ total_lyd|default:"0" }};
-    var avgRate = {{ avg_rate|default:"0" }};
+    var totalCount = {{ total_count|default:"0"|unlocalize }};
+    var filteredCount = {{ filtered_count|default:"0"|unlocalize }};
+    var totalEGPServer = {{ total_egp|default:"0"|unlocalize }};
+    var totalLYDServer = {{ total_lyd|default:"0"|unlocalize }};
+    var avgRate = {{ avg_rate|default:"0"|unlocalize }};
     var isFiltered = {% if is_filtered %}true{% else %}false{% endif %};
     var displayCount = isFiltered ? filteredCount : totalCount;
 
