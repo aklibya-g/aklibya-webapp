@@ -103,13 +103,13 @@
         <div class="icon-box"><i class="bi bi-bank"></i></div>
         <div class="s-label">إجمالي الإيداعات (مصري)</div>
         <div class="s-value">{{ total_cap_egp|fmt }}</div>
-        <div class="s-sub">EGP — الفرق بالليبي: {{ total_egp_to_lyd|fmt }}</div>
+        <div class="s-sub">EGP — متوسط السعر: <strong style="color:#7c3aed">{{ total_cap_avg_rate }}</strong> — الفرق بالليبي: {{ total_egp_to_lyd|fmt }}</div>
     </div>
     <div class="s-card amber">
         <div class="icon-box"><i class="bi bi-send-arrow-up"></i></div>
         <div class="s-label">إجمالي الحوالات (مصري)</div>
         <div class="s-value">{{ total_db_egp|fmt }}</div>
-        <div class="s-sub">EGP — الحوالات بالليبي: {{ total_db_lyd|fmt }}</div>
+        <div class="s-sub">EGP — متوسط السعر: <strong style="color:#2563eb">{{ total_db_avg_rate }}</strong> — الحوالات بالليبي: {{ total_db_lyd|fmt }}</div>
     </div>
     <div class="s-card red">
         <div class="icon-box"><i class="bi bi-currency-exchange"></i></div>
