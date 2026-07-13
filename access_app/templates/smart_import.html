@@ -39,7 +39,8 @@
 .si-select:focus{outline:none;border-color:var(--primary)}
 
 /* Settings bar */
-.si-settings{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-sm);margin-bottom:20px}
+.si-settings{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-sm);margin-bottom:20px;transition:all .3s}
+.si-settings.sticky{position:sticky;top:0;z-index:100;padding:8px 16px;margin-bottom:12px;border-radius:0 0 14px 14px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
 .si-settings label{font-size:.78rem;font-weight:700;color:var(--text-muted);white-space:nowrap}
 .si-type-pills{display:flex;gap:4px;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--border)}
 .si-type-pill{padding:8px 18px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;color:var(--text-muted);transition:all .25s;display:flex;align-items:center;gap:6px}
@@ -47,11 +48,17 @@
 .si-type-pill[data-type="transfer"].active{background:#eef2ff;color:#4f46e5;border:1px solid rgba(79,70,229,.2)}
 .si-type-pill[data-type="balance"].active{background:#ecfdf5;color:#059669;border:1px solid rgba(5,150,105,.2)}
 
-/* Preview table */
-.si-preview{width:100%;border-collapse:collapse;font-size:.82rem}
-.si-preview th{background:var(--bg);padding:10px 12px;font-weight:700;font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
-.si-preview td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+/* Preview table - compact */
+.si-preview{width:100%;border-collapse:collapse;font-size:.78rem}
+.si-preview th{background:var(--bg);padding:8px 10px;font-weight:700;font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
+.si-preview td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
 .si-preview tr:hover{background:var(--primary-bg)}
+.si-preview .actions-col{width:50px;text-align:center}
+.si-preview .num-col{width:35px;text-align:center;font-weight:600}
+.si-preview .phone-col{min-width:110px}
+.si-preview .type-col{min-width:70px}
+.si-preview .egp-col,.si-preview .lyd-col{min-width:80px;text-align:left;font-weight:800}
+.si-preview .rate-col{min-width:55px;text-align:center}
 
 /* Status */
 .si-status{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:10px;margin-top:12px;font-size:.85rem;font-weight:600}
@@ -464,34 +471,34 @@ function showPreview() {
     var body = document.getElementById('previewBody');
 
     if (isTr) {
-        head.innerHTML = '<tr><th>#</th><th>رقم المحمول</th><th>نوع التحويل</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th></tr>';
+        head.innerHTML = '<tr><th class="num-col">#</th><th class="phone-col">رقم المحمول</th><th class="type-col">نوع</th><th class="egp-col">مصري</th><th class="rate-col">السعر</th><th class="lyd-col">ليبي</th><th class="actions-col"></th></tr>';
     } else {
-        head.innerHTML = '<tr><th>#</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th style="width:60px"></th></tr>';
+        head.innerHTML = '<tr><th class="num-col">#</th><th class="egp-col">مصري</th><th class="rate-col">السعر</th><th class="lyd-col">ليبي</th><th class="actions-col"></th></tr>';
     }
 
     var html = '';
     for (var i = 0; i < smartResults.length; i++) {
         var r = smartResults[i];
         var rowBg = r._rateFilled ? 'class="rate-filled"' : '';
-        html += '<tr ' + rowBg + '><td style="font-weight:600">' + (i + 1) + '</td>';
+        html += '<tr ' + rowBg + '><td class="num-col">' + (i + 1) + '</td>';
         if (isTr) {
-            html += '<td dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
-            html += '<td>' + (r.transfer_type || 'كاش') + '</td>';
-            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
+            html += '<td class="phone-col" dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
+            html += '<td class="type-col">' + (r.transfer_type || 'كاش') + '</td>';
+            html += '<td class="egp-col" style="color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
             if (r._rateFilled) {
-                html += '<td style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:6px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
+                html += '<td class="rate-col" style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:4px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
             } else {
-                html += '<td>' + (r.exchange_rate || 0) + '</td>';
+                html += '<td class="rate-col">' + (r.exchange_rate || 0) + '</td>';
             }
-            html += '<td style="font-weight:800;color:#059669">' + fmt(r.amount_lyd) + '</td>';
+            html += '<td class="lyd-col" style="color:#059669">' + fmt(r.amount_lyd) + '</td>';
         } else {
-            html += '<td style="font-weight:800;color:var(--primary)">' + fmt(r.egp) + '</td>';
-            html += '<td>' + (r.rate || 0) + '</td>';
-            html += '<td style="font-weight:800;color:#059669">' + fmt(r.lyd) + '</td>';
+            html += '<td class="egp-col" style="color:var(--primary)">' + fmt(r.egp) + '</td>';
+            html += '<td class="rate-col">' + (r.rate || 0) + '</td>';
+            html += '<td class="lyd-col" style="color:#059669">' + fmt(r.lyd) + '</td>';
         }
-        html += '<td onclick="event.stopPropagation()"><div class="d-flex gap-1">';
-        html += '<button type="button" class="btn btn-outline-primary btn-sm" onclick="editRow(' + i + ')" style="border-radius:8px;padding:4px 8px"><i class="bi bi-pencil" style="font-size:.75rem"></i></button>';
-        html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(' + i + ')" style="border-radius:8px;padding:4px 8px"><i class="bi bi-x-lg" style="font-size:.75rem"></i></button>';
+        html += '<td class="actions-col" onclick="event.stopPropagation()"><div class="d-flex gap-1" style="justify-content:center">';
+        html += '<button type="button" class="btn btn-outline-primary btn-sm" onclick="editRow(' + i + ')" style="border-radius:6px;padding:2px 6px"><i class="bi bi-pencil" style="font-size:.7rem"></i></button>';
+        html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(' + i + ')" style="border-radius:6px;padding:2px 6px"><i class="bi bi-x-lg" style="font-size:.7rem"></i></button>';
         html += '</div></td></tr>';
     }
     body.innerHTML = html;
@@ -667,6 +674,18 @@ document.getElementById('waPasteArea').addEventListener('paste', function() {
 (function() {
     document.getElementById('exportCount').textContent = '{{ db_count|default:"0"|unlocalize }}';
     document.getElementById('exportEgp').textContent = '{{ db_total_egp|default:"0"|unlocalize }}';
+
+    // Sticky settings bar
+    var settingsBar = document.querySelector('.si-settings');
+    var settingsTop = settingsBar ? settingsBar.offsetTop : 0;
+    window.addEventListener('scroll', function() {
+        if (!settingsBar) return;
+        if (window.scrollY > settingsTop + 100) {
+            settingsBar.classList.add('sticky');
+        } else {
+            settingsBar.classList.remove('sticky');
+        }
+    });
 })();
 </script>
 {% endblock %}
