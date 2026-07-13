@@ -195,9 +195,6 @@
                     <a href="{% url 'transactions' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/transactions/' in request.path and '/add/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
                     {% endif %}
                     </div>
-                    {% if current_user.perm_import_whatsapp or current_user.is_admin %}
-                    <a href="{% url 'import_whatsapp' %}" class="nav-item" style="padding:7px 10px;{% if '/whatsapp/import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-whatsapp" style="color:#25d366;"></i> <span style="color:#25d366;">تصدير</span> <span style="color:#94a3b8;">و</span> <span style="color:#0ea5e9;">استيراد</span> <span style="color:#94a3b8;">حوالات</span></a>
-                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -212,9 +209,6 @@
                     <a href="{% url 'capital_list' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/capital/' in request.path and '/add/' not in request.path and '/import/' not in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-search"></i> استعلام</a>
                     {% endif %}
                     </div>
-                    {% if current_user.perm_import_balance or current_user.is_admin %}
-                    <a href="{% url 'import_balance' %}" class="nav-item" style="padding:7px 10px;{% if '/capital/import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-upload" style="color:#059669;"></i> <span style="color:#059669;">تصدير</span> <span style="color:#94a3b8;">و</span> <span style="color:#f59e0b;">استيراد</span> <span style="color:#94a3b8;">أرصدة</span></a>
-                    {% endif %}
                     <a href="{% url 'carryover_balance' %}" class="nav-item" style="padding:7px 10px;{% if '/carryover/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-skip-forward"></i> ترحيل الرصيد</a>
                 </div>
                 {% endif %}
