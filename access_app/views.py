@@ -1571,6 +1571,132 @@ def profits_report(request):
     })
 
 
+def export_profits_report(request):
+    from datetime import datetime
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from django.http import HttpResponse
+
+    year = int(request.GET.get("year", datetime.now().year))
+    month_from = int(request.GET.get("month_from", 1))
+    month_to = int(request.GET.get("month_to", 12))
+
+    month_names = {
+        1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل",
+        5: "مايو", 6: "يونيو", 7: "يوليو", 8: "أغسطس",
+        9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر",
+    }
+    month_from_name = month_names.get(month_from, "")
+    month_to_name = month_names.get(month_to, "")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "تقرير الأرباح"
+
+    header_font = Font(name="Cairo", size=14, bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="065f46", end_color="065f46", fill_type="solid")
+    ws.merge_cells("A1:J1")
+    ws["A1"] = f"تقرير الأرباح — الفترة من {month_from_name} الى {month_to_name} {year}"
+    ws["A1"].font = header_font
+    ws["A1"].fill = header_fill
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 40
+
+    sub_font = Font(name="Cairo", size=10, bold=True, color="FFFFFF")
+    ws.merge_cells("A2:J2")
+    ws["A2"] = "شركة اليمامة المالية"
+    ws["A2"].font = sub_font
+    ws["A2"].fill = header_fill
+    ws["A2"].alignment = Alignment(horizontal="center")
+    ws.row_dimensions[2].height = 28
+
+    headers = ["#", "الشهر", "إيداعات (مصري)", "حوالات (مصري)", "الفرق ÷ السعر", "إيداعات (ليبي)", "حوالات (ليبي)", "الفرق الليبي", "متوسط السعر", "صافي الربح"]
+    header_row = 4
+    col_header_fill = PatternFill(start_color="f0fdf9", end_color="f0fdf9", fill_type="solid")
+    col_header_font = Font(name="Cairo", size=10, bold=True, color="374151")
+    thin_border = Border(
+        left=Side(style="thin", color="e5e7eb"),
+        right=Side(style="thin", color="e5e7eb"),
+        top=Side(style="thin", color="e5e7eb"),
+        bottom=Side(style="thin", color="e5e7eb"),
+    )
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=header_row, column=col_idx, value=h)
+        cell.font = col_header_font
+        cell.fill = col_header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+
+    total_db_egp = 0
+    total_db_lyd = 0
+    total_cap_egp = 0
+    total_cap_lyd = 0
+    total_egp_to_lyd = 0
+    total_lyd_surplus = 0
+    total_profit = 0
+
+    row = header_row + 1
+    data_font = Font(name="Cairo", size=10)
+    profit_pos_font = Font(name="Cairo", size=10, bold=True, color="059669")
+    profit_neg_font = Font(name="Cairo", size=10, bold=True, color="dc2626")
+
+    for m in range(month_from, month_to + 1):
+        tx_qs = Database.objects.filter(date__year=year, date__month=m)
+        cap_qs = Capital.objects.filter(date__year=year, date__month=m)
+
+        db_egp = tx_qs.aggregate(t=Sum("transfered_amount"))["t"] or 0
+        db_lyd = tx_qs.aggregate(t=Sum("transfer_amount"))["t"] or 0
+        cap_egp = cap_qs.aggregate(t=Sum("cash_in"))["t"] or 0
+        cap_lyd = cap_qs.aggregate(t=Sum("libyan_cash"))["t"] or 0
+
+        avg_rate = round(cap_egp / cap_lyd, 3) if cap_lyd else 0
+        egypt_surplus_egp = cap_egp - db_egp
+        egypt_surplus_lyd = egypt_surplus_egp / avg_rate if avg_rate else 0
+        lyd_surplus = cap_lyd - db_lyd
+        profit = egypt_surplus_lyd - lyd_surplus if avg_rate else 0
+
+        total_db_egp += db_egp
+        total_db_lyd += db_lyd
+        total_cap_egp += cap_egp
+        total_cap_lyd += cap_lyd
+        total_egp_to_lyd += egypt_surplus_lyd
+        total_lyd_surplus += lyd_surplus
+        total_profit += profit
+
+        row_data = [m, month_names[m], cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), avg_rate, round(profit, 2)]
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row, column=col_idx, value=val)
+            cell.font = data_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+            if col_idx == 10:
+                cell.font = profit_pos_font if profit >= 0 else profit_neg_font
+            if col_idx == 9:
+                cell.number_format = "0.000"
+        row += 1
+
+    total_row = row
+    total_fill = PatternFill(start_color="e8f5e9", end_color="e8f5e9", fill_type="solid")
+    total_font = Font(name="Cairo", size=10, bold=True)
+    total_data = ["", "الإجمالي", total_cap_egp, total_db_egp, round(total_egp_to_lyd, 2), total_cap_lyd, total_db_lyd, round(total_lyd_surplus, 2), "—", round(total_profit, 2)]
+    for col_idx, val in enumerate(total_data, 1):
+        cell = ws.cell(row=total_row, column=col_idx, value=val)
+        cell.font = total_font
+        cell.fill = total_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+
+    col_widths = [6, 14, 18, 18, 16, 18, 18, 16, 14, 18]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    filename = f"تقرير الارباح عن الفترة من {month_from_name} الى {month_to_name} سنة {year}.xlsx"
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
 def edit_capital(request, id):
     obj = get_object_or_404(Capital, id=id)
     if request.method == "POST":

@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/quick-office/', views.quick_office, name='quick_office'),
     path('transactions/receipt/<int:id>/', views.transaction_receipt, name='transaction_receipt'),
     path('profits/', views.profits_report, name='profits_report'),
+    path('profits/export/', views.export_profits_report, name='export_profits_report'),
     path('carryover/', views.carryover_balance, name='carryover_balance'),
     path('carryover/dismiss/<str:period>/', views.dismiss_carryover, name='dismiss_carryover'),
     path('internal/', views.internal_transfer_list, name='internal_transfer_list'),

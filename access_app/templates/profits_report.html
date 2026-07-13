@@ -157,6 +157,9 @@
         <div class="col-md-2">
             <button type="button" onclick="window.print()" style="width:100%;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-printer"></i> طباعة</button>
         </div>
+        <div class="col-md-2">
+            <a href="{% url 'export_profits_report' %}?year={{ year }}&month_from={{ month_from }}&month_to={{ month_to }}" style="display:block;width:100%;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;text-align:center;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
+        </div>
     </form>
 </div>
 
