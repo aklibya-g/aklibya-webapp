@@ -314,6 +314,19 @@
     </div>
 </div>
 
+<!-- Confirm Import Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content" style="border-radius:16px;border:none">
+    <div class="modal-header" style="border-bottom:1px solid var(--border);padding:16px 20px;background:linear-gradient(135deg,#dcfce7,#d1fae5)">
+        <h6 class="modal-title fw-bold" style="color:#065f46"><i class="bi bi-check-circle-fill" style="color:#059669"></i> تأكيد الاستيراد</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" style="padding:20px" id="confirmBody"></div>
+    <div class="modal-footer" style="border-top:1px solid var(--border);padding:12px 20px">
+        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius:8px"><i class="bi bi-x-lg"></i> إلغاء</button>
+        <button type="button" class="btn btn-success fw-bold" onclick="doImport()" style="border-radius:8px;padding:8px 24px"><i class="bi bi-check-lg"></i> تأكيد الاستيراد</button>
+    </div>
+</div></div></div>
+
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:16px;border:none">
     <div class="modal-header" style="border-bottom:1px solid var(--border);padding:16px 20px">
@@ -658,7 +671,64 @@ function confirmImport() {
     var isTr = smartType === 'transfer';
     var resultsToSend = JSON.parse(JSON.stringify(smartResults));
     if (isTr && document.getElementById('siPrevRate').checked) fillMissingRates(resultsToSend);
+    window._resultsToSend = resultsToSend;
 
+    var clientName = document.getElementById('siClient').options[document.getElementById('siClient').selectedIndex].text;
+    var typeName = isTr ? 'حوالات' : 'أرصدة';
+    var typeIcon = isTr ? '💸' : '💰';
+    var totalEgp = 0, totalLyd = 0;
+    resultsToSend.forEach(function(r) {
+        totalEgp += parseFloat(r.amount_egp || r.egp || 0);
+        totalLyd += parseFloat(r.amount_lyd || r.lyd || 0);
+    });
+
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">';
+    html += '<div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:10px;padding:12px;text-align:center"><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px">التاريخ</div><div style="font-size:.95rem;font-weight:700">' + date + '</div></div>';
+    html += '<div style="background:#d1fae5;border:1px solid #059669;border-radius:10px;padding:12px;text-align:center"><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px">الشخص</div><div style="font-size:.95rem;font-weight:700;color:#065f46">' + clientName + '</div></div>';
+    html += '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px;text-align:center"><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px">النوع</div><div style="font-size:.95rem;font-weight:700;color:#92400e">' + typeIcon + ' ' + typeName + '</div></div>';
+    html += '<div style="background:#ede9fe;border:1px solid #7c3aed;border-radius:10px;padding:12px;text-align:center"><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px">العدد</div><div style="font-size:.95rem;font-weight:700;color:#5b21b6">' + resultsToSend.length + ' عنصر</div></div>';
+    html += '</div>';
+    html += '<div style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:10px;padding:12px;display:flex;justify-content:space-around;margin-bottom:16px">';
+    html += '<div style="text-align:center"><div style="font-size:.75rem;color:var(--text-muted)">مصري</div><div style="font-size:1.1rem;font-weight:800;color:var(--primary)">' + fmt(totalEgp) + ' EGP</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:.75rem;color:var(--text-muted)">ليبي</div><div style="font-size:1.1rem;font-weight:800;color:#059669">' + fmt(totalLyd) + ' LYD</div></div>';
+    html += '</div>';
+
+    html += '<div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
+    html += '<thead><tr style="background:var(--bg)">';
+    html += '<th style="padding:8px;text-align:center">#</th>';
+    if (isTr) html += '<th style="padding:8px;text-align:center">رقم المحمول</th>';
+    html += '<th style="padding:8px;text-align:center">مصري</th>';
+    html += '<th style="padding:8px;text-align:center">السعر</th>';
+    html += '<th style="padding:8px;text-align:center">ليبي</th>';
+    if (isTr) html += '<th style="padding:8px;text-align:center">النوع</th>';
+    html += '</tr></thead><tbody>';
+    resultsToSend.forEach(function(r, i) {
+        var egp = r.amount_egp || r.egp || 0;
+        var rate = r.exchange_rate || r.rate || 0;
+        var lyd = r.amount_lyd || r.lyd || 0;
+        var rateStyle = r._rateFilled ? 'color:#991b1b;font-weight:800;background:#fecdd3;border-radius:4px' : '';
+        html += '<tr style="border-bottom:1px solid var(--border)">';
+        html += '<td style="padding:6px;text-align:center;font-weight:600;color:var(--text-muted)">' + (i+1) + '</td>';
+        if (isTr) html += '<td style="padding:6px;text-align:center;font-weight:700" dir="ltr">' + (r.receiver_tele || '-') + '</td>';
+        html += '<td style="padding:6px;text-align:center;font-weight:700;color:var(--primary)">' + fmt(egp) + '</td>';
+        html += '<td style="padding:6px;text-align:center;font-weight:700;' + rateStyle + '">' + (rate ? '⚡ ' + rate : '-') + '</td>';
+        html += '<td style="padding:6px;text-align:center;font-weight:700;color:#059669">' + fmt(lyd) + '</td>';
+        if (isTr) html += '<td style="padding:6px;text-align:center">' + (r.transfer_type || 'كاش') + '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    document.getElementById('confirmBody').innerHTML = html;
+    var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function doImport() {
+    var modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+    modal.hide();
+    var isTr = smartType === 'transfer';
+    var resultsToSend = window._resultsToSend;
     var form = document.createElement('form');
     form.method = 'POST';
     form.action = isTr ? '{% url "import_whatsapp" %}' : '{% url "import_balance" %}';
@@ -667,11 +737,11 @@ function confirmImport() {
     html += '<input type="hidden" name="confirm" value="1">';
     if (isTr) {
         html += '<input type="hidden" name="use_prev_rate" value="' + (document.getElementById('siPrevRate').checked ? '1' : '0') + '">';
-        html += '<input type="hidden" name="import_date" value="' + date + '">';
-        html += '<input type="hidden" name="client_id" value="' + client + '">';
+        html += '<input type="hidden" name="import_date" value="' + document.getElementById('siDate').value + '">';
+        html += '<input type="hidden" name="client_id" value="' + document.getElementById('siClient').value + '">';
     } else {
-        html += '<input type="hidden" name="client_id" value="' + client + '">';
-        html += '<input type="hidden" name="import_date" value="' + date + '">';
+        html += '<input type="hidden" name="client_id" value="' + document.getElementById('siClient').value + '">';
+        html += '<input type="hidden" name="import_date" value="' + document.getElementById('siDate').value + '">';
     }
     form.innerHTML = html;
     document.body.appendChild(form);
