@@ -75,7 +75,7 @@
 .si-detect-unknown{background:#fef3c7;color:#d97706;border:1px solid rgba(217,119,6,.2)}
 
 /* Rate filled highlight */
-.rate-filled{background:linear-gradient(90deg,#fffbeb,#fef3c7);border-left:3px solid #d97706}
+.rate-filled{background:linear-gradient(90deg,#fff1f2,#fecdd3);border-left:3px solid #dc2626}
 
 @media(max-width:992px){.si-settings{flex-direction:column;align-items:stretch}}
 </style>
@@ -538,7 +538,7 @@ function showPreview() {
             html += '<td class="type-col">' + (r.transfer_type || 'كاش') + '</td>';
             html += '<td class="egp-col" style="color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
             if (r._rateFilled) {
-                html += '<td class="rate-col" style="color:#92400e;font-weight:800;background:#fef3c7;border-radius:4px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
+                html += '<td class="rate-col" style="color:#991b1b;font-weight:800;background:#fecdd3;border-radius:4px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
             } else {
                 html += '<td class="rate-col">' + (r.exchange_rate || 0) + '</td>';
             }
