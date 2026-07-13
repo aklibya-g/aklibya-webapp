@@ -182,6 +182,8 @@
                         <th>إيداعات (ليبي)</th>
                         <th>حوالات (ليبي)</th>
                         <th>الفرق الليبي</th>
+                        <th>سعر الحوالات</th>
+                        <th>سعر الارصدة</th>
                         <th>متوسط السعر</th>
                         <th>صافي الربح</th>
                     </tr>
@@ -197,7 +199,9 @@
                         <td>{{ d.cap_lyd|fmt }}</td>
                         <td>{{ d.db_lyd|fmt }}</td>
                         <td style="font-weight:600;color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</td>
-                        <td class="rate-cell">{{ d.avg_rate|fmt }}</td>
+                        <td class="rate-cell" style="color:#2563eb;font-weight:700">{{ d.db_avg_rate }}</td>
+                        <td class="rate-cell" style="color:#7c3aed;font-weight:700">{{ d.cap_avg_rate }}</td>
+                        <td class="rate-cell">{{ d.avg_rate }}</td>
                         <td class="{% if d.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
                             {% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}
                         </td>
@@ -214,6 +218,8 @@
                         <td>{{ total_cap_lyd|fmt }}</td>
                         <td>{{ total_db_lyd|fmt }}</td>
                         <td style="font-weight:800;color:{% if total_lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_lyd_surplus|fmt }}</td>
+                        <td class="rate-cell" style="color:#2563eb;font-weight:700">{% if total_db_lyd %}{{ total_db_egp|floatformat:0 }}÷{{ total_db_lyd|floatformat:0 }}{% endif %}</td>
+                        <td class="rate-cell" style="color:#7c3aed;font-weight:700">{% if total_cap_lyd %}{{ total_cap_egp|floatformat:0 }}÷{{ total_cap_lyd|floatformat:0 }}{% endif %}</td>
                         <td class="rate-cell">—</td>
                         <td class="total-profit {% if total_profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
                             {% if total_profit >= 0 %}+{% endif %}{{ total_profit|fmt }}

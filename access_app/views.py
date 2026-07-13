@@ -1532,6 +1532,9 @@ def profits_report(request):
         total_lyd_surplus += lyd_surplus
         total_profit += profit
 
+        db_avg_rate = round(db_egp / db_lyd, 3) if db_lyd else 0
+        cap_avg_rate = round(cap_egp / cap_lyd, 3) if cap_lyd else 0
+
         data.append({
             "month": m,
             "month_name": month_names[m],
@@ -1540,6 +1543,8 @@ def profits_report(request):
             "cap_egp": cap_egp,
             "cap_lyd": cap_lyd,
             "avg_rate": avg_rate,
+            "db_avg_rate": db_avg_rate,
+            "cap_avg_rate": cap_avg_rate,
             "egp_to_lyd": egypt_surplus_lyd,
             "lyd_surplus": lyd_surplus,
             "profit": profit,
@@ -1595,7 +1600,7 @@ def export_profits_report(request):
 
     header_font = Font(name="Cairo", size=14, bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="065f46", end_color="065f46", fill_type="solid")
-    ws.merge_cells("A1:J1")
+    ws.merge_cells("A1:L1")
     ws["A1"] = f"تقرير الأرباح — الفترة من {month_from_name} الى {month_to_name} {year}"
     ws["A1"].font = header_font
     ws["A1"].fill = header_fill
@@ -1603,14 +1608,14 @@ def export_profits_report(request):
     ws.row_dimensions[1].height = 40
 
     sub_font = Font(name="Cairo", size=10, bold=True, color="FFFFFF")
-    ws.merge_cells("A2:J2")
+    ws.merge_cells("A2:L2")
     ws["A2"] = "شركة اليمامة المالية"
     ws["A2"].font = sub_font
     ws["A2"].fill = header_fill
     ws["A2"].alignment = Alignment(horizontal="center")
     ws.row_dimensions[2].height = 28
 
-    headers = ["#", "الشهر", "إيداعات (مصري)", "حوالات (مصري)", "الفرق ÷ السعر", "إيداعات (ليبي)", "حوالات (ليبي)", "الفرق الليبي", "متوسط السعر", "صافي الربح"]
+    headers = ["#", "الشهر", "إيداعات (مصري)", "حوالات (مصري)", "الفرق ÷ السعر", "إيداعات (ليبي)", "حوالات (ليبي)", "الفرق الليبي", "سعر الحوالات", "سعر الارصدة", "متوسط السعر", "صافي الربح"]
     header_row = 4
     col_header_fill = PatternFill(start_color="f0fdf9", end_color="f0fdf9", fill_type="solid")
     col_header_font = Font(name="Cairo", size=10, bold=True, color="374151")
@@ -1663,7 +1668,7 @@ def export_profits_report(request):
         total_lyd_surplus += lyd_surplus
         total_profit += profit
 
-        row_data = [m, month_names[m], cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), avg_rate, round(profit, 2)]
+        row_data = [m, month_names[m], cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), round(db_egp / db_lyd, 3) if db_lyd else 0, round(cap_egp / cap_lyd, 3) if cap_lyd else 0, avg_rate, round(profit, 2)]
         for col_idx, val in enumerate(row_data, 1):
             cell = ws.cell(row=row, column=col_idx, value=val)
             cell.font = data_font
@@ -1678,7 +1683,7 @@ def export_profits_report(request):
     total_row = row
     total_fill = PatternFill(start_color="e8f5e9", end_color="e8f5e9", fill_type="solid")
     total_font = Font(name="Cairo", size=10, bold=True)
-    total_data = ["", "الإجمالي", total_cap_egp, total_db_egp, round(total_egp_to_lyd, 2), total_cap_lyd, total_db_lyd, round(total_lyd_surplus, 2), "—", round(total_profit, 2)]
+    total_data = ["", "الإجمالي", total_cap_egp, total_db_egp, round(total_egp_to_lyd, 2), total_cap_lyd, total_db_lyd, round(total_lyd_surplus, 2), "—", "—", "—", round(total_profit, 2)]
     for col_idx, val in enumerate(total_data, 1):
         cell = ws.cell(row=total_row, column=col_idx, value=val)
         cell.font = total_font
@@ -1686,7 +1691,7 @@ def export_profits_report(request):
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.border = thin_border
 
-    col_widths = [6, 14, 18, 18, 16, 18, 18, 16, 14, 18]
+    col_widths = [6, 14, 18, 18, 16, 18, 18, 16, 14, 14, 14, 18]
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
