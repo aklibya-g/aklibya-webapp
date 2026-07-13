@@ -772,9 +772,6 @@ def import_whatsapp(request):
                         amount_lyd = item["amount_lyd"]
                         amount_egp = item["amount_egp"]
                         if ahmed:
-                            if ahmed.egp_balance < amount_egp:
-                                errors.append(f"رقم {item['receiver_tele']}: رصيد {ahmed.name} غير كافٍ ({ahmed.egp_balance:.2f} < {amount_egp:.2f})")
-                                continue
                             ahmed.egp_balance -= amount_egp
                             ahmed.lyd_balance += amount_lyd
                             ahmed.save()
@@ -1358,9 +1355,6 @@ def import_transfers_excel(request):
                 rate = float(row[8] or 0)
                 amount_lyd = float(row[9] or 0)
                 if amount_egp <= 0:
-                    continue
-                if ahmed and ahmed.egp_balance < amount_egp:
-                    errors.append(f"صف {row_idx}: رصيد أحمد ياسين غير كافٍ")
                     continue
                 if ahmed:
                     ahmed.egp_balance -= amount_egp
