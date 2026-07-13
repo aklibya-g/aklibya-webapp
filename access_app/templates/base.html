@@ -260,10 +260,6 @@
                 <div class="sec-box" style="margin-top:8px">
                     <div class="nav-section" style="color:#8b5cf6;padding:4px 8px 6px;">إدارة النظام</div>
                     <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
-                    <a href="{% url 'smart_import' %}#alerts" class="nav-item" style="padding:7px 10px;{% if import_alerts_unread %}background:rgba(220,38,38,0.08);border-right:3px solid #dc2626;{% endif %}{% if '/smart-import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
-                        <i class="bi bi-bell-fill" style="color:{% if import_alerts_unread %}#dc2626{% else %}#f59e0b{% endif %};{% if import_alerts_unread %}animation:pulse 1.5s infinite{% endif %}"></i> تنبيهات الاستيراد
-                        {% if import_alerts_unread %}<span style="background:#dc2626;color:#fff;font-size:.65rem;padding:3px 8px;border-radius:10px;margin-right:6px;font-weight:800;animation:pulse 1.5s infinite;box-shadow:0 0 8px rgba(220,38,38,0.4)">{{ import_alerts_unread }} مشكلة</span>{% endif %}
-                    </a>
                     {% if current_user.is_admin %}
                     <a href="{% url 'backups_list' %}" class="nav-item" style="padding:7px 10px;{% if '/backups/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-cloud-arrow-up" style="color:#06b6d4;"></i> النسخ الاحتياطية</a>
                     {% endif %}
