@@ -1094,7 +1094,7 @@ def parse_balance_lines(text):
         if egp < 10:
             continue
 
-        final_lyd = round(egp * rate, 2)
+        final_lyd = round(egp / rate, 2) if rate else 0
 
         results.append({
             "egp": egp,
