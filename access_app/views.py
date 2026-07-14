@@ -917,9 +917,8 @@ def _clean_number(raw):
 def _extract_egp(ln):
     """Try to extract EGP amount from a single line. Returns float or None.
     Returns None if the number has 🇾🇪🇱🇾 flag (meaning it's LYD, not EGP)."""
-    # If line has 🇾🇪 or 🇱🇾 flag after number, it's LYD not EGP
-    if re.search(r'\d+\s*(🇾🇪|🇱🇾)', ln):
-        return None
+    # If line has 🇾🇪 or 🇱🇾 flag after number AND has 'ج.م' or 'ج م', it's EGP not LYD
+    # Otherwise 🇾🇪 just means "via Yemen channel", not currency - ignore it
 
     # Pattern 1: "استلام XXX" - extract number after استلام
     m = re.search(r'استلام\s*(\d[\d,\.]*)', ln)
@@ -1050,7 +1049,6 @@ def parse_balance_lines(text):
         lines = block.split('\n')
         egp = None
         rate = None
-        lyd_direct = None
         found_istalam = False
 
         for li, line in enumerate(lines):
@@ -1078,29 +1076,16 @@ def parse_balance_lines(text):
             if rate is None:
                 rate = _extract_rate(ln)
 
-            # Check for LYD direct amount (e.g., "76200🇾🇪")
-            if lyd_direct is None and egp is None:
+            # Check for bare number with 🇾🇪 flag - treat as EGP (not LYD)
+            if egp is None:
                 m = re.search(r'(\d[\d,\.]*)\s*🇾🇪', ln)
                 if m:
                     try:
                         v = _clean_number(m.group(1))
                         if v >= 10:
-                            lyd_direct = v
+                            egp = v
                     except ValueError:
                         pass
-                # Also check for 🇱🇾 (Libya flag)
-                m = re.search(r'(\d[\d,\.]*)\s*🇱🇾', ln)
-                if m:
-                    try:
-                        v = _clean_number(m.group(1))
-                        if v >= 10:
-                            lyd_direct = v
-                    except ValueError:
-                        pass
-
-        # If no EGP found but have LYD direct + rate, calculate EGP
-        if egp is None and lyd_direct is not None and rate is not None and rate > 0:
-            egp = round(lyd_direct / rate, 2)
 
         if egp is None or rate is None:
             continue
@@ -1109,7 +1094,7 @@ def parse_balance_lines(text):
         if egp < 10:
             continue
 
-        final_lyd = lyd_direct if lyd_direct is not None else round(egp * rate, 2)
+        final_lyd = round(egp * rate, 2)
 
         results.append({
             "egp": egp,
