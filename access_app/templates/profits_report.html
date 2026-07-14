@@ -38,17 +38,17 @@
 .table-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;overflow:hidden}
 .table-card .table-header{padding:18px 22px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
 .table-card .table-header h3{font-size:1.05rem;font-weight:700;color:#1a1a2e;margin:0}
-.profit-table{width:100%;border-collapse:separate;border-spacing:0}
-.profit-table thead th{background:#f8fafb;color:#4b5563;font-size:.78rem;font-weight:700;padding:12px 14px;text-align:center;border-bottom:2px solid #e5e7eb;white-space:nowrap;letter-spacing:.3px}
-.profit-table tbody td{padding:12px 14px;text-align:center;font-size:.88rem;border-bottom:1px solid #f0f0f0;color:#374151;transition:background .15s}
+.profit-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.profit-table thead th{background:#f8fafb;color:#4b5563;font-size:.72rem;font-weight:700;padding:8px 6px;text-align:center;border-bottom:2px solid #e5e7eb;white-space:nowrap;letter-spacing:.2px}
+.profit-table tbody td{padding:8px 6px;text-align:center;font-size:.8rem;border-bottom:1px solid #f0f0f0;color:#374151;transition:background .15s}
 .profit-table tbody tr:hover td{background:#f0fdf9}
 .profit-table tbody tr:nth-child(even) td{background:#fafbfc}
 .profit-table tbody tr:nth-child(even):hover td{background:#f0fdf9}
-.profit-table .month-cell{font-weight:700;color:#1a1a2e;font-size:.9rem}
+.profit-table .month-cell{font-weight:700;color:#1a1a2e;font-size:.82rem}
 .profit-table .profit-pos{color:#059669;font-weight:800}
 .profit-table .profit-neg{color:#dc2626;font-weight:800}
 .profit-table .rate-cell{background:#f8fafb;color:#6b7280;font-size:.82rem}
-.profit-table tfoot td{background:#f0fdf9;font-weight:800;color:#1a1a2e;border-top:2px solid #059669;padding:14px;font-size:.92rem}
+.profit-table tfoot td{background:#f0fdf9;font-weight:800;color:#1a1a2e;border-top:2px solid #059669;padding:10px 6px;font-size:.82rem}
 .profit-table tfoot .total-profit{font-size:1.1rem}
 .empty-state{text-align:center;padding:60px 20px;color:#9ca3af}
 .empty-state i{font-size:3rem;margin-bottom:12px;display:block}
@@ -168,22 +168,22 @@
             <span style="font-size:.82rem;color:#6b7280">{{ data|length }} شهر</span>
         </div>
         {% if data %}
-        <div class="table-responsive">
+        <div style="overflow-x:auto">
             <table class="profit-table" id="profitTable">
                 <thead>
                     <tr>
-                        <th style="width:40px">#</th>
-                        <th>الشهر</th>
-                        <th>إيداعات (مصري)</th>
-                        <th>حوالات (مصري)</th>
-                        <th>الفرق ÷ السعر</th>
-                        <th>إيداعات (ليبي)</th>
-                        <th>حوالات (ليبي)</th>
-                        <th>الفرق الليبي</th>
+                        <th style="width:28px">#</th>
+                        <th style="width:70px">الشهر</th>
+                        <th>إيداعات مصري</th>
+                        <th>حوالات مصري</th>
+                        <th>الفرق</th>
+                        <th>إيداعات ليبي</th>
+                        <th>حوالات ليبي</th>
+                        <th>فرق ليبي</th>
                         <th>سعر الحوالات</th>
                         <th>سعر الارصدة</th>
-                        <th>متوسط السعر</th>
-                        <th>صافي الربح</th>
+                        <th>السعر</th>
+                        <th>الربح</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -209,16 +209,16 @@
                 <tfoot>
                     <tr>
                         <td></td>
-                        <td style="font-weight:800">الإجمالي</td>
+                        <td style="font-weight:800;font-size:.82rem">الإجمالي</td>
                         <td>{{ total_cap_egp|fmt }}</td>
                         <td>{{ total_db_egp|fmt }}</td>
-                        <td class="rate-cell">{{ total_egp_to_lyd|fmt }}</td>
+                        <td>{{ total_egp_to_lyd|fmt }}</td>
                         <td>{{ total_cap_lyd|fmt }}</td>
                         <td>{{ total_db_lyd|fmt }}</td>
                         <td style="font-weight:800;color:{% if total_lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_lyd_surplus|fmt }}</td>
-                        <td class="rate-cell" style="color:#2563eb;font-weight:700">{% if total_db_lyd %}{{ total_db_egp|floatformat:0 }}÷{{ total_db_lyd|floatformat:0 }}{% endif %}</td>
-                        <td class="rate-cell" style="color:#7c3aed;font-weight:700">{% if total_cap_lyd %}{{ total_cap_egp|floatformat:0 }}÷{{ total_cap_lyd|floatformat:0 }}{% endif %}</td>
-                        <td class="rate-cell">—</td>
+                        <td style="color:#2563eb;font-weight:700">{{ total_db_avg_rate }}</td>
+                        <td style="color:#7c3aed;font-weight:700">{{ total_cap_avg_rate }}</td>
+                        <td>—</td>
                         <td class="total-profit {% if total_profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">
                             {% if total_profit >= 0 %}+{% endif %}{{ total_profit|fmt }}
                         </td>
