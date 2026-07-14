@@ -1100,7 +1100,7 @@ def parse_balance_lines(text):
 
         # If no EGP found but have LYD direct + rate, calculate EGP
         if egp is None and lyd_direct is not None and rate is not None and rate > 0:
-            egp = round(lyd_direct * rate, 2)
+            egp = round(lyd_direct / rate, 2)
 
         if egp is None or rate is None:
             continue
@@ -1109,7 +1109,7 @@ def parse_balance_lines(text):
         if egp < 10:
             continue
 
-        final_lyd = lyd_direct if lyd_direct is not None else round(egp / rate, 2)
+        final_lyd = lyd_direct if lyd_direct is not None else round(egp * rate, 2)
 
         results.append({
             "egp": egp,
