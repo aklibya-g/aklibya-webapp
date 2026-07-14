@@ -1524,6 +1524,7 @@ def profits_report(request):
 
     total_db_avg_rate = round(total_db_egp / total_db_lyd, 3) if total_db_lyd else 0
     total_cap_avg_rate = round(total_cap_egp / total_cap_lyd, 3) if total_cap_lyd else 0
+    total_egp_balance = total_cap_egp - total_db_egp
 
     return render(request, "profits_report.html", {
         "title": "تقرير الأرباح",
@@ -1539,6 +1540,7 @@ def profits_report(request):
         "total_cap_lyd": total_cap_lyd,
         "total_egp_to_lyd": total_egp_to_lyd,
         "total_lyd_surplus": total_lyd_surplus,
+        "total_egp_balance": total_egp_balance,
         "total_db_avg_rate": total_db_avg_rate,
         "total_cap_avg_rate": total_cap_avg_rate,
         "total_profit": total_profit,
