@@ -16,6 +16,10 @@
 .form-group label{display:block;font-size:.82rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .form-group input,.form-group select{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:600;background:var(--bg);color:var(--text);transition:border-color .2s}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
+.pwd-wrap{position:relative}
+.pwd-wrap input{padding-left:42px}
+.pwd-toggle{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;font-size:1.1rem;transition:color .15s}
+.pwd-toggle:hover{color:var(--primary)}
 .form-btn{padding:12px 28px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
 .form-btn-primary{background:var(--primary);color:#fff}.form-btn-primary:hover{background:var(--primary-hover)}
 .form-btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.form-btn-outline:hover{border-color:var(--primary);color:var(--primary)}
@@ -45,7 +49,10 @@
             </div>
             <div class="form-group">
                 <label>{% if mode == 'add' %}كلمة المرور{% else %}كلمة المرور الجديدة (اتركها فارغة للإبقاء){% endif %}</label>
-                <input type="password" name="password" {% if mode == 'add' %}required{% endif %} placeholder="{% if mode == 'add' %}كلمة المرور{% else %}اتركها فارغة للإبقاء{% endif %}">
+                <div class="pwd-wrap">
+                    <input type="password" name="password" id="pwdField" {% if mode == 'add' %}required{% endif %} placeholder="{% if mode == 'add' %}كلمة المرور{% else %}اتركها فارغة للإبقاء{% endif %}">
+                    <button type="button" class="pwd-toggle" onclick="togglePwd()" tabindex="-1"><i class="bi bi-eye" id="pwdIcon"></i></button>
+                </div>
             </div>
         </div>
         <div class="form-row">
@@ -190,4 +197,11 @@
         <a href="{% url 'users_list' %}" class="form-btn form-btn-outline">إلغاء</a>
     </div>
 </form>
+<script>
+function togglePwd(){
+    var f=document.getElementById('pwdField'),i=document.getElementById('pwdIcon');
+    if(f.type==='password'){f.type='text';i.className='bi bi-eye-slash'}
+    else{f.type='password';i.className='bi bi-eye'}
+}
+</script>
 {% endblock %}
