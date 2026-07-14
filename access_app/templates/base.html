@@ -245,7 +245,7 @@
                     <div class="nav-section" style="color:#ec4899;padding:4px 8px 6px;">الأرباح</div>
                     <div style="display:flex;gap:4px;padding:0 4px;">
                     <a href="{% url 'profits_report' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/profits/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-graph-up-arrow"></i> التقرير</a>
-                    <a href="/admin/" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;"><i class="bi bi-gear"></i> الإعدادات</a>
+                    <a href="{% url 'settings_page' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/settings/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-gear"></i> الإعدادات</a>
                     </div>
                 </div>
                 {% endif %}

@@ -2405,6 +2405,148 @@ def toggle_maintenance(request):
 
 
 @login_required_custom
+def settings_page(request):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية للوصول إلى الإعدادات")
+        return redirect("home")
+
+    from .models import (SystemSetting, DeliveryArea, OfficeName, FromSource,
+                         TransferType, OrderType, BalanceType, CurrencyCapital, ClientBalance)
+    setting = SystemSetting.get()
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "update_maintenance":
+            setting.maintenance_mode = request.POST.get("maintenance_mode") == "on"
+            setting.maintenance_message = request.POST.get("maintenance_message", setting.maintenance_message)
+            setting.save()
+            messages.success(request, "تم حفظ إعدادات الصيانة")
+
+        elif action == "add_area":
+            name = request.POST.get("name", "").strip()
+            if name:
+                DeliveryArea.objects.get_or_create(name=name)
+                messages.success(request, f"تم إضافة منطقة: {name}")
+            else:
+                messages.error(request, "أدخل اسم المنطقة")
+
+        elif action == "delete_area":
+            try:
+                DeliveryArea.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف المنطقة")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_office":
+            name = request.POST.get("name", "").strip()
+            code = request.POST.get("code", "").strip()
+            if name:
+                OfficeName.objects.get_or_create(office_name=name, defaults={"code": code})
+                messages.success(request, f"تم إضافة مكتب: {name}")
+            else:
+                messages.error(request, "أدخل اسم المكتب")
+
+        elif action == "delete_office":
+            try:
+                OfficeName.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف المكتب")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_source":
+            name = request.POST.get("name", "").strip()
+            if name:
+                FromSource.objects.get_or_create(from_field=name)
+                messages.success(request, f"تم إضافة مصدر: {name}")
+            else:
+                messages.error(request, "أدخل اسم المصدر")
+
+        elif action == "delete_source":
+            try:
+                FromSource.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف المصدر")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_transfer_type":
+            name = request.POST.get("name", "").strip()
+            if name:
+                TransferType.objects.get_or_create(Transfer_type=name)
+                messages.success(request, f"تم إضافة نوع: {name}")
+            else:
+                messages.error(request, "أدخل اسم النوع")
+
+        elif action == "delete_transfer_type":
+            try:
+                TransferType.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف النوع")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_order_type":
+            name = request.POST.get("name", "").strip()
+            if name:
+                OrderType.objects.get_or_create(order_type=name)
+                messages.success(request, f"تم إضافة نوع طلب: {name}")
+            else:
+                messages.error(request, "أدخل اسم النوع")
+
+        elif action == "delete_order_type":
+            try:
+                OrderType.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف نوع الطلب")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_balance_type":
+            name = request.POST.get("name", "").strip()
+            if name:
+                BalanceType.objects.get_or_create(type=name)
+                messages.success(request, f"تم إضافة نوع رصيد: {name}")
+            else:
+                messages.error(request, "أدخل اسم النوع")
+
+        elif action == "delete_balance_type":
+            try:
+                BalanceType.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف نوع الرصيد")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        elif action == "add_currency":
+            name = request.POST.get("name", "").strip()
+            if name:
+                CurrencyCapital.objects.get_or_create(currency_type=name)
+                messages.success(request, f"تم إضافة عملة: {name}")
+            else:
+                messages.error(request, "أدخل اسم العملة")
+
+        elif action == "delete_currency":
+            try:
+                CurrencyCapital.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.success(request, "تم حذف العملة")
+            except Exception as e:
+                messages.error(request, f"خطأ: {e}")
+
+        return redirect("settings_page")
+
+    ctx = {
+        "title": "الإعدادات",
+        "setting": setting,
+        "areas": list(DeliveryArea.objects.all()),
+        "offices": list(OfficeName.objects.all()),
+        "sources": list(FromSource.objects.all()),
+        "transfer_types": list(TransferType.objects.all()),
+        "order_types": list(OrderType.objects.all()),
+        "balance_types": list(BalanceType.objects.all()),
+        "currencies": list(CurrencyCapital.objects.all()),
+    }
+    return render(request, "settings.html", ctx)
+
+
+@login_required_custom
 def toggle_user_active(request, id):
     user = get_current_user(request)
     if not user or not user.is_admin:
