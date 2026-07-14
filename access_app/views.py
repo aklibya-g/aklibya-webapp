@@ -917,11 +917,9 @@ def _clean_number(raw):
 def _extract_egp(ln):
     """Try to extract EGP amount from a single line. Returns float or None.
     Returns None if the number has 🇾🇪🇱🇾 flag (meaning it's LYD, not EGP)."""
-    # If line has flag emoji after number, it's LYD not EGP
-    if re.search(r'\d+\s*[\U0001f1ea-\U0001f1ff]{2}', ln):
-        # Exception: 🇪🇬 flag means EGP
-        if not re.search(r'🇪🇬', ln):
-            return None
+    # If line has 🇾🇪 or 🇱🇾 flag after number, it's LYD not EGP
+    if re.search(r'\d+\s*(🇾🇪|🇱🇾)', ln):
+        return None
 
     # Pattern 1: "استلام XXX" - extract number after استلام
     m = re.search(r'استلام\s*(\d[\d,\.]*)', ln)
@@ -992,8 +990,11 @@ def _extract_egp(ln):
 
 def _extract_rate(ln):
     """Try to extract exchange rate from a single line. Returns float or None."""
-    # Pattern 1: "سعر X" or "سعر: X" - clean any attached symbols/flags
-    m = re.search(r'سعر[:\s]*(\d[\d,\.]*)', ln)
+    # Strip flag emojis before matching
+    ln_clean = re.sub(r'[\U0001f1e6-\U0001f1ff]{2}', '', ln).strip()
+
+    # Pattern 1: "سعر X" or "سعر: X"
+    m = re.search(r'سعر[:\s]*(\d[\d,\.]*)', ln_clean)
     if m:
         r_str = m.group(1).replace(",", ".")
         try:
@@ -1004,7 +1005,7 @@ def _extract_rate(ln):
             pass
 
     # Pattern 2: "X♻️"
-    m = re.search(r'(\d+[\.,]?\d*)\s*♻', ln)
+    m = re.search(r'(\d+[\.,]?\d*)\s*♻', ln_clean)
     if m:
         r_str = m.group(1).replace(",", ".")
         try:
@@ -1014,30 +1015,8 @@ def _extract_rate(ln):
         except ValueError:
             pass
 
-    # Pattern 3: Flag emoji after number (🇾🇪🇱🇾🇪🇬 etc.)
-    m = re.search(r'(\d+[\.,]?\d*)\s*\U0001f1e6\U0001f1ff', ln)
-    if m:
-        r_str = m.group(1).replace(",", ".")
-        try:
-            v = float(r_str)
-            if 3 < v < 10:
-                return v
-        except ValueError:
-            pass
-
-    # Pattern 3b: Any two-char flag emoji after number
-    m = re.search(r'(\d+[\.,]?\d*)\s*[\U0001f1ea-\U0001f1ff]{2}', ln)
-    if m:
-        r_str = m.group(1).replace(",", ".")
-        try:
-            v = float(r_str)
-            if 3 < v < 10:
-                return v
-        except ValueError:
-            pass
-
-    # Pattern 4: standalone rate number (when سعر is on separate line)
-    m = re.match(r'^\s*(\d+[\.,]?\d*)\s*$', ln)
+    # Pattern 3: standalone rate number (when سعر is on separate line)
+    m = re.match(r'^\s*(\d+[\.,]?\d*)\s*$', ln_clean)
     if m:
         r_str = m.group(1).replace(",", ".")
         try:

@@ -9,3 +9,4 @@ server_error.log
 install.bat
 start.bat
 debug_parser.py
+temp/
