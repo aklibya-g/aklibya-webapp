@@ -199,7 +199,11 @@ function printPage() {
     html += '.total-row td{padding:10px 6px;font-size:9.5pt}';
     html += '.footer{margin-top:16px;text-align:center;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px}';
     html += '.btn-print{display:inline-block;padding:10px 30px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
-    html += '@media print{body{padding:8mm 10mm}.btn-print{display:none!important}}';
+    html += '.scroll-nav{position:fixed;z-index:9999;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;font-size:1.2rem;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:all .2s;opacity:.85}';
+    html += '.scroll-nav:hover{opacity:1;transform:scale(1.1)}';
+    html += '.scroll-top{top:20px;left:20px;background:linear-gradient(135deg,#0f766e,#14b8a6)}';
+    html += '.scroll-bottom{bottom:20px;left:20px;background:linear-gradient(135deg,#1e40af,#3b82f6)}';
+    html += '@media print{body{padding:8mm 10mm}.btn-print,.scroll-nav{display:none!important}}';
     html += '</style></head><body>';
 
     html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #0f766e"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير الحوالات' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
@@ -241,6 +245,8 @@ function printPage() {
     
     html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center" id="printBtnWrap"><button class="btn-print" onclick="window.print()" style="display:none">طباعة</button></div>';
+    html += '<button class="scroll-nav scroll-top" onclick="window.scrollTo({top:0,behavior:\'smooth\'})" title="العودة للأعلى"><i class="bi bi-arrow-up"></i></button>';
+    html += '<button class="scroll-nav scroll-bottom" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'})" title="الذهاب للأسفل"><i class="bi bi-arrow-down"></i></button>';
     html += '</body></html>';
     
     var win = window.open('', '_blank');
