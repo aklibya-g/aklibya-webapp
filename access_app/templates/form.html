@@ -125,10 +125,9 @@
             <div class="col-md-3">
                 <label class="form-label">المبلغ بالمصري</label>
                 <div style="display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;">
-                    <input type="text" id="id_transfered_amount_display" class="form-control form-control-sm" readonly style="background:transparent;border:none;font-weight:700;color:#d97706;padding:0;">
+                    {{ form.transfered_amount }}
                     <span style="font-size:0.7rem;color:#d97706;font-weight:700;white-space:nowrap;">EGP</span>
                 </div>
-                <div style="display:none;">{{ form.transfered_amount }}</div>
             </div>
             <div class="col-md-3">
                 <label class="form-label">المكتب</label>
@@ -221,23 +220,45 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const amount = document.getElementById('id_transfer_amount');
-    const rate = document.getElementById('id_exchange_rate');
-    const result = document.getElementById('id_transfered_amount');
-    const display = document.getElementById('id_transfered_amount_display');
+    const lydInput = document.getElementById('id_transfer_amount');
+    const rateInput = document.getElementById('id_exchange_rate');
+    const egpInput = document.getElementById('id_transfered_amount');
 
-    if (amount && rate && result) {
-        result.readOnly = true;
-        function calc() {
-            const a = parseFloat(amount.value) || 0;
-            const r = parseFloat(rate.value) || 0;
-            const total = a * r;
-            result.value = total.toFixed(2);
-            if (display) display.value = total.toFixed(3);
-        }
-        amount.addEventListener('input', calc);
-        rate.addEventListener('input', calc);
-        calc();
+    if (lydInput && rateInput && egpInput) {
+        let lastEdited = 'lyd';
+
+        lydInput.addEventListener('input', function() {
+            lastEdited = 'lyd';
+            var lyd = parseFloat(lydInput.value) || 0;
+            var rate = parseFloat(rateInput.value) || 0;
+            if (lyd > 0 && rate > 0) {
+                egpInput.value = (lyd * rate).toFixed(2);
+            } else {
+                egpInput.value = '';
+            }
+        });
+
+        egpInput.addEventListener('input', function() {
+            lastEdited = 'egp';
+            var egp = parseFloat(egpInput.value) || 0;
+            var rate = parseFloat(rateInput.value) || 0;
+            if (egp > 0 && rate > 0) {
+                lydInput.value = (egp / rate).toFixed(2);
+            } else {
+                lydInput.value = '';
+            }
+        });
+
+        rateInput.addEventListener('input', function() {
+            var rate = parseFloat(rateInput.value) || 0;
+            if (lastEdited === 'lyd') {
+                var lyd = parseFloat(lydInput.value) || 0;
+                if (lyd > 0 && rate > 0) egpInput.value = (lyd * rate).toFixed(2);
+            } else {
+                var egp = parseFloat(egpInput.value) || 0;
+                if (egp > 0 && rate > 0) lydInput.value = (egp / rate).toFixed(2);
+            }
+        });
     }
 });
 function addTransferType() {
