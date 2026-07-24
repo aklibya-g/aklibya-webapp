@@ -51,13 +51,50 @@
         </div>
 
         <div class="d-flex align-items-center gap-3 mt-4 pt-3 border-top">
-            <button type="submit" class="btn btn-primary btn-lg px-5" style="border-radius:10px;" onclick="return confirm('هل أنت متأكد من إيداع الرصيد؟')">
+            <button type="button" class="btn btn-primary btn-lg px-5" style="border-radius:10px;" onclick="validateDeposit()">
                 <i class="bi bi-save"></i> {{ submit_label }}
             </button>
             <a href="{% url 'capital_list' %}" class="btn btn-outline-secondary btn-lg" style="border-radius:10px;">إلغاء</a>
         </div>
     </form>
 </div>
+
+<script>
+function validateDeposit() {
+    var client = document.getElementById('id_client');
+    var date = document.querySelector('input[name="date"]');
+    var egp = document.getElementById('dep_egp');
+    var rate = document.getElementById('dep_rate');
+
+    var missing = [];
+    if (!client.value) missing.push('صاحب الرصيد');
+    if (!date.value) missing.push('التاريخ');
+    if (!egp.value) missing.push('المبلغ بالمصري');
+    if (!rate.value) missing.push('سعر الصرف');
+
+    if (missing.length > 0) {
+        alert('⚠️ يرجى تعبئة الحقول التالية:\n• ' + missing.join('\n• '));
+        return;
+    }
+
+    var clientName = client.options[client.selectedIndex].text;
+    var egpVal = parseFloat(egp.value).toLocaleString('en');
+    var rateVal = rate.value;
+    var lydVal = document.getElementById('dep_lyd').value;
+    var dateVal = date.value;
+
+    var msg = 'هل أنت متأكد من إيداع الرصيد؟\n\n' +
+              '👤 العميل: ' + clientName + '\n' +
+              '📅 التاريخ: ' + dateVal + '\n' +
+              '💰 المصري: ' + egpVal + ' EGP\n' +
+              '💱 السعر: ' + rateVal + '\n' +
+              '💰 الليبي: ' + lydVal + ' LYD';
+
+    if (confirm(msg)) {
+        document.querySelector('form').submit();
+    }
+}
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
