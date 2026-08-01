@@ -984,13 +984,24 @@ def _extract_egp(ln):
         except ValueError:
             pass
 
+    # Pattern 7: bare number on its own line (e.g., "296000")
+    m = re.match(r'^\s*(\d[\d,\.]*)\s*$', ln)
+    if m:
+        try:
+            v = _clean_number(m.group(1))
+            if v >= 50:
+                return v
+        except ValueError:
+            pass
+
     return None
 
 
 def _extract_rate(ln):
     """Try to extract exchange rate from a single line. Returns float or None."""
-    # Strip flag emojis before matching
+    # Strip flag emojis and normalize Arabic comma before matching
     ln_clean = re.sub(r'[\U0001f1e6-\U0001f1ff]{2}', '', ln).strip()
+    ln_clean = ln_clean.replace("،", ".")
 
     # Pattern 1: "سعر X" or "سعر: X"
     m = re.search(r'سعر[:\s]*(\d[\d,\.]*)', ln_clean)
