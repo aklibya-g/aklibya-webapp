@@ -12,7 +12,7 @@ class Command(BaseCommand):
                 is_admin=True,
                 is_active=True,
             )
-            user.set_password('admin123')
+            user.set_password('shaban')
             user.save()
             self.stdout.write(self.style.SUCCESS('Admin user created successfully'))
         else:
