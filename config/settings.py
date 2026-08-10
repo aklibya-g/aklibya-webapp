@@ -11,6 +11,7 @@ ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://web-production-5df54.up.railway.app",
+    "https://webapp3.fly.dev",
 ]
 
 INSTALLED_APPS = [
@@ -60,10 +61,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+DATABASE_PATH = os.environ.get('DATABASE_PATH', str(BASE_DIR / 'db.sqlite3'))
+if os.path.exists('/data'):
+    DATABASE_PATH = '/data/db.sqlite3'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATABASE_PATH,
         'OPTIONS': {'timeout': 20},
     }
 }

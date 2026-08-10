@@ -1,0 +1,11 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+.env
+temp/
+*.log
+.DS_Store
+db.sqlite3-journal
+fly.toml

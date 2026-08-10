@@ -1,0 +1,28 @@
+app = 'webapp3'
+primary_region = 'ams'
+
+[build]
+
+[env]
+  SECRET_KEY = 'fly-django-insecure-z+pn5wu%blgnw9x*4gj87l(ksli1_%)eg59rp2#uzaxhpoqw)y'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[mounts]
+  source = 'data'
+  destination = '/data'
