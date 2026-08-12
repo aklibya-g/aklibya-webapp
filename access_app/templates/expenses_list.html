@@ -108,7 +108,7 @@
                 {% for e in expenses %}
                 <tr>
                     <td style="font-weight:600;color:var(--text-muted)">{{ forloop.counter }}</td>
-                    <td style="font-weight:700">{{ e.expense_type|default:e.name|default:"-" }}</td>
+                    <td style="font-weight:700">{{ e.expense_type|default:"-" }}</td>
                     <td style="font-weight:800;color:#dc2626">{{ e.amount|fmt }} <span style="font-size:.7rem;color:var(--text-muted)">EGP</span></td>
                     <td>{{ e.date|date:"Y-m-d" }}</td>
                     <td><span style="background:var(--primary-bg);color:var(--primary);padding:3px 10px;border-radius:8px;font-size:.78rem;font-weight:700">{{ e.expense_type|default:"-" }}</span></td>
