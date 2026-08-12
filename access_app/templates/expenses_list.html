@@ -116,6 +116,7 @@
                     <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.notes|default:"" }}</td>
                     <td>
                         <a href="{% url 'edit_expense' e.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'delete_expense' e.id %}" class="exp-btn exp-btn-danger" style="padding:6px 10px;font-size:.78rem" onclick="return confirm('هل أنت متأكد من حذف هذا المصروف؟')"><i class="bi bi-trash"></i></a>
                     </td>
                 </tr>
                 {% empty %}
