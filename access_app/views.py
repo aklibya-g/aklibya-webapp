@@ -284,6 +284,14 @@ def transactions(request):
     if month_to:
         qs = qs.filter(date__month__lte=month_to)
 
+    amount_filter = request.GET.get("amount", "").strip()
+    if amount_filter:
+        try:
+            amount_val = float(amount_filter.replace(",", ""))
+            qs = qs.filter(transfered_amount=amount_val)
+        except ValueError:
+            pass
+
     agg = qs.aggregate(
         total_egp=Sum("transfered_amount"),
         total_lyd=Sum("transfer_amount"),
@@ -297,7 +305,7 @@ def transactions(request):
 
     clients, total_egp_clients = _get_clients_with_remaining()
 
-    is_filtered = bool(q or date_from or date_to or year or month_from or month_to)
+    is_filtered = bool(q or date_from or date_to or year or month_from or month_to or amount_filter)
 
     return render(request, "transactions_list.html", {
         "title": "الحوالات",
@@ -317,6 +325,7 @@ def transactions(request):
         "filtered_count": filtered_count,
         "total_count": total_count,
         "is_filtered": is_filtered,
+        "amount_filter": amount_filter,
     })
 
 

@@ -24,6 +24,7 @@
     <a href="{% url 'add_transaction' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> تحويل</a>
     <form method="get" class="d-flex gap-2 align-items-center" id="filterForm">
         <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px;border-radius:8px;">
+        <input type="number" name="amount" value="{{ amount_filter }}" class="form-control form-control-sm" placeholder="بحث بالقيمة..." style="width:150px;border-radius:8px;">
         <select name="year" class="form-select form-select-sm" style="width:auto;">
             <option value="">كل السنوات</option>
             {% for y in "2024,2025,2026,2027,2028"|split %}
@@ -43,12 +44,12 @@
             {% endfor %}
         </select>
         <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
-        {% if q or selected_year or selected_month_from or selected_month_to %}
+        {% if q or selected_year or selected_month_from or selected_month_to or amount_filter %}
         <a href="{% url 'transactions' %}?order={{ order }}" class="btn btn-outline-danger btn-sm" title="مسح الفلتر"><i class="bi bi-x-lg"></i></a>
         {% endif %}
         <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
     </form>
-    <a href="?q={{ q|urlencode }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}&order={% if order == 'desc' %}asc{% else %}desc{% endif %}" class="btn btn-outline-secondary btn-sm" style="text-decoration:none">
+    <a href="?q={{ q|urlencode }}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}&order={% if order == 'desc' %}asc{% else %}desc{% endif %}" class="btn btn-outline-secondary btn-sm" style="text-decoration:none">
         <i class="bi bi-sort-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
         {% if order == 'desc' %}تنازلي{% else %}تصاعدي{% endif %}
     </a>
