@@ -77,7 +77,7 @@
         <div class="exp-sum-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="bi bi-cash"></i></div>
         <div class="exp-sum-info">
             <div class="num" style="color:#d97706">{{ total|fmt }}</div>
-            <div class="lbl">إجمالي المصروفات (EGP)</div>
+            <div class="lbl">إجمالي المصروفات (LYD)</div>
         </div>
     </div>
     <div class="exp-sum-card">
@@ -109,7 +109,7 @@
                 <tr>
                     <td style="font-weight:600;color:var(--text-muted)">{{ forloop.counter }}</td>
                     <td style="font-weight:700">{{ e.expense_type|default:"-" }}</td>
-                    <td style="font-weight:800;color:#dc2626">{{ e.amount|fmt }} <span style="font-size:.7rem;color:var(--text-muted)">EGP</span></td>
+                    <td style="font-weight:800;color:#dc2626">{{ e.amount|fmt }} <span style="font-size:.7rem;color:var(--text-muted)">LYD</span></td>
                     <td>{{ e.date|date:"Y-m-d" }}</td>
                     <td><span style="background:var(--primary-bg);color:var(--primary);padding:3px 10px;border-radius:8px;font-size:.78rem;font-weight:700">{{ e.expense_type|default:"-" }}</span></td>
                     <td>{{ e.paid_by|default:"-" }}</td>
@@ -171,7 +171,7 @@ function printPage() {
     
     html += '<div class="stats">';
     html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + rows.length + '</div></div>';
-    html += '<div class="stat-box"><div class="label">إجمالي المصروفات</div><div class="val">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' EGP</div></div>';
+    html += '<div class="stat-box"><div class="label">إجمالي المصروفات</div><div class="val">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' LYD</div></div>';
     html += '</div>';
     
     html += '<table><thead><tr><th>#</th><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th>المدفوع بواسطة</th><th>ملاحظات</th></tr></thead><tbody>';
@@ -190,7 +190,7 @@ function printPage() {
         }
     });
     
-    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#dc2626;font-size:11pt">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' EGP</td><td colspan="3"></td></tr></tfoot></table>';
+    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#dc2626;font-size:11pt">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' LYD</td><td colspan="3"></td></tr></tfoot></table>';
     
     html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
