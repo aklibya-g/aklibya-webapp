@@ -10,7 +10,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
-from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert
+from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
@@ -97,7 +97,7 @@ def _backup_all(label="manual"):
                         elif hasattr(val, 'pk'):
                             val = val.pk if val else ''
                         data[field.name] = val
-                writer.writerow([model_name, obj.pk, str(data)])
+                writer.writerow([model_name, obj.pk, json.dumps(data, ensure_ascii=False)])
     return filename
 
 
@@ -205,7 +205,7 @@ def _restore_all(filepath):
             if not model:
                 continue
             try:
-                data = eval(row[2])
+                data = json.loads(row[2])
             except Exception:
                 continue
             for k in list(data.keys()):
