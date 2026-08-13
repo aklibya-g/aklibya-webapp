@@ -56,6 +56,51 @@ def _backup_capital(label="auto"):
     return filename
 
 
+def _backup_all(label="manual"):
+    _ensure_backup_dir()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"full_backup_{label}_{timestamp}.csv"
+    filepath = os.path.join(BACKUP_DIR, filename)
+
+    all_models = [
+        ("Database", Database),
+        ("Capital", Capital),
+        ("ClientBalance", ClientBalance),
+        ("Expense", Expense),
+        ("InternalTransfer", InternalTransfer),
+        ("BalanceType", BalanceType),
+        ("CurrencyCapital", CurrencyCapital),
+        ("OfficeName", OfficeName),
+        ("OrderType", OrderType),
+        ("TransferType", TransferType),
+        ("FromSource", FromSource),
+        ("DeliveryArea", DeliveryArea),
+        ("SystemUser", SystemUser),
+        ("Message", Message),
+        ("ImportAlert", ImportAlert),
+        ("SystemSetting", SystemSetting),
+        ("T1Summary", T1Summary),
+        ("Dbcash", Dbcash),
+    ]
+
+    with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        writer.writerow(["TABLE", "ID", "DATA"])
+        for model_name, model in all_models:
+            for obj in model.objects.all():
+                data = {}
+                for field in model._meta.get_fields():
+                    if hasattr(field, 'column'):
+                        val = getattr(obj, field.name, '')
+                        if hasattr(val, 'isoformat'):
+                            val = val.isoformat()
+                        elif hasattr(val, 'pk'):
+                            val = val.pk if val else ''
+                        data[field.name] = val
+                writer.writerow([model_name, obj.pk, str(data)])
+    return filename
+
+
 def _restore_transactions(filepath):
     with open(filepath, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
@@ -108,6 +153,86 @@ def _restore_capital(filepath):
                     data[k] = v if v else ''
             try:
                 Capital.objects.create(**data)
+                count += 1
+            except Exception:
+                pass
+        return count
+
+
+def _restore_all(filepath):
+    model_map = {
+        "Database": Database,
+        "Capital": Capital,
+        "ClientBalance": ClientBalance,
+        "Expense": Expense,
+        "InternalTransfer": InternalTransfer,
+        "BalanceType": BalanceType,
+        "CurrencyCapital": CurrencyCapital,
+        "OfficeName": OfficeName,
+        "OrderType": OrderType,
+        "TransferType": TransferType,
+        "FromSource": FromSource,
+        "DeliveryArea": DeliveryArea,
+        "SystemUser": SystemUser,
+        "Message": Message,
+        "ImportAlert": ImportAlert,
+        "SystemSetting": SystemSetting,
+        "T1Summary": T1Summary,
+        "Dbcash": Dbcash,
+    }
+
+    float_fields_map = {
+        "Database": ('transfer_amount', 'transfered_amount', 'exchange_rate'),
+        "Capital": ('cash_in', 'cash_out', 'libyan_cash', 'libyan_withdraw', 'exchange_rate'),
+        "ClientBalance": ('egp_balance', 'lyd_balance'),
+        "Expense": ('amount',),
+        "InternalTransfer": ('amount',),
+        "T1Summary": ('amount',),
+        "Dbcash": ('amount',),
+    }
+
+    date_fields = ('date', 'time', 'last_updated', 'created_at')
+
+    with open(filepath, 'r', encoding='utf-8-sig') as f:
+        reader = csv.reader(f)
+        next(reader, None)
+        count = 0
+        for row in reader:
+            if len(row) < 3:
+                continue
+            table_name = row[0]
+            model = model_map.get(table_name)
+            if not model:
+                continue
+            try:
+                data = eval(row[2])
+            except Exception:
+                continue
+            for k in list(data.keys()):
+                if k == 'id':
+                    del data[k]
+                    continue
+                v = data[k]
+                if k in date_fields:
+                    if v and isinstance(v, str):
+                        try:
+                            data[k] = datetime.fromisoformat(v).date() if 'date' in k else datetime.fromisoformat(v).time() if k == 'time' else datetime.fromisoformat(v)
+                        except (ValueError, TypeError):
+                            data[k] = None
+                    else:
+                        data[k] = None
+                elif k in float_fields_map.get(table_name, ()):
+                    try:
+                        data[k] = float(v) if v else 0
+                    except (ValueError, TypeError):
+                        data[k] = 0
+                elif k.endswith('_id'):
+                    try:
+                        data[k] = int(v) if v else None
+                    except (ValueError, TypeError):
+                        data[k] = None
+            try:
+                model.objects.create(**data)
                 count += 1
             except Exception:
                 pass
@@ -2740,7 +2865,14 @@ def backups_list(request):
         if fn.endswith('.csv'):
             fp = os.path.join(BACKUP_DIR, fn)
             stat = os.stat(fp)
-            ftype = "حوالات" if fn.startswith("transactions") else "أرصدة"
+            if fn.startswith("transactions"):
+                ftype = "حوالات"
+            elif fn.startswith("capital"):
+                ftype = "أرصدة"
+            elif fn.startswith("full_backup"):
+                ftype = "full"
+            else:
+                ftype = "أخرى"
             files.append({
                 "name": fn,
                 "type": ftype,
@@ -2752,6 +2884,20 @@ def backups_list(request):
         "title": "النسخ الاحتياطية",
         "backups": files,
     })
+
+
+@login_required_custom
+def backup_now(request):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية")
+        return redirect("index")
+    filename = _backup_all("manual")
+    if filename:
+        messages.success(request, f"✅ تم إنشاء نسخة احتياطية كاملة: {filename}")
+    else:
+        messages.error(request, "لا توجد بيانات للنسخ")
+    return redirect("backups_list")
 
 
 @login_required_custom
@@ -2772,6 +2918,10 @@ def backup_restore(request, filename):
         count = _restore_capital(filepath)
         messages.success(request, f"✅ تم استعادة {count} رصيد من النسخة الاحتياطية: {filename}")
         return redirect("capital_list")
+    elif filename.startswith("full_backup"):
+        count = _restore_all(filepath)
+        messages.success(request, f"✅ تم استعادة {count} سجل من النسخة الاحتياطية الكاملة: {filename}")
+        return redirect("backups_list")
     else:
         messages.error(request, "نوع ملف غير معروف")
         return redirect("backups_list")

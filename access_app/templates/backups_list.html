@@ -3,7 +3,13 @@
 <div style="max-width:900px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
         <h4 style="margin:0;font-weight:800"><i class="bi bi-cloud-arrow-up" style="color:var(--primary)"></i> النسخ الاحتياطية</h4>
-        <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
+        <div style="display:flex;gap:8px;align-items:center">
+            <a href="{% url 'backup_now' %}" onclick="return confirm('هل تريد عمل نسخة احتياطية كاملة لجميع بيانات المنظومة؟')"
+               style="padding:8px 18px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:.85rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.3);transition:all .2s" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(16,185,129,.3)'">
+                <i class="bi bi-shield-check"></i> نسخ احتياطي الآن
+            </a>
+            <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
+        </div>
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">
@@ -30,6 +36,8 @@
                         <td style="padding:12px 16px">
                             {% if b.type == 'حوالات' %}
                             <span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:700">{{ b.type }}</span>
+                            {% elif b.type == 'full' %}
+                            <span style="background:#f3e8ff;color:#7c3aed;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:700">كامل</span>
                             {% else %}
                             <span style="background:#d1fae5;color:#059669;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:700">{{ b.type }}</span>
                             {% endif %}
@@ -38,7 +46,7 @@
                         <td style="padding:12px 16px;font-size:.82rem;color:var(--text-muted)">{{ b.date }}</td>
                         <td style="padding:12px 16px;text-align:center">
                             <div style="display:flex;gap:6px;justify-content:center">
-                                <a href="{% url 'backup_restore' b.name %}" onclick="return confirm('هل أنت متأكد من استعادة هذه النسخة؟\nسيتم إضافة البيانات الحالية مع البيانات المستعادة.')"
+                                <a href="{% url 'backup_restore' b.name %}" onclick="return confirm('{% if b.type == "full" %}هل أنت متأكد من استعادة هذه النسخة الكاملة؟\nسيتم حذف جميع البيانات الحالية واستعادتها من النسخة الاحتياطية.{% else %}هل أنت متأكد من استعادة هذه النسخة؟\nسيتم إضافة البيانات الحالية مع البيانات المستعادة.{% endif %}')"
                                    style="padding:5px 12px;border-radius:8px;background:#dcfce7;color:#16a34a;font-size:.78rem;font-weight:700;text-decoration:none;border:1px solid #bbf7d0">
                                     <i class="bi bi-arrow-counterclockwise"></i> استعادة
                                 </a>
