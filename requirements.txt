@@ -2,3 +2,7 @@ Django>=4.0,<6.0
 openpyxl>=3.0
 whitenoise==6.8.2
 gunicorn==23.0.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
