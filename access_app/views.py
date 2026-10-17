@@ -10,7 +10,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
-from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash
+from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash, WhatsAppMessage
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
@@ -2954,3 +2954,53 @@ def backup_delete(request, filename):
         os.remove(filepath)
         messages.success(request, f"تم حذف النسخة الاحتياطية: {filename}")
     return redirect("backups_list")
+
+
+@login_required_custom
+def whatsapp_integration(request):
+    user = get_current_user(request)
+    if not user:
+        return redirect("index")
+    messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
+    bot_status = "مفصول"
+    if os.path.exists("whatsapp_bot.pid"):
+        try:
+            with open("whatsapp_bot.pid", "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            bot_status = "متصل"
+        except (ProcessLookupError, ValueError, PermissionError):
+            bot_status = "مفصول"
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "start_bot":
+            group_jid = request.POST.get("group_jid", "").strip()
+            if not group_jid:
+                messages.error(request, "أدخل معرف الغرفة")
+                return redirect("whatsapp_integration")
+            try:
+                subprocess.Popen(
+                    ["py", "-3.11", "whatsapp_bot.py"],
+                    cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                )
+                messages.success(request, "تم تشغيل بوت الواتساب")
+            except Exception as e:
+                messages.error(request, f"خطأ في التشغيل: {str(e)}")
+            return redirect("whatsapp_integration")
+        elif action == "stop_bot":
+            if os.path.exists("whatsapp_bot.pid"):
+                try:
+                    with open("whatsapp_bot.pid", "r") as f:
+                        pid = int(f.read().strip())
+                    os.kill(pid, 9)
+                    os.remove("whatsapp_bot.pid")
+                    messages.success(request, "تم إيقاف البوت")
+                except Exception:
+                    pass
+            return redirect("whatsapp_integration")
+    return render(request, "whatsapp_integration.html", {
+        "title": "ربط الواتساب",
+        "messages_list": messages_list,
+        "bot_status": bot_status,
+    })

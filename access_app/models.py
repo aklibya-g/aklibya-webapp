@@ -337,6 +337,24 @@ class ImportAlert(models.Model):
         super().save(*args, **kwargs)
 
 
+class WhatsAppMessage(models.Model):
+    sender = models.CharField(max_length=200, verbose_name="المرسل")
+    group_jid = models.CharField(max_length=200, verbose_name="معرف المجموعة")
+    message_text = models.TextField(verbose_name="نص الرسالة")
+    amount = models.FloatField(verbose_name="المبلغ", null=True, blank=True)
+    exchange_rate = models.FloatField(verbose_name="سعر الصرف", null=True, blank=True)
+    commission = models.FloatField(verbose_name="العمولة", null=True, blank=True)
+    currency = models.CharField(max_length=100, verbose_name="العملة", null=True, blank=True)
+    timestamp = models.DateTimeField(verbose_name="التوقيت", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "رسالة واتساب"
+        verbose_name_plural = "رسائل واتساب"
+
+    def __str__(self):
+        return f"{self.sender} - {self.message_text[:50]}"
+
+
 class SystemSetting(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="وضع الصيانة")
     maintenance_message = models.TextField(default="النظام تحت الصيانة حالياً. يرجى المحاولة لاحقاً.", verbose_name="رسالة الصيانة")

@@ -1,6 +1,9 @@
+import json
 from datetime import datetime
 import re
 import subprocess
+import os
+import sys
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +12,24 @@ from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+DJANGO_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db.sqlite3")
+
+def save_to_django_db(sender, group_jid, message_text, amount, exchange_rate, commission, currency):
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import django
+    django.setup()
+    from access_app.models import WhatsAppMessage
+    WhatsAppMessage.objects.create(
+        sender=sender,
+        group_jid=group_jid,
+        message_text=message_text,
+        amount=amount,
+        exchange_rate=exchange_rate,
+        commission=commission,
+        currency=currency,
+    )
 
 DATABASE_URL = "sqlite:///./whatsapp_system.db"
 engine = create_engine(
@@ -188,13 +209,10 @@ async def start_bot(group_jid: str = Form(...)):
 
 @app.post("/api/messages")
 async def receive_message(payload: MessagePayload):
-    db = SessionLocal()
-
     amount, rate, commission, currency = parse_financial_message(
         payload.message
     )
-
-    db_msg = WhatsAppMessageDB(
+    save_to_django_db(
         sender=payload.sender,
         group_jid=payload.jid,
         message_text=payload.message,
@@ -203,12 +221,10 @@ async def receive_message(payload: MessagePayload):
         commission=commission,
         currency=currency,
     )
-    db.add(db_msg)
-    db.commit()
-    db.close()
-
     return {"status": "success", "saved": True}
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    with open("whatsapp_bot.pid", "w") as f:
+        f.write(str(os.getpid()))
+    uvicorn.run(app, host="127.0.0.1", port=1500)
