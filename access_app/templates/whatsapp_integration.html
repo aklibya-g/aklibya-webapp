@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}{% load app_tags %}
+{% block content %}
 <style>
 .wa-table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); }
 .wa-table thead th { background:linear-gradient(135deg,#1e293b,#334155); color:#e2e8f0; padding:10px 6px; font-size:.7rem; font-weight:800; text-align:center; letter-spacing:.3px; border-bottom:3px solid #2563eb; position:sticky; top:0; z-index:5; white-space:nowrap; }
@@ -35,8 +36,41 @@ body.wa-dark-font .wa-table tbody tr:nth-child(odd) { background:#1a2436; }
 body.wa-dark-font .wa-table tbody tr:hover { background:#243356; box-shadow:inset 0 0 0 1px #4f6fd8; }
 body.wa-dark-font .wa-table .num-cell, body.wa-dark-font .wa-table .rate-cell, body.wa-dark-font .wa-table .conv-cell { color:#fbbf24; }
 body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !important; }
+
+/* ===== PROFESSIONAL DATA GRID ===== */
+.grid-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:14px; overflow:hidden; box-shadow:0 4px 24px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06); background:#fff; }
+.grid-table thead th { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:11px 8px; font-size:.72rem; font-weight:800; text-align:center; letter-spacing:.4px; border-bottom:3px solid #312e81; position:sticky; top:0; z-index:5; white-space:nowrap; }
+.grid-table thead th:first-child { border-top-right-radius:14px; }
+.grid-table thead th:last-child { border-top-left-radius:14px; }
+.grid-table tbody td { padding:9px 8px; font-size:.72rem; text-align:center; border-bottom:1px solid #eef2f7; vertical-align:middle; }
+.grid-table tbody tr:nth-child(even) { background:linear-gradient(90deg,#fafbff,#f5f7ff); }
+.grid-table tbody tr:nth-child(odd) { background:#fff; }
+.grid-table tbody tr:hover { background:linear-gradient(90deg,#eef2ff,#e0e7ff); transform:scale(1.001); }
+.grid-table tbody tr:last-child td { border-bottom:none; }
+.grid-table .g-idx { color:#a5b4fc; font-weight:800; font-size:.68rem; }
+.grid-table .g-phone { font-family:'Consolas',monospace; font-weight:700; color:#312e81; direction:ltr; }
+.grid-table .g-amount { font-family:'Consolas',monospace; font-weight:800; color:#0f172a; font-size:.78rem; }
+.grid-table .g-rate { font-family:'Consolas',monospace; font-weight:800; color:#7c3aed; font-size:.78rem; }
+.grid-table .g-conv { font-family:'Consolas',monospace; font-weight:800; color:#059669; font-size:.78rem; }
+.grid-table .g-msg { text-align:right; white-space:pre-line; word-break:break-word; line-height:1.5; font-size:.7rem; color:#334155; max-width:340px; }
+.grid-table .g-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.62rem; font-weight:800; }
+.grid-table .g-hide { display:none; }
+.colchk { display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:20px; background:#fff; border:1px solid #c7d2fe; font-size:.7rem; font-weight:700; color:#4338ca; cursor:pointer; transition:all .15s; user-select:none; }
+.colchk:hover { background:#eef2ff; border-color:#818cf8; }
+.colchk input { accent-color:#4f46e5; cursor:pointer; margin:0; }
+.colchk:has(input:checked) { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+.colchk:has(input:checked) input { accent-color:#fff; }
+body.wa-dark-font .grid-table { background:#1a2436; box-shadow:0 4px 24px rgba(0,0,0,.4); }
+body.wa-dark-font .grid-table tbody td { color:#e2e8f0; border-bottom-color:#283548; }
+body.wa-dark-font .grid-table tbody tr:nth-child(even) { background:#16213a; }
+body.wa-dark-font .grid-table tbody tr:nth-child(odd) { background:#1a2436; }
+body.wa-dark-font .grid-table tbody tr:hover { background:#243356; }
+body.wa-dark-font .grid-table .g-phone, body.wa-dark-font .grid-table .g-amount { color:#c7d2fe; }
+body.wa-dark-font .grid-table .g-rate { color:#c4b5fd; }
+body.wa-dark-font .grid-table .g-conv { color:#6ee7b7; }
+body.wa-dark-font .grid-table .g-msg { color:#cbd5e1; }
+body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b4fc; }
 </style>
-{% block content %}
 <div style="max-width:1600px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
         <h4 style="margin:0;font-weight:800"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
@@ -211,25 +245,42 @@ body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !impor
                 </tbody>
             </table>
         </div>
-        <div id="dataGrid" style="display:none;padding:8px 12px 16px">
-            <table class="wa-table">
-                <thead>
-                    <tr>
-                        <th style="width:4%">#</th>
-                        <th style="width:14%">التليفون</th>
-                        <th style="width:12%">المبلغ</th>
-                        <th style="width:8%">السعر</th>
-                        <th style="width:12%">بعد التحويل</th>
-                        <th style="width:6%">العملة</th>
-                        <th style="width:10%">النوع</th>
-                        <th style="width:7%">الاتجاه</th>
-                        <th style="width:7%">الحالة</th>
-                        <th style="width:8%">التاريخ</th>
-                        <th style="width:6%">الوقت</th>
-                    </tr>
-                </thead>
-                <tbody id="dataGridBody"></tbody>
-            </table>
+        <div id="dataGrid" style="display:none;padding:0 0 16px">
+            <div id="gridColBar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-bottom:1px solid var(--border)">
+                <span style="font-size:.72rem;font-weight:800;color:#6366f1;white-space:nowrap"><i class="bi bi-list-check"></i> الأعمدة:</span>
+                <label class="colchk"><input type="checkbox" checked data-col="1" onchange="toggleGridCol(this)"> التليفون</label>
+                <label class="colchk"><input type="checkbox" checked data-col="2" onchange="toggleGridCol(this)"> المبلغ</label>
+                <label class="colchk"><input type="checkbox" checked data-col="3" onchange="toggleGridCol(this)"> السعر</label>
+                <label class="colchk"><input type="checkbox" checked data-col="4" onchange="toggleGridCol(this)"> بعد التحويل</label>
+                <label class="colchk"><input type="checkbox" checked data-col="5" onchange="toggleGridCol(this)"> العملة</label>
+                <label class="colchk"><input type="checkbox" checked data-col="6" onchange="toggleGridCol(this)"> النوع</label>
+                <label class="colchk"><input type="checkbox" checked data-col="7" onchange="toggleGridCol(this)"> الاتجاه</label>
+                <label class="colchk"><input type="checkbox" checked data-col="8" onchange="toggleGridCol(this)"> الحالة</label>
+                <label class="colchk"><input type="checkbox" checked data-col="9" onchange="toggleGridCol(this)"> التاريخ</label>
+                <label class="colchk"><input type="checkbox" checked data-col="10" onchange="toggleGridCol(this)"> الوقت</label>
+                <label class="colchk"><input type="checkbox" checked data-col="11" onchange="toggleGridCol(this)"> الرسالة</label>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="grid-table" id="gridTable">
+                    <thead>
+                        <tr>
+                            <th class="g-col" data-col="0" style="width:40px">#</th>
+                            <th class="g-col" data-col="1">التليفون</th>
+                            <th class="g-col" data-col="2">المبلغ</th>
+                            <th class="g-col" data-col="3">السعر</th>
+                            <th class="g-col" data-col="4">بعد التحويل</th>
+                            <th class="g-col" data-col="5">العملة</th>
+                            <th class="g-col" data-col="6">النوع</th>
+                            <th class="g-col" data-col="7">الاتجاه</th>
+                            <th class="g-col" data-col="8">الحالة</th>
+                            <th class="g-col" data-col="9">التاريخ</th>
+                            <th class="g-col" data-col="10">الوقت</th>
+                            <th class="g-col" data-col="11" style="width:30%">الرسالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataGridBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -316,22 +367,25 @@ function buildDataGrid() {
         const st = cells[10] ? cells[10].innerHTML : '-';
         const date = cells[11] ? cells[11].textContent.trim() : '-';
         const time = cells[12] ? cells[12].textContent.trim() : '-';
+        const msg = cells[3] ? cells[3].textContent.trim() : '-';
         html += '<tr>'
-            + '<td style="text-align:center;color:var(--text-muted)">' + i + '</td>'
-            + '<td style="text-align:center;font-family:monospace;font-weight:700" dir="ltr">' + escapeHtml(phone) + '</td>'
-            + '<td class="num-cell" style="text-align:center" dir="ltr">' + escapeHtml(amount) + '</td>'
-            + '<td class="rate-cell" style="text-align:center" dir="ltr">' + escapeHtml(rate) + '</td>'
-            + '<td class="conv-cell" style="text-align:center" dir="ltr">' + escapeHtml(conv) + '</td>'
-            + '<td style="text-align:center">' + escapeHtml(cur) + '</td>'
-            + '<td style="text-align:center">' + escapeHtml(type) + '</td>'
-            + '<td style="text-align:center">' + dir + '</td>'
-            + '<td style="text-align:center">' + st + '</td>'
-            + '<td style="text-align:center;color:var(--text-muted)">' + escapeHtml(date) + '</td>'
-            + '<td style="text-align:center;color:var(--text-muted)">' + escapeHtml(time) + '</td>'
+            + '<td class="g-col g-idx" data-col="0">' + i + '</td>'
+            + '<td class="g-col g-phone" data-col="1">' + escapeHtml(phone) + '</td>'
+            + '<td class="g-col g-amount" data-col="2">' + escapeHtml(amount) + '</td>'
+            + '<td class="g-col g-rate" data-col="3">' + escapeHtml(rate) + '</td>'
+            + '<td class="g-col g-conv" data-col="4">' + escapeHtml(conv) + '</td>'
+            + '<td class="g-col" data-col="5">' + (cur !== '-' ? '<span class="g-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">' + escapeHtml(cur) + '</span>' : '-') + '</td>'
+            + '<td class="g-col" data-col="6">' + (type !== '-' ? '<span class="g-badge" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac">' + escapeHtml(type) + '</span>' : '-') + '</td>'
+            + '<td class="g-col" data-col="7">' + dir + '</td>'
+            + '<td class="g-col" data-col="8">' + st + '</td>'
+            + '<td class="g-col" data-col="9" style="color:var(--text-muted)">' + escapeHtml(date) + '</td>'
+            + '<td class="g-col" data-col="10" style="color:var(--text-muted)">' + escapeHtml(time) + '</td>'
+            + '<td class="g-col g-msg" data-col="11">' + escapeHtml(msg) + '</td>'
             + '</tr>';
     });
-    if (!html) html = '<tr><td colspan="11" style="padding:30px;text-align:center;color:var(--text-muted)">لا توجد بيانات</td></tr>';
+    if (!html) html = '<tr><td colspan="12" style="padding:36px;text-align:center;color:var(--text-muted)">لا توجد بيانات</td></tr>';
     tbody.innerHTML = html;
+    applyColVisibility();
 }
 
 function escapeHtml(s) {
@@ -339,6 +393,28 @@ function escapeHtml(s) {
     d.textContent = s;
     return d.innerHTML;
 }
+
+function applyColVisibility() {
+    document.querySelectorAll('#gridColBar .colchk input').forEach(cb => {
+        const col = cb.dataset.col;
+        const hidden = !cb.checked;
+        document.querySelectorAll('#gridTable [data-col="' + col + '"]').forEach(el => {
+            el.classList.toggle('g-hide', hidden);
+        });
+    });
+}
+
+function toggleGridCol(cb) {
+    localStorage.setItem('gridCol_' + cb.dataset.col, cb.checked ? '1' : '0');
+    applyColVisibility();
+}
+
+(function() {
+    document.querySelectorAll('#gridColBar .colchk input').forEach(cb => {
+        const saved = localStorage.getItem('gridCol_' + cb.dataset.col);
+        if (saved !== null) cb.checked = saved === '1';
+    });
+})();
 
 function toggleDataGrid() {
     gridVisible = !gridVisible;
