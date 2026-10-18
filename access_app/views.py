@@ -1,6 +1,7 @@
 import json
 import os
 import csv
+import subprocess
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -2980,7 +2981,8 @@ def whatsapp_integration(request):
                     cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    shell=True
                 )
                 messages.success(request, "تم تشغيل بوت الواتساب")
             except Exception as e:
