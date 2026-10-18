@@ -3,7 +3,7 @@
 {% block content %}
 <style>
 .wa-table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); }
-.wa-table thead th { background:linear-gradient(135deg,#1e293b,#334155); color:#e2e8f0; padding:10px 6px; font-size:.7rem; font-weight:800; text-align:center; letter-spacing:.3px; border-bottom:3px solid #2563eb; position:sticky; top:0; z-index:5; white-space:nowrap; }
+.wa-table thead th { background:linear-gradient(135deg,#1e293b,#334155); color:#e2e8f0; padding:10px 6px; font-size:.7rem; font-weight:800; text-align:center; letter-spacing:.3px; border-bottom:3px solid #2563eb; position:sticky; top:47px; z-index:20; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.15); }
 .wa-table thead th:first-child { border-top-right-radius:12px; }
 .wa-table thead th:last-child { border-top-left-radius:12px; }
 .wa-table tbody td { padding:7px 6px; font-size:.7rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; transition:background .15s; }
@@ -39,7 +39,7 @@ body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !impor
 
 /* ===== PROFESSIONAL DATA GRID ===== */
 .grid-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:14px; overflow:hidden; box-shadow:0 4px 24px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06); background:#fff; }
-.grid-table thead th { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:11px 8px; font-size:.72rem; font-weight:800; text-align:center; letter-spacing:.4px; border-bottom:3px solid #312e81; position:sticky; top:0; z-index:5; white-space:nowrap; }
+.grid-table thead th { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:11px 8px; font-size:.72rem; font-weight:800; text-align:center; letter-spacing:.4px; border-bottom:3px solid #312e81; position:sticky; top:47px; z-index:20; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.15); }
 .grid-table thead th:first-child { border-top-right-radius:14px; }
 .grid-table thead th:last-child { border-top-left-radius:14px; }
 .grid-table tbody td { padding:9px 8px; font-size:.72rem; text-align:center; border-bottom:1px solid #eef2f7; vertical-align:middle; }
@@ -176,7 +176,7 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
             <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
                 <i class="bi bi-trash"></i> حذف المحدد
             </button>
-            <form method="POST" style="display:inline" onsubmit="return confirm('هل تريد حذف جميع الرسائل؟')">
+            <form method="POST" style="display:inline" onsubmit="return confirmDeleteAll()">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete_all_messages">
                 <button type="submit" style="padding:6px 14px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">
@@ -300,7 +300,16 @@ function updateSelectedCount() {
 function deleteSelected() {
     const ids = Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value);
     if (!ids.length) { alert('حدد رسائل أولاً'); return; }
-    if (!confirm('حذف ' + ids.length + ' رسالة محددة؟')) return;
+    const total = document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
+    let msg = 'سيتم حذف ' + ids.length + ' رسالة نهائياً — لا يمكن التراجع. متابعة؟';
+    if (ids.length > 1) msg = '⚠️ حددت ' + ids.length + ' رسالة من أصل ' + total + '!\nتأكد أنك تريد حذفها كلها.';
+    if (ids.length >= total && total > 1) msg = '⚠️⚠️ حددت ALL الرسائل (' + total + ')!\nاكتب "حذف" في المربع للتأكيد.';
+    if (ids.length >= total && total > 1) {
+        const v = prompt(msg, '');
+        if (v !== 'حذف') return;
+    } else {
+        if (!confirm(msg)) return;
+    }
     fetch("{% url 'whatsapp_bulk_delete' %}", {
         method: 'POST',
         headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
@@ -309,6 +318,11 @@ function deleteSelected() {
         if (d.ok) loadMessages();
         else alert('خطأ في الحذف');
     });
+}
+function confirmDeleteAll() {
+    const total = document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
+    const v = prompt('⚠️ سيتم حذف جميع الرسائل (' + total + ') نهائياً!\nاكتب "حذف الكل" للتأكيد:', '');
+    return v === 'حذف الكل';
 }
 var activeFilter = '';
 var filtersApplied = false;
@@ -536,6 +550,7 @@ function filterTable() {
 
 function loadMessages() {
     const checkedIds = new Set(Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value));
+    const scrollY = window.scrollY;
     fetch("{% url 'whatsapp_messages_api' %}")
         .then(r => r.text())
         .then(html => {
@@ -556,6 +571,7 @@ function loadMessages() {
             if (filtersApplied) applyFilters();
             if (gridVisible) buildDataGrid();
             updateSelectedCount();
+            window.scrollTo(0, scrollY);
         })
         .catch(() => {});
 }
