@@ -70,7 +70,7 @@
                         <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">التوقيت</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="messagesTableBody">
                     {% for msg in messages_list %}
                     <tr style="border-bottom:1px solid var(--border)">
                         <td style="padding:10px 14px;font-size:.82rem;font-weight:600">{{ msg.sender }}</td>
@@ -97,6 +97,23 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+function loadMessages() {
+    fetch("{% url 'whatsapp_integration' %}")
+        .then(r => r.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const newTbody = doc.querySelector("#messagesTableBody");
+            const currentTbody = document.getElementById("messagesTableBody");
+            if (newTbody && currentTbody) {
+                currentTbody.innerHTML = newTbody.innerHTML;
+            }
+        })
+        .catch(() => {});
+}
+setInterval(loadMessages, 5000);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 function pollQR() {
