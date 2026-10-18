@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block content %}
-<div style="max-width:900px;margin:0 auto">
+<div style="max-width:1600px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
         <h4 style="margin:0;font-weight:800"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
         <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
@@ -160,14 +160,14 @@
 
 {% block extra_js %}
 <script>
-function filterTable(direction) {
-    const rows = document.querySelectorAll("#messagesTableBody tr");
+function filterTable(direction, status) {
+    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
     rows.forEach(row => {
-        if (direction === "" || row.dataset.direction === direction) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
+        const dirOk = !direction || row.dataset.direction === direction;
+        const statusOk = !status || row.dataset.status === status;
+        row.style.display = (dirOk && statusOk) ? '' : 'none';
+    });
+}
     });
 }
 
@@ -238,5 +238,18 @@ function pollQR() {
     setTimeout(pollQR, 2000);
 }
 pollQR();
+
+function refreshMessages() {
+    fetch('/api/whatsapp/messages/')
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('messagesTableBody').innerHTML = html;
+            const dir = document.getElementById('directionFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            filterTable(dir, status);
+        })
+        .catch(() => {});
+}
+setInterval(refreshMessages, 5000);
 </script>
 {% endblock %}
