@@ -3206,16 +3206,18 @@ def whatsapp_webhook(request):
             text = data.get("message", "")
             sender = data.get("sender", "")
             jid = data.get("jid", "")
-            amount, rate, commission, currency = _parse_wa_message(text)
+            amount, rate, commission, currency, phone = _parse_wa_message(text)
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
+                phone_number=phone,
                 message_text=text,
                 amount=amount,
                 exchange_rate=rate,
                 commission=commission,
                 currency=currency,
                 direction=data.get("direction", "وارد"),
+                status=data.get("status", "فعالة"),
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:
@@ -3228,19 +3230,23 @@ def _parse_wa_message(text):
     exchange_rate = None
     commission = None
     currency = None
+    phone_number = ""
     if "ليبى" in text or "دينار" in text or "LYD" in text:
         currency = "د ل"
     elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
         currency = "ج م"
 
+    import re
+    phone_matches = re.findall(r'(?:01\d{9}|09\d{9}|0\d{9})', text)
+    if phone_matches:
+        phone_number = phone_matches[0]
+        if len(phone_number) == 10 and not phone_number.startswith('0'):
+            phone_number = '0' + phone_number
+        elif len(phone_number) == 9:
+            phone_number = '0' + phone_number
+
     phone_pattern = r'(?:01\d{9}|09\d{9})'
-    phone_numbers = __import__('re').findall(phone_pattern, text)
-    normalized_phones = []
-    for phone in phone_numbers:
-        if len(phone) == 10 and not phone.startswith('0'):
-            phone = '0' + phone
-        normalized_phones.append(phone)
-    cleaned_text = __import__('re').sub(phone_pattern, '', text)
+    cleaned_text = re.sub(phone_pattern, '', text)
 
     value_patterns = [
         r'القيمه\s*:?\s*([\d,]+)',
@@ -3249,7 +3255,7 @@ def _parse_wa_message(text):
         r'المبلغ\s*:?\s*([\d,]+)',
     ]
     for pattern in value_patterns:
-        match = __import__('re').search(pattern, cleaned_text)
+        match = re.search(pattern, cleaned_text)
         if match:
             try:
                 amount = float(match.group(1).replace(',', ''))
@@ -3259,7 +3265,7 @@ def _parse_wa_message(text):
 
     if amount is None:
         remaining = []
-        numbers = __import__('re').findall(r'[\d,]+', cleaned_text)
+        numbers = re.findall(r'[\d,]+', cleaned_text)
         for n in numbers:
             try:
                 val = float(n.replace(',', ''))
@@ -3281,18 +3287,18 @@ def _parse_wa_message(text):
             if small_numbers:
                 amount = small_numbers[0]
 
-    rate_match = __import__('re').search(r'سعر\s*:?\s*([\d.]+)', cleaned_text)
+    rate_match = re.search(r'سعر\s*:?\s*([\d.]+)', cleaned_text)
     if rate_match:
         try:
             exchange_rate = float(rate_match.group(1))
         except ValueError:
             pass
 
-    commission_match = __import__('re').search(r'عموله\s*:?\s*([\d.]+)', cleaned_text)
+    commission_match = re.search(r'عموله\s*:?\s*([\d.]+)', cleaned_text)
     if commission_match:
         try:
             commission = float(commission_match.group(1))
         except ValueError:
             pass
 
-    return amount, exchange_rate, commission, currency
+    return amount, exchange_rate, commission, currency, phone_number
