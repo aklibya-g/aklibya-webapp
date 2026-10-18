@@ -3244,6 +3244,7 @@ def whatsapp_webhook(request):
 
 
 def _parse_wa_message(text):
+    text = text.replace('،', '.')
     amount = None
     exchange_rate = None
     commission = None
