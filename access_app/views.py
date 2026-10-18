@@ -2973,6 +2973,7 @@ def whatsapp_message_edit(request, msg_id):
         msg.exchange_rate = request.POST.get("exchange_rate") or None
         msg.commission = request.POST.get("commission") or None
         msg.currency = request.POST.get("currency", msg.currency)
+        msg.transfer_type = request.POST.get("transfer_type", msg.transfer_type)
         msg.direction = request.POST.get("direction", msg.direction)
         msg.save()
         messages.success(request, "تم تعديل الرسالة")
@@ -3133,7 +3134,7 @@ def _is_pid_running(pid):
                 try:
                     with open(pid_path, "r") as f:
                         pid = int(f.read().strip())
-                    os.kill(pid, 9)
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
                     os.remove(pid_path)
                     messages.success(request, "تم إيقاف البوت")
                 except Exception:
@@ -3143,7 +3144,7 @@ def _is_pid_running(pid):
             msg_id = request.POST.get("msg_id")
             if msg_id:
                 msg = get_object_or_404(WhatsAppMessage, id=msg_id)
-                amount, rate, commission, currency, phone = _parse_wa_message(msg.message_text)
+                amount, rate, commission, currency, phone, _ = _parse_wa_message(msg.message_text)
                 from urllib.parse import urlencode
                 params = urlencode({
                     "phone": phone or "",
@@ -3155,13 +3156,26 @@ def _is_pid_running(pid):
                 return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
             for msg in all_msgs:
-                amount, rate, commission, currency, _ = _parse_wa_message(msg.message_text)
+                amount, rate, commission, currency, _, ttype = _parse_wa_message(msg.message_text)
                 msg.amount = amount
                 msg.exchange_rate = rate
                 msg.commission = commission
                 msg.currency = currency
+                msg.transfer_type = ttype
                 msg.save()
             messages.success(request, f"تم تصحيح {all_msgs.count()} رسالة")
+            return redirect("whatsapp_integration")
+        elif action == "sync_messages":
+            last_msg = WhatsAppMessage.objects.order_by("-timestamp").first()
+            since_ts = int(last_msg.timestamp.timestamp()) if last_msg else 0
+            sync_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "whatsapp-bot", "sync_request"
+            )
+            import time as _time
+            with open(sync_path, "w") as f:
+                f.write(str(since_ts))
+            messages.success(request, "تم إرسال طلب سحب الرسائل المفقودة")
             return redirect("whatsapp_integration")
         elif action == "save_group":
             group_jid = request.POST.get("group_jid", "").strip()
@@ -3229,7 +3243,7 @@ def whatsapp_webhook(request):
             text = data.get("message", "")
             sender = data.get("sender", "")
             jid = data.get("jid", "")
-            amount, rate, commission, currency, phone = _parse_wa_message(text)
+            amount, rate, commission, currency, phone, ttype = _parse_wa_message(text)
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
@@ -3241,6 +3255,7 @@ def whatsapp_webhook(request):
                 currency=currency,
                 direction=data.get("direction", "وارد"),
                 status=data.get("status", "فعالة"),
+                transfer_type=ttype,
                 timestamp=timezone.now(),
             )
             return JsonResponse({"status": "success", "saved": True})
@@ -3255,10 +3270,17 @@ def _parse_wa_message(text):
     commission = None
     currency = None
     phone_number = ""
+    transfer_type = "تحويل"
     if "ليبى" in text or "دينار" in text or "LYD" in text:
         currency = "د ل"
     elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
         currency = "ج م"
+    if "فودافون كاش" in text:
+        transfer_type = "فودافون كاش"
+    elif "انستا كاش" in text:
+        transfer_type = "انستا كاش"
+    elif "محفظة" in text:
+        transfer_type = "محفظة"
 
     import re
     phone_matches = re.findall(r'(?:01\d{9}|09\d{9}|0\d{9})', text)
@@ -3325,4 +3347,4 @@ def _parse_wa_message(text):
         except ValueError:
             pass
 
-    return amount, exchange_rate, commission, currency, phone_number
+    return amount, exchange_rate, commission, currency, phone_number, transfer_type

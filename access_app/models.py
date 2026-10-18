@@ -353,6 +353,7 @@ class WhatsAppMessage(models.Model):
     currency = models.CharField(max_length=100, verbose_name="العملة", null=True, blank=True)
     direction = models.CharField(max_length=10, default="وارد", verbose_name="الاتجاه")
     status = models.CharField(max_length=10, default="فعالة", verbose_name="الحالة")
+    transfer_type = models.CharField(max_length=100, default="تحويل", verbose_name="نوع التحويل")
     timestamp = models.DateTimeField(verbose_name="التوقيت", auto_now_add=True)
 
     class Meta:

@@ -42,6 +42,15 @@
                 </div>
             </div>
             <div style="margin-bottom:20px">
+                <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نوع التحويل</label>
+                <select name="transfer_type" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+                    <option value="تحويل" {% if msg.transfer_type == 'تحويل' %}selected{% endif %}>تحويل</option>
+                    <option value="محفظة" {% if msg.transfer_type == 'محفظة' %}selected{% endif %}>محفظة</option>
+                    <option value="فودافون كاش" {% if msg.transfer_type == 'فودافون كاش' %}selected{% endif %}>فودافون كاش</option>
+                    <option value="انستا كاش" {% if msg.transfer_type == 'انستا كاش' %}selected{% endif %}>انستا كاش</option>
+                </select>
+            </div>
+            <div style="margin-bottom:20px">
                 <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">الاتجاه</label>
                 <select name="direction" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                     <option value="وارد" {% if msg.direction == 'وارد' %}selected{% endif %}>وارد</option>

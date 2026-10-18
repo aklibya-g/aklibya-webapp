@@ -1,0 +1,9 @@
+{"level":30,"time":"2026-10-18T12:04:41.936Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","browser":["Chrome","Desktop","10.0"],"helloMsg":{"clientHello":{"ephemeral":"6/UMsYD0mQ4hk5E/1JLajGHRNtM2noiLccOyA1BX6Gc="}},"msg":"connected to WA"}
+{"level":30,"time":"2026-10-18T12:04:42.216Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","node":{"username":"218925304014","passive":false,"userAgent":{"platform":"WEB","appVersion":{"primary":2,"secondary":3000,"tertiary":1043857760},"mcc":"000","mnc":"000","osVersion":"0.1","device":"Desktop","osBuildNumber":"0.1","releaseChannel":"RELEASE","localeLanguageIso6391":"en","localeCountryIso31661Alpha2":"US"},"webInfo":{"webSubPlatform":"WEB_BROWSER"},"connectType":"WIFI_UNKNOWN","connectReason":"USER_ACTIVATED","device":12,"pull":true},"msg":"logging in..."}
+{"level":30,"time":"2026-10-18T12:04:42.767Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"offline preview received"}
+{"level":30,"time":"2026-10-18T12:04:42.776Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"handled 1 offline messages/notifications"}
+{"level":30,"time":"2026-10-18T12:04:42.776Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"Connection is now AwaitingInitialSync, buffering events"}
+{"level":30,"time":"2026-10-18T12:04:42.777Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"History sync is disabled by config, not waiting for notification. Transitioning to Online."}
+{"level":30,"time":"2026-10-18T12:04:42.835Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"25 pre-keys found on server"}
+{"level":30,"time":"2026-10-18T12:04:43.173Z","pid":17972,"hostname":"LAPTOP-SMC322R8","class":"baileys","msg":"opened connection to WA"}
+✅ تم الاتصال بالواتساب بنجاح!

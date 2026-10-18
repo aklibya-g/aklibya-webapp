@@ -8,6 +8,7 @@
     <td style="padding:10px 14px;font-size:.82rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
     <td style="padding:10px 14px;font-size:.82rem;text-align:center" dir="ltr">{% if msg.commission %}{{ msg.commission|floatformat:3|intcomma }}{% else %}-{% endif %}</td>
     <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
+    <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
     <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">وارد</span>{% endif %}</td>
     <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.status == 'معدلة' %}<span style="background:#fef9c3;color:#ca8a04;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">معدلة</span>{% elif msg.status == 'ملغية' %}<span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">ملغية</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">فعالة</span>{% endif %}</td>
     <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"Y-m-d" }}</td>
@@ -33,7 +34,7 @@
 </tr>
 {% empty %}
 <tr>
-    <td colspan="12" style="padding:40px;text-align:center;color:var(--text-muted)">
+    <td colspan="13" style="padding:40px;text-align:center;color:var(--text-muted)">
         <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
         لا توجد رسائل واردة
     </td>
