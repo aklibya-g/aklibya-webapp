@@ -48,11 +48,11 @@ fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
+        if (!msg.message) return;
 
         const targetGroupJid = process.env.GROUP_JID || '';
 
-        if (targetGroupJid && msg.key.remoteJid !== targetGroupJid) return;
+
 
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
         const sender = msg.key.participant || msg.key.remoteJid;
