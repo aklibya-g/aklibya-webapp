@@ -3190,11 +3190,51 @@ def _parse_wa_message(text):
         currency = "د ل"
     elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
         currency = "ج م"
-    numbers = re.findall(r"\d+(?:\.\d+)?", text)
-    if len(numbers) > 0:
-        amount = float(numbers[0])
-    if len(numbers) > 1:
-        exchange_rate = float(numbers[1])
-    if len(numbers) > 2:
-        commission = float(numbers[2])
+
+    phone_pattern = r'(?:01\d{9}|09\d{9}|01\d{9})'
+    phone_numbers = __import__('re').findall(phone_pattern, text)
+    cleaned_text = __import__('re').sub(phone_pattern, '', text)
+
+    value_patterns = [
+        r'القيمه\s*:?\s*([\d,]+)',
+        r'القيمة\s*:?\s*([\d,]+)',
+        r'مبلغ\s*:?\s*([\d,]+)',
+        r'المبلغ\s*:?\s*([\d,]+)',
+    ]
+    for pattern in value_patterns:
+        match = __import__('re').search(pattern, cleaned_text)
+        if match:
+            try:
+                amount = float(match.group(1).replace(',', ''))
+                break
+            except ValueError:
+                pass
+
+    if amount is None:
+        remaining = []
+        numbers = __import__('re').findall(r'[\d,]+', cleaned_text)
+        for n in numbers:
+            try:
+                val = float(n.replace(',', ''))
+                if val >= 100 and len(n.replace(',', '')) >= 4:
+                    remaining.append(val)
+            except ValueError:
+                pass
+        if remaining:
+            amount = remaining[0]
+
+    rate_match = __import__('re').search(r'سعر\s*:?\s*([\d.]+)', cleaned_text)
+    if rate_match:
+        try:
+            exchange_rate = float(rate_match.group(1))
+        except ValueError:
+            pass
+
+    commission_match = __import__('re').search(r'عموله\s*:?\s*([\d.]+)', cleaned_text)
+    if commission_match:
+        try:
+            commission = float(commission_match.group(1))
+        except ValueError:
+            pass
+
     return amount, exchange_rate, commission, currency
