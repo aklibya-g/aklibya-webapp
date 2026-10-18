@@ -27,12 +27,25 @@
 .wa-table .act-delete { background:#fef2f2; color:#dc2626; }
 .wa-table tbody tr td:first-child { border-right:3px solid transparent; }
 .wa-table tbody tr.selected-row td:first-child { border-right-color:#2563eb; }
+body.wa-dark-font { --text:#e2e8f0; --text-muted:#94a3b8; --card-bg:#1e293b; --bg:#0f172a; --border:#334155; --input-bg:#1e293b; --input-border:#475569; color-scheme:dark; }
+body.wa-dark-font .wa-table thead th { background:linear-gradient(135deg,#0f172a,#1e293b); color:#cbd5e1; border-bottom-color:#60a5fa; }
+body.wa-dark-font .wa-table tbody td { color:#e2e8f0; border-bottom-color:#283548; }
+body.wa-dark-font .wa-table tbody tr:nth-child(even) { background:#16213a; }
+body.wa-dark-font .wa-table tbody tr:nth-child(odd) { background:#1a2436; }
+body.wa-dark-font .wa-table tbody tr:hover { background:#243356; box-shadow:inset 0 0 0 1px #4f6fd8; }
+body.wa-dark-font .wa-table .num-cell, body.wa-dark-font .wa-table .rate-cell, body.wa-dark-font .wa-table .conv-cell { color:#fbbf24; }
+body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !important; }
 </style>
 {% block content %}
 <div style="max-width:1600px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
         <h4 style="margin:0;font-weight:800"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
         <div style="display:flex;gap:10px;align-items:center">
+            <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">
+                <button onclick="fontZoom(1)" style="width:28px;height:28px;border-radius:7px;border:none;background:#f0fdf4;color:#16a34a;font-weight:800;font-size:.8rem;cursor:pointer" title="تكبير الخط">A+</button>
+                <button onclick="fontZoom(-1)" style="width:28px;height:28px;border-radius:7px;border:none;background:#fef2f2;color:#dc2626;font-weight:800;font-size:.8rem;cursor:pointer" title="تصغير الخط">A-</button>
+                <button id="fontDarkBtn" onclick="fontDark()" style="width:28px;height:28px;border-radius:7px;border:none;background:#f3f4f6;color:#374151;font-weight:800;font-size:.85rem;cursor:pointer" title="تديكين الخط">◐</button>
+            </div>
             <button id="toggleBotBox" onclick="toggleBotBox()" title="إظهار/إخفاء لوحة الاتصال" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
                 <i class="bi bi-eye" id="botBoxEye"></i>
             </button>
@@ -227,6 +240,37 @@ function deleteSelected() {
 }
 var activeFilter = '';
 var filtersApplied = false;
+
+// ===== FONT ZOOM / DARK =====
+var waFontScale = parseFloat(localStorage.getItem('waFontScale')) || 1;
+var waFontDark = localStorage.getItem('waFontDark') === '1';
+
+function applyFontSettings() {
+    var table = document.querySelector('.wa-table');
+    if (table) {
+        table.style.zoom = waFontScale;
+    }
+    document.body.classList.toggle('wa-dark-font', waFontDark);
+    var db = document.getElementById('fontDarkBtn');
+    if (db) {
+        db.style.background = waFontDark ? '#1e293b' : '#f3f4f6';
+        db.style.color = waFontDark ? '#fbbf24' : '#374151';
+    }
+}
+function fontZoom(dir) {
+    waFontScale = Math.round((waFontScale + dir * 0.1) * 10) / 10;
+    if (waFontScale < 0.6) waFontScale = 0.6;
+    if (waFontScale > 2) waFontScale = 2;
+    localStorage.setItem('waFontScale', waFontScale);
+    applyFontSettings();
+}
+function fontDark() {
+    waFontDark = !waFontDark;
+    localStorage.setItem('waFontDark', waFontDark ? '1' : '0');
+    applyFontSettings();
+}
+document.addEventListener('DOMContentLoaded', applyFontSettings);
+setTimeout(applyFontSettings, 300);
 
 function toggleBotBox() {
     const box = document.getElementById('botBox');
