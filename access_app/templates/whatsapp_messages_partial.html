@@ -1,0 +1,18 @@
+{% for msg in messages_list %}
+<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:10px 14px;font-size:.82rem;font-weight:600">{{ msg.sender }}</td>
+    <td style="padding:10px 14px;font-size:.82rem">{{ msg.message_text|truncatechars:60 }}</td>
+    <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.amount %}{{ msg.amount }}{% else %}-{% endif %}</td>
+    <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.exchange_rate %}{{ msg.exchange_rate }}{% else %}-{% endif %}</td>
+    <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.commission %}{{ msg.commission }}{% else %}-{% endif %}</td>
+    <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
+    <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"Y-m-d H:i" }}</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" style="padding:40px;text-align:center;color:var(--text-muted)">
+        <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
+        لا توجد رسائل واردة
+    </td>
+</tr>
+{% endfor %}

@@ -99,15 +99,12 @@
 {% block extra_js %}
 <script>
 function loadMessages() {
-    fetch("{% url 'whatsapp_integration' %}")
+    fetch("{% url 'whatsapp_messages_api' %}")
         .then(r => r.text())
         .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const newTbody = doc.querySelector("#messagesTableBody");
-            const currentTbody = document.getElementById("messagesTableBody");
-            if (newTbody && currentTbody) {
-                currentTbody.innerHTML = newTbody.innerHTML;
+            const tbody = document.getElementById("messagesTableBody");
+            if (tbody) {
+                tbody.innerHTML = html;
             }
         })
         .catch(() => {});

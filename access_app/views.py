@@ -2958,6 +2958,14 @@ def backup_delete(request, filename):
 
 
 @login_required_custom
+def whatsapp_messages_api(request):
+    messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
+    return render(request, "whatsapp_messages_partial.html", {
+        "messages_list": messages_list,
+    })
+
+
+@login_required_custom
 def whatsapp_integration(request):
     user = get_current_user(request)
     if not user:
