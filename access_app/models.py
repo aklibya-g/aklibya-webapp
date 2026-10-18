@@ -338,6 +338,8 @@ class ImportAlert(models.Model):
 
 
 class WhatsAppMessage(models.Model):
+    DIRECTION_IN = "وارد"
+    DIRECTION_OUT = "صادر"
     sender = models.CharField(max_length=200, verbose_name="المرسل")
     group_jid = models.CharField(max_length=200, verbose_name="معرف المجموعة")
     message_text = models.TextField(verbose_name="نص الرسالة")
@@ -345,6 +347,7 @@ class WhatsAppMessage(models.Model):
     exchange_rate = models.FloatField(verbose_name="سعر الصرف", null=True, blank=True)
     commission = models.FloatField(verbose_name="العمولة", null=True, blank=True)
     currency = models.CharField(max_length=100, verbose_name="العملة", null=True, blank=True)
+    direction = models.CharField(max_length=10, default="وارد", verbose_name="الاتجاه")
     timestamp = models.DateTimeField(verbose_name="التوقيت", auto_now_add=True)
 
     class Meta:

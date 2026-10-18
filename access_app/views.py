@@ -3173,6 +3173,7 @@ def whatsapp_webhook(request):
                 exchange_rate=rate,
                 commission=commission,
                 currency=currency,
+                direction=data.get("direction", "وارد"),
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:
@@ -3186,9 +3187,9 @@ def _parse_wa_message(text):
     commission = None
     currency = None
     if "ليبى" in text or "دينار" in text or "LYD" in text:
-        currency = "دينار ليبي"
-    elif "مصري" in text or "جنيه" in text or "EGP" in text:
-        currency = "جنيه مصري"
+        currency = "د ل"
+    elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
+        currency = "ج م"
     numbers = re.findall(r"\d+(?:\.\d+)?", text)
     if len(numbers) > 0:
         amount = float(numbers[0])

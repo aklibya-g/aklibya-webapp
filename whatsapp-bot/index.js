@@ -66,7 +66,8 @@ fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
                 jid: msg.key.remoteJid,
                 sender: sender,
                 message: text,
-                timestamp: msg.messageTimestamp
+                timestamp: msg.messageTimestamp,
+                direction: msg.key.fromMe ? 'صادر' : 'وارد'
             });
             console.log('🚀 تم إرسال البيانات بنجاح!');
         } catch (error) {
