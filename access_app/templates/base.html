@@ -91,7 +91,14 @@
         .sec-box.profits { background: var(--sec-profit); border-color: var(--sec-profit-border); }
         .stat-card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--card-border); padding: 20px; box-shadow: var(--shadow-sm); transition: all .2s; }
         .stat-card:hover { box-shadow: var(--shadow); }
-        .main-area { flex: 1; margin-right: 240px; min-height: 100vh; }
+        .main-area { flex: 1; margin-right: 240px; min-height: 100vh; transition: margin-right .3s; }
+        body.sidebar-hidden .main-area { margin-right: 0; }
+        body.sidebar-hidden .sidebar { transform: translateX(100%); }
+        body.sidebar-hidden .sidebar.sidebar-peek { transform: translateX(0); box-shadow: -4px 0 20px rgba(0,0,0,0.25); }
+        body.sidebar-hidden .page-content { font-size: 1.05em; }
+        body.sidebar-hidden .page-content table { font-size: 1.05em; }
+        #sidebarPeekZone { position: fixed; top: 0; right: 0; bottom: 0; width: 14px; z-index: 99; display: none; }
+        body.sidebar-hidden #sidebarPeekZone { display: block; }
         .topbar { background: var(--card-bg); border-bottom: 1px solid var(--card-border); padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); min-height: 46px; }
         .topbar .page-title h4 { font-size: 1rem; font-weight: 700; margin: 0; }
         .topbar .page-title small { font-size: 0.7rem; color: var(--text-muted); }
@@ -290,6 +297,7 @@
                 <a class="nav-item" data-action="toggleTheme"><i class="bi bi-palette"></i> <span id="themeLabel">السمات</span></a>
             </div>
         </div>
+        <div id="sidebarPeekZone"></div>
 
         <div class="main-area">
             <div class="topbar">
@@ -299,6 +307,7 @@
                 </div>
                 <div class="topbar-actions">
                     <button class="btn-icon d-md-none" data-action="toggleSidebar"><i class="bi bi-list"></i></button>
+                    <div class="btn-icon" id="toggleSidebarHide" title="إخفاء/إظهار القائمة الجانبية"><i class="bi bi-layout-sidebar"></i></div>
                     <div class="btn-icon" data-action="toggleTheme" title="السمات اللونية"><i class="bi bi-palette" id="themeIcon"></i></div>
                     <div class="btn-icon" data-action="toggleFontSize" title="حجم الخط" style="font-weight:700;font-size:0.8rem;"><span id="fontIcon">A</span><sup id="fontSizeLabel" style="font-size:0.6rem;">1</sup></div>
                     {% if current_user %}
@@ -439,6 +448,47 @@
                 });
             })(els[i]);
         }
+        } catch(e) {}
+
+        // ============ SIDEBAR HIDE/SHOW ============
+        try {
+            var hideBtn = document.getElementById('toggleSidebarHide');
+            var sidebar = document.getElementById('sidebar');
+            var peekZone = document.getElementById('sidebarPeekZone');
+            var peekTimer = null;
+            if (hideBtn && sidebar) {
+                if (localStorage.getItem('sidebarHidden') === '1') {
+                    document.body.classList.add('sidebar-hidden');
+                }
+                hideBtn.addEventListener('click', function() {
+                    var hidden = document.body.classList.toggle('sidebar-hidden');
+                    sidebar.classList.remove('sidebar-peek');
+                    localStorage.setItem('sidebarHidden', hidden ? '1' : '0');
+                });
+                if (peekZone) {
+                    peekZone.addEventListener('mouseenter', function() {
+                        if (!document.body.classList.contains('sidebar-hidden')) return;
+                        clearTimeout(peekTimer);
+                        sidebar.classList.add('sidebar-peek');
+                    });
+                    peekZone.addEventListener('mouseleave', function() {
+                        if (!sidebar.classList.contains('sidebar-peek')) return;
+                        peekTimer = setTimeout(function() {
+                            sidebar.classList.remove('sidebar-peek');
+                        }, 5000);
+                    });
+                    sidebar.addEventListener('mouseenter', function() {
+                        clearTimeout(peekTimer);
+                    });
+                    sidebar.addEventListener('mouseleave', function() {
+                        if (!document.body.classList.contains('sidebar-hidden')) return;
+                        if (!sidebar.classList.contains('sidebar-peek')) return;
+                        peekTimer = setTimeout(function() {
+                            sidebar.classList.remove('sidebar-peek');
+                        }, 5000);
+                    });
+                }
+            }
         } catch(e) {}
     })();
 
