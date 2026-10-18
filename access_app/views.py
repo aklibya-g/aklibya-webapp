@@ -2975,6 +2975,15 @@ def whatsapp_integration(request):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "start_bot":
+            if os.path.exists("whatsapp_bot.pid"):
+                try:
+                    with open("whatsapp_bot.pid", "r") as f:
+                        pid = int(f.read().strip())
+                    os.kill(pid, 0)
+                    messages.error(request, "البوت يعمل بالفعل")
+                    return redirect("whatsapp_integration")
+                except (ProcessLookupError, ValueError, PermissionError):
+                    pass
             try:
                 subprocess.Popen(
                     ["node", "index.js"],
