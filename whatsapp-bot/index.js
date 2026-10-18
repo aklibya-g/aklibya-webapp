@@ -37,12 +37,16 @@ async function startBot() {
         }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
-            if (statusCode !== DisconnectReason.loggedOut) {
-startBot();
-
-const fs = require('fs');
-fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
+            if (statusCode === DisconnectReason.loggedOut) {
+                console.log('❌ تم تسجيل الخروج');
+                return;
             }
+            if (statusCode === 409) {
+                console.log('⚠️ تعارض جلسة - إعادة المحاولة بعد 5 ثوانٍ');
+                setTimeout(startBot, 5000);
+                return;
+            }
+            setTimeout(startBot, 3000);
         }
     });
 
