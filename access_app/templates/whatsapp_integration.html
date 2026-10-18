@@ -145,7 +145,7 @@
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
                         <td style="padding:4px 4px;font-size:.68rem;word-break:break-word">{{ msg.message_text }}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
-                        <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:0 }}{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.commission %}{{ msg.commission|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.62rem;text-align:center;overflow:hidden;white-space:nowrap">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
