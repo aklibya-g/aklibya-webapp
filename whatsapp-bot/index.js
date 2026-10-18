@@ -6,6 +6,7 @@ require('dotenv').config();
 
 let sock = null;
 let monitoredGroupJid = process.env.GROUP_JID || '';
+let lastDetectedGroup = '';
 
 async function fetchGroupJid() {
     try {
@@ -15,13 +16,28 @@ async function fetchGroupJid() {
     } catch (e) { }
 }
 
+async function reportGroup(jid) {
+    if (!jid || !jid.endsWith('@g.us')) return;
+    if (jid === lastDetectedGroup) return;
+    lastDetectedGroup = jid;
+    try {
+        await axios.post('http://127.0.0.1:1500/api/whatsapp/report-group/', { group_jid: jid });
+        monitoredGroupJid = jid;
+        console.log('📥 تم حفظ المجموعة: ' + jid);
+    } catch (e) { }
+}
+
 function isAllowed(jid) {
     if (!monitoredGroupJid) return true;
     return jid === monitoredGroupJid;
 }
 
 async function sendToDjango(msg) {
-    if (!isAllowed(msg.key.remoteJid)) return;
+    const jid = msg.key.remoteJid;
+    if (!monitoredGroupJid && jid && jid.endsWith('@g.us')) {
+        await reportGroup(jid);
+    }
+    if (!isAllowed(jid)) return;
     const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
     if (!text) return;
     const sender = msg.key.participant || msg.key.remoteJid;
@@ -41,6 +57,16 @@ async function sendToDjango(msg) {
 
 async function syncMissedMessages(sinceTs) {
     if (!sock) return;
+    if (!monitoredGroupJid) {
+        try {
+            const chats = await sock.groupFetchAllParticipating();
+            const groups = Object.values(chats || {});
+            if (groups.length > 0) {
+                const first = groups[0];
+                await reportGroup(first.id);
+            }
+        } catch (e) { }
+    }
     const targetJid = monitoredGroupJid;
     if (!targetJid) {
         console.log('⚠️ لا توجد مجموعة محددة - تخطي السحب');

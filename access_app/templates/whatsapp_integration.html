@@ -124,7 +124,7 @@
                         <th style="padding:6px 3px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:22px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المرسل</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">التليفون</th>
-                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الرسالة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:25%">الرسالة</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المبلغ</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">السعر</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">العمولة</th>
@@ -143,7 +143,7 @@
                         <td style="padding:4px 3px;text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount()"></td>
                         <td style="padding:4px 4px;font-size:.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.sender }}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-                        <td style="padding:4px 4px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.message_text|truncatechars:25 }}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;word-break:break-word">{{ msg.message_text }}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:0 }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.commission %}{{ msg.commission|floatformat:0|intcomma }}{% else %}-{% endif %}</td>

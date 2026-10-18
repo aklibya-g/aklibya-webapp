@@ -3150,6 +3150,23 @@ def whatsapp_config(request):
 
 
 @csrf_exempt
+def whatsapp_report_group(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            group_jid = data.get("group_jid", "")
+            if group_jid:
+                setting = SystemSetting.get()
+                setting.monitored_group_jid = group_jid
+                setting.save()
+                return JsonResponse({"ok": True, "group_jid": group_jid})
+            return JsonResponse({"ok": False, "error": "no group_jid"})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+    return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
+
+
+@csrf_exempt
 def whatsapp_bulk_delete(request):
     if request.method == "POST":
         try:

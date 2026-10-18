@@ -79,6 +79,7 @@ urlpatterns = [
     path('api/whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
     path('api/whatsapp/messages/', views.whatsapp_messages_api, name='whatsapp_messages_api'),
     path('api/whatsapp/config/', views.whatsapp_config, name='whatsapp_config'),
+    path('api/whatsapp/report-group/', views.whatsapp_report_group, name='whatsapp_report_group'),
     path('api/whatsapp/bulk-delete/', views.whatsapp_bulk_delete, name='whatsapp_bulk_delete'),
     path('whatsapp/message/<int:msg_id>/edit/', views.whatsapp_message_edit, name='whatsapp_message_edit'),
     path('whatsapp/message/<int:msg_id>/delete/', views.whatsapp_message_delete, name='whatsapp_message_delete'),
