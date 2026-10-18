@@ -71,32 +71,33 @@
         <div style="padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
                 <span style="font-weight:700;font-size:.9rem"><i class="bi bi-chat-dots"></i> آخر الرسائل الواردة</span>
-                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                    <button onclick="filterTable('وارد')" style="padding:5px 12px;border-radius:8px;background:#dcfce7;color:#16a34a;font-size:.75rem;font-weight:700;border:1px solid #bbf7d0;cursor:pointer">وارد</button>
-                    <button onclick="filterTable('صادر')" style="padding:5px 12px;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:.75rem;font-weight:700;border:1px solid #bfdbfe;cursor:pointer">صادر</button>
-                    <button onclick="filterTable('فعالة')" style="padding:5px 12px;border-radius:8px;background:#dcfce7;color:#16a34a;font-size:.75rem;font-weight:700;border:1px solid #bbf7d0;cursor:pointer">فعالة</button>
-                    <button onclick="filterTable('معدلة')" style="padding:5px 12px;border-radius:8px;background:#fef9c3;color:#ca8a04;font-size:.75rem;font-weight:700;border:1px solid #fde047;cursor:pointer">معدلة</button>
-                    <button onclick="filterTable('ملغية')" style="padding:5px 12px;border-radius:8px;background:#fef2f2;color:#dc2626;font-size:.75rem;font-weight:700;border:1px solid #fecaca;cursor:pointer">ملغية</button>
-                    <button onclick="filterTable('')" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">الكل</button>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                    <button class="fbtn" data-filter="" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">الكل</button>
+                    <button class="fbtn" data-filter="وارد" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">وارد</button>
+                    <button class="fbtn" data-filter="صادر" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">صادر</button>
+                    <button class="fbtn" data-filter="فعالة" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">فعالة</button>
+                    <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">معدلة</button>
+                    <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">ملغية</button>
+                    <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 14px;border-radius:8px;background:#2563eb;color:#fff;font-size:.75rem;font-weight:700;border:none;cursor:pointer">▶ تطبيق الفلتر</button>
                 </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
                 <div>
                     <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">بحث</label>
-                    <input type="text" id="searchInput" onkeyup="filterTable(document.getElementById('directionFilter').value)" placeholder="ابحث بأي نص..."
+                    <input type="text" id="searchInput" placeholder="ابحث بأي نص..."
                            style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem;width:200px">
                 </div>
                 <div>
                     <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">من تاريخ</label>
-                    <input type="date" id="dateFrom" onchange="filterTable(document.getElementById('directionFilter').value)"
+                    <input type="date" id="dateFrom"
                            style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
                 </div>
                 <div>
                     <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">إلى تاريخ</label>
-                    <input type="date" id="dateTo" onchange="filterTable(document.getElementById('directionFilter').value)"
+                    <input type="date" id="dateTo"
                            style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
                 </div>
-                <select id="directionFilter" onchange="filterTable(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
+                <select id="directionFilter" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
                     <option value="">كل الاتجاهات</option>
                     <option value="وارد">وارد</option>
                     <option value="صادر">صادر</option>
@@ -211,13 +212,87 @@ function deleteSelected() {
         else alert('خطأ في الحذف');
     });
 }
-function filterTable(direction, status) {
-    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
-    rows.forEach(row => {
-        const dirOk = !direction || row.dataset.direction === direction;
-        const statusOk = !status || row.dataset.status === status;
-        row.style.display = (dirOk && statusOk) ? '' : 'none';
+var activeFilter = '';
+var filtersApplied = false;
+
+function setFilter(btn) {
+    document.querySelectorAll('.fbtn').forEach(b => {
+        b.style.background = '#f3f4f6';
+        b.style.color = '#374151';
+        b.style.borderColor = '#e5e7eb';
     });
+    activeFilter = btn.dataset.filter;
+    btn.style.background = '#2563eb';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#1d4ed8';
+    applyFilters();
+}
+
+function applyFilters() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+    const dateFrom = document.getElementById('dateFrom').value || '';
+    const dateTo = document.getElementById('dateTo').value || '';
+    const dirSel = document.getElementById('directionFilter').value || '';
+    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
+    let shown = 0;
+    rows.forEach(row => {
+        let ok = true;
+        const f = activeFilter;
+        if (f === 'وارد' || f === 'صادر') {
+            if (row.dataset.direction !== f) ok = false;
+        } else if (f === 'فعالة' || f === 'معدلة' || f === 'ملغية') {
+            if (row.dataset.status !== f) ok = false;
+        }
+        if (ok && dirSel && row.dataset.direction !== dirSel) ok = false;
+        if (ok && search) {
+            const hay = (row.dataset.search || '').toLowerCase();
+            if (!hay.includes(search)) ok = false;
+        }
+        if (ok && dateFrom) {
+            if ((row.dataset.date || '') < dateFrom) ok = false;
+        }
+        if (ok && dateTo) {
+            if ((row.dataset.date || '') > dateTo) ok = false;
+        }
+        row.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+    });
+    filtersApplied = !!(activeFilter || search || dateFrom || dateTo || dirSel);
+    const btn = document.getElementById('applyClearBtn');
+    if (btn) {
+        if (filtersApplied) {
+            btn.textContent = '✖ مسح الفلتر';
+            btn.style.background = '#dc2626';
+        } else {
+            btn.textContent = '▶ تطبيق الفلتر';
+            btn.style.background = '#2563eb';
+        }
+    }
+    const sc = document.getElementById('selectedCount');
+    if (sc && filtersApplied) sc.textContent = 'النتائج: ' + shown;
+}
+
+function clearFilters() {
+    activeFilter = '';
+    document.querySelectorAll('.fbtn').forEach(b => {
+        b.style.background = '#f3f4f6';
+        b.style.color = '#374151';
+        b.style.borderColor = '#e5e7eb';
+    });
+    document.getElementById('searchInput').value = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    document.getElementById('directionFilter').value = '';
+    applyFilters();
+}
+
+function toggleFilters() {
+    if (filtersApplied) clearFilters();
+    else applyFilters();
+}
+
+function filterTable() {
+    applyFilters();
 }
 
 function loadMessages() {
@@ -230,11 +305,23 @@ function loadMessages() {
             }
             const sa = document.getElementById('selectAll');
             if (sa) sa.checked = false;
+            if (filtersApplied) applyFilters();
             updateSelectedCount();
         })
         .catch(() => {});
 }
 setInterval(loadMessages, 5000);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const si = document.getElementById('searchInput');
+    const df = document.getElementById('dateFrom');
+    const dt = document.getElementById('dateTo');
+    const ds = document.getElementById('directionFilter');
+    if (si) si.addEventListener('keyup', applyFilters);
+    if (df) df.addEventListener('change', applyFilters);
+    if (dt) dt.addEventListener('change', applyFilters);
+    if (ds) ds.addEventListener('change', applyFilters);
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
