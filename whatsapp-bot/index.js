@@ -52,7 +52,7 @@ fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
 
         const targetGroupJid = process.env.GROUP_JID || '';
 
-
+        if (targetGroupJid && msg.key.remoteJid !== targetGroupJid) return;
 
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
         const sender = msg.key.participant || msg.key.remoteJid;

@@ -31,11 +31,15 @@
             <input type="hidden" name="action" value="start_bot">
             <div style="flex:1;min-width:200px">
                 <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">معرف الغرفة (Group JID)</label>
-                <input type="text" name="group_jid" placeholder="120363xxxxxxxxx@g.us"
+                <input type="text" name="group_jid" placeholder="120363xxxxxxxxx@g.us" value="{{ monitored_group }}"
                        style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem;box-sizing:border-box">
             </div>
             <button type="submit" style="padding:10px 20px;border-radius:10px;background:#25d366;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.88rem">
                 <i class="bi bi-play-fill"></i> تشغيل البوت
+            </button>
+            <button type="submit" name="action" value="save_group" onclick="this.form.action=this.value;return true;"
+                    style="padding:10px 20px;border-radius:10px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.88rem">
+                <i class="bi bi-save"></i> حفظ
             </button>
         </form>
 

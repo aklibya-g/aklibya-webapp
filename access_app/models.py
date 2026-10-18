@@ -355,9 +355,28 @@ class WhatsAppMessage(models.Model):
         return f"{self.sender} - {self.message_text[:50]}"
 
 
+class WhatsAppQRState(models.Model):
+    qr_code = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=50, default="disconnected")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "حالة الواتساب"
+        verbose_name_plural = "حالة الواتساب"
+
+    def __str__(self):
+        return f"WhatsApp - {self.status}"
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(id=1)
+        return obj
+
+
 class SystemSetting(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="وضع الصيانة")
     maintenance_message = models.TextField(default="النظام تحت الصيانة حالياً. يرجى المحاولة لاحقاً.", verbose_name="رسالة الصيانة")
+    monitored_group_jid = models.CharField(max_length=200, default="", blank=True, verbose_name="معرف المجموعة المراقبة")
 
     class Meta:
         verbose_name = "إعدادات النظام"

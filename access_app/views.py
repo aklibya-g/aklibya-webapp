@@ -3098,6 +3098,13 @@ def _is_pid_running(pid):
                 except Exception:
                     pass
             return redirect("whatsapp_integration")
+        elif action == "save_group":
+            group_jid = request.POST.get("group_jid", "").strip()
+            setting = SystemSetting.get()
+            setting.monitored_group_jid = group_jid
+            setting.save()
+            messages.success(request, "تم حفظ معرف المجموعة")
+            return redirect("whatsapp_integration")
         elif action == "delete_session":
             import shutil
             session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "auth_session")
@@ -3107,10 +3114,12 @@ def _is_pid_running(pid):
             else:
                 messages.error(request, "لا توجد جلسة")
             return redirect("whatsapp_integration")
+    setting = SystemSetting.get()
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
         "messages_list": messages_list,
         "bot_status": bot_status,
+        "monitored_group": setting.monitored_group_jid,
     })
 
 
