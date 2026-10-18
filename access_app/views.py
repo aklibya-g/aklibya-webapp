@@ -2966,6 +2966,7 @@ def whatsapp_message_edit(request, msg_id):
     if request.method == "POST":
         msg.sender = request.POST.get("sender", msg.sender)
         msg.message_text = request.POST.get("message_text", msg.message_text)
+        msg.phone_number = request.POST.get("phone_number", "")
         msg.amount = request.POST.get("amount") or None
         msg.exchange_rate = request.POST.get("exchange_rate") or None
         msg.commission = request.POST.get("commission") or None
@@ -2974,7 +2975,14 @@ def whatsapp_message_edit(request, msg_id):
         msg.save()
         messages.success(request, "تم تعديل الرسالة")
         return redirect("whatsapp_integration")
-    return render(request, "whatsapp_message_edit.html", {"msg": msg})
+    prefill = {
+        "phone": request.GET.get("phone", ""),
+        "amount": request.GET.get("amount", ""),
+        "rate": request.GET.get("rate", ""),
+        "commission": request.GET.get("commission", ""),
+        "currency": request.GET.get("currency", ""),
+    }
+    return render(request, "whatsapp_message_edit.html", {"msg": msg, "prefill": prefill})
 
 
 @login_required_custom
@@ -3130,9 +3138,22 @@ def _is_pid_running(pid):
                     pass
             return redirect("whatsapp_integration")
         elif action == "reprocess":
+            msg_id = request.POST.get("msg_id")
+            if msg_id:
+                msg = get_object_or_404(WhatsAppMessage, id=msg_id)
+                amount, rate, commission, currency, phone = _parse_wa_message(msg.message_text)
+                from urllib.parse import urlencode
+                params = urlencode({
+                    "phone": phone or "",
+                    "amount": amount or "",
+                    "rate": rate or "",
+                    "commission": commission or "",
+                    "currency": currency or "",
+                })
+                return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
             for msg in all_msgs:
-                amount, rate, commission, currency = _parse_wa_message(msg.message_text)
+                amount, rate, commission, currency, _ = _parse_wa_message(msg.message_text)
                 msg.amount = amount
                 msg.exchange_rate = rate
                 msg.commission = commission

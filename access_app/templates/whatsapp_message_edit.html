@@ -17,24 +17,28 @@
                 <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نص الرسالة</label>
                 <textarea name="message_text" rows="3" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">{{ msg.message_text }}</textarea>
             </div>
+            <div style="margin-bottom:16px">
+                <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">رقم الهاتف</label>
+                <input type="text" name="phone_number" value="{{ prefill.phone|default:msg.phone_number|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem" dir="ltr">
+            </div>
             <div style="display:flex;gap:10px;margin-bottom:16px">
                 <div style="flex:1">
                     <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">المبلغ</label>
-                    <input type="number" step="0.01" name="amount" value="{{ msg.amount|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+                    <input type="number" step="0.01" name="amount" value="{{ prefill.amount|default:msg.amount|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                 </div>
                 <div style="flex:1">
                     <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">سعر الصرف</label>
-                    <input type="number" step="0.01" name="exchange_rate" value="{{ msg.exchange_rate|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+                    <input type="number" step="0.01" name="exchange_rate" value="{{ prefill.rate|default:msg.exchange_rate|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                 </div>
             </div>
             <div style="display:flex;gap:10px;margin-bottom:16px">
                 <div style="flex:1">
                     <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العمولة</label>
-                    <input type="number" step="0.01" name="commission" value="{{ msg.commission|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+                    <input type="number" step="0.01" name="commission" value="{{ prefill.commission|default:msg.commission|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                 </div>
                 <div style="flex:1">
                     <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العملة</label>
-                    <input type="text" name="currency" value="{{ msg.currency|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+                    <input type="text" name="currency" value="{{ prefill.currency|default:msg.currency|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                 </div>
             </div>
             <div style="margin-bottom:20px">
