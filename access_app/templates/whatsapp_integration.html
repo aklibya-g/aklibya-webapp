@@ -296,6 +296,7 @@ function filterTable() {
 }
 
 function loadMessages() {
+    const checkedIds = new Set(Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value));
     fetch("{% url 'whatsapp_messages_api' %}")
         .then(r => r.text())
         .then(html => {
@@ -303,6 +304,10 @@ function loadMessages() {
             if (tbody) {
                 tbody.innerHTML = html;
             }
+            checkedIds.forEach(id => {
+                const cb = document.querySelector('.rowCheck[value="' + id + '"]');
+                if (cb) cb.checked = true;
+            });
             const sa = document.getElementById('selectAll');
             if (sa) sa.checked = false;
             if (filtersApplied) applyFilters();
