@@ -43,7 +43,7 @@
             </button>
         </form>
 
-        <form method="POST" style="margin-top:12px;display:flex;gap:8px">
+        <form method="POST" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             {% csrf_token %}
             <input type="hidden" name="action" value="stop_bot">
             <button type="submit" style="padding:8px 16px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.82rem">
@@ -54,12 +54,21 @@
                     style="padding:8px 16px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.82rem">
                 <i class="bi bi-arrow-counterclockwise"></i> حذف الجلسة
             </button>
+            <input type="hidden" name="action" value="reprocess">
+            <button type="submit" style="padding:8px 16px;border-radius:8px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.82rem">
+                <i class="bi bi-arrow-repeat"></i> المصحح
+            </button>
         </form>
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">
-        <div style="padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+        <div style="padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <span style="font-weight:700;font-size:.9rem"><i class="bi bi-chat-dots"></i> آخر الرسائل الواردة</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button onclick="filterTable('وارد')" style="padding:5px 12px;border-radius:8px;background:#dcfce7;color:#16a34a;font-size:.75rem;font-weight:700;border:1px solid #bbf7d0;cursor:pointer">وارد</button>
+                <button onclick="filterTable('صادر')" style="padding:5px 12px;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:.75rem;font-weight:700;border:1px solid #bfdbfe;cursor:pointer">صادر</button>
+                <button onclick="filterTable('')" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">الكل</button>
+            </div>
         </div>
         <div class="table-responsive">
             <table style="width:100%;border-collapse:collapse">
@@ -74,11 +83,11 @@
                         <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">الاتجاه</th>
                         <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">التاريخ</th>
                         <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">الوقت</th>
+                        <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">إجراءات</th>
                         <th style="padding:10px 14px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted)">التوقيت</th>
                     </tr>
                 </thead>
-                <tbody id="messagesTableBody">
-                    {% for msg in messages_list %}
+                <tbody id="messagesTableBody">                    {% for msg in messages_list %}
                     <tr style="border-bottom:1px solid var(--border)">
                         <td style="padding:10px 14px;font-size:.82rem;font-weight:600" dir="ltr">{{ msg.sender }}</td>
                         <td style="padding:10px 14px;font-size:.82rem">{{ msg.message_text|truncatechars:60 }}</td>
@@ -89,6 +98,16 @@
                         <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">وارد</span>{% endif %}</td>
                         <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"Y-m-d" }}</td>
                         <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"H:i:s" }}</td>
+                        <td style="padding:10px 14px;text-align:center">
+                            <div style="display:flex;gap:4px;justify-content:center">
+                                <a href="{% url 'whatsapp_message_edit' msg.id %}" style="padding:4px 10px;border-radius:6px;background:#dbeafe;color:#2563eb;font-size:.75rem;font-weight:700;text-decoration:none">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'whatsapp_message_delete' msg.id %}" onclick="return confirm('هل تريد حذف هذه الرسالة؟')" style="padding:4px 10px;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.75rem;font-weight:700;text-decoration:none">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -107,6 +126,28 @@
 
 {% block extra_js %}
 <script>
+function filterTable(direction) {
+    const rows = document.querySelectorAll("#messagesTableBody tr");
+    rows.forEach(row => {
+        if (direction === "" || row.dataset.direction === direction) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+function filterTable(direction) {
+    const rows = document.querySelectorAll("#messagesTableBody tr");
+    rows.forEach(row => {
+        if (direction === "" || row.dataset.direction === direction) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
 function loadMessages() {
     fetch("{% url 'whatsapp_messages_api' %}")
         .then(r => r.text())

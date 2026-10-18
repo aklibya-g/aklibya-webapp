@@ -78,4 +78,6 @@ urlpatterns = [
     path('api/whatsapp/qr/status/', views.whatsapp_qr_status, name='whatsapp_qr_status'),
     path('api/whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
     path('api/whatsapp/messages/', views.whatsapp_messages_api, name='whatsapp_messages_api'),
+    path('whatsapp/message/<int:msg_id>/edit/', views.whatsapp_message_edit, name='whatsapp_message_edit'),
+    path('whatsapp/message/<int:msg_id>/delete/', views.whatsapp_message_delete, name='whatsapp_message_delete'),
 ]

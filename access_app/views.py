@@ -2958,6 +2958,37 @@ def backup_delete(request, filename):
 
 
 @login_required_custom
+def whatsapp_message_edit(request, msg_id):
+    user = get_current_user(request)
+    if not user:
+        return redirect("index")
+    msg = get_object_or_404(WhatsAppMessage, id=msg_id)
+    if request.method == "POST":
+        msg.sender = request.POST.get("sender", msg.sender)
+        msg.message_text = request.POST.get("message_text", msg.message_text)
+        msg.amount = request.POST.get("amount") or None
+        msg.exchange_rate = request.POST.get("exchange_rate") or None
+        msg.commission = request.POST.get("commission") or None
+        msg.currency = request.POST.get("currency", msg.currency)
+        msg.direction = request.POST.get("direction", msg.direction)
+        msg.save()
+        messages.success(request, "تم تعديل الرسالة")
+        return redirect("whatsapp_integration")
+    return render(request, "whatsapp_message_edit.html", {"msg": msg})
+
+
+@login_required_custom
+def whatsapp_message_delete(request, msg_id):
+    user = get_current_user(request)
+    if not user:
+        return redirect("index")
+    msg = get_object_or_404(WhatsAppMessage, id=msg_id)
+    msg.delete()
+    messages.success(request, "تم حذف الرسالة")
+    return redirect("whatsapp_integration")
+
+
+@login_required_custom
 def whatsapp_messages_api(request):
     messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
     return render(request, "whatsapp_messages_partial.html", {
@@ -3098,6 +3129,17 @@ def _is_pid_running(pid):
                 except Exception:
                     pass
             return redirect("whatsapp_integration")
+        elif action == "reprocess":
+            all_msgs = WhatsAppMessage.objects.all()
+            for msg in all_msgs:
+                amount, rate, commission, currency = _parse_wa_message(msg.message_text)
+                msg.amount = amount
+                msg.exchange_rate = rate
+                msg.commission = commission
+                msg.currency = currency
+                msg.save()
+            messages.success(request, f"تم تصحيح {all_msgs.count()} رسالة")
+            return redirect("whatsapp_integration")
         elif action == "save_group":
             group_jid = request.POST.get("group_jid", "").strip()
             setting = SystemSetting.get()
@@ -3191,8 +3233,13 @@ def _parse_wa_message(text):
     elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
         currency = "ج م"
 
-    phone_pattern = r'(?:01\d{9}|09\d{9}|01\d{9})'
+    phone_pattern = r'(?:01\d{9}|09\d{9})'
     phone_numbers = __import__('re').findall(phone_pattern, text)
+    normalized_phones = []
+    for phone in phone_numbers:
+        if len(phone) == 10 and not phone.startswith('0'):
+            phone = '0' + phone
+        normalized_phones.append(phone)
     cleaned_text = __import__('re').sub(phone_pattern, '', text)
 
     value_patterns = [

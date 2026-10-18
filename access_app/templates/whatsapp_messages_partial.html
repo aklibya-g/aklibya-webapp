@@ -1,5 +1,5 @@
 {% for msg in messages_list %}
-<tr style="border-bottom:1px solid var(--border)">
+<tr data-direction="{{ msg.direction }}" style="border-bottom:1px solid var(--border)">
     <td style="padding:10px 14px;font-size:.82rem;font-weight:600" dir="ltr">{{ msg.sender }}</td>
     <td style="padding:10px 14px;font-size:.82rem">{{ msg.message_text|truncatechars:60 }}</td>
     <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.amount %}{{ msg.amount|floatformat:2 }}{% else %}-{% endif %}</td>
@@ -9,6 +9,16 @@
     <td style="padding:10px 14px;font-size:.82rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">وارد</span>{% endif %}</td>
     <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"Y-m-d" }}</td>
     <td style="padding:10px 14px;font-size:.78rem;color:var(--text-muted);text-align:center">{{ msg.timestamp|date:"H:i:s" }}</td>
+    <td style="padding:10px 14px;text-align:center">
+        <div style="display:flex;gap:4px;justify-content:center">
+            <a href="{% url 'whatsapp_message_edit' msg.id %}" style="padding:4px 10px;border-radius:6px;background:#dbeafe;color:#2563eb;font-size:.75rem;font-weight:700;text-decoration:none">
+                <i class="bi bi-pencil"></i>
+            </a>
+            <a href="{% url 'whatsapp_message_delete' msg.id %}" onclick="return confirm('هل تريد حذف هذه الرسالة؟')" style="padding:4px 10px;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.75rem;font-weight:700;text-decoration:none">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </td>
 </tr>
 {% empty %}
 <tr>
