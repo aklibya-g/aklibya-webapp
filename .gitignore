@@ -10,3 +10,8 @@ install.bat
 start.bat
 debug_parser.py
 temp/
+whatsapp-bot/node_modules/
+whatsapp-bot/whatsapp_bot.pid
+whatsapp-bot/wa_bot.log
+whatsapp-bot/sync_request
+whatsapp-bot/auth_session/
