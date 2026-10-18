@@ -380,7 +380,11 @@ function loadMessages() {
             }
             checkedIds.forEach(id => {
                 const cb = document.querySelector('.rowCheck[value="' + id + '"]');
-                if (cb) cb.checked = true;
+                if (cb) {
+                    cb.checked = true;
+                    const tr = cb.closest('tr');
+                    if (tr) tr.classList.add('selected-row');
+                }
             });
             const sa = document.getElementById('selectAll');
             if (sa) sa.checked = false;
@@ -438,18 +442,5 @@ function pollQR() {
     setTimeout(pollQR, 2000);
 }
 pollQR();
-
-function refreshMessages() {
-    fetch('/api/whatsapp/messages/')
-        .then(r => r.text())
-        .then(html => {
-            document.getElementById('messagesTableBody').innerHTML = html;
-            const dir = document.getElementById('directionFilter').value;
-            const status = document.getElementById('statusFilter').value;
-            filterTable(dir, status);
-        })
-        .catch(() => {});
-}
-setInterval(refreshMessages, 5000);
 </script>
 {% endblock %}
