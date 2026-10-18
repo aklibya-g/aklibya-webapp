@@ -487,6 +487,13 @@
                             sidebar.classList.remove('sidebar-peek');
                         }, 5000);
                     });
+                    document.addEventListener('click', function(e) {
+                        if (!sidebar.classList.contains('sidebar-peek')) return;
+                        if (sidebar.contains(e.target)) return;
+                        if (peekZone && peekZone.contains(e.target)) return;
+                        clearTimeout(peekTimer);
+                        sidebar.classList.remove('sidebar-peek');
+                    });
                 }
             }
         } catch(e) {}
