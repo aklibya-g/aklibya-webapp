@@ -2964,9 +2964,10 @@ def whatsapp_integration(request):
         return redirect("index")
     messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
     bot_status = "مفصول"
-    if os.path.exists("whatsapp_bot.pid"):
+    pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
+    if os.path.exists(pid_path):
         try:
-            with open("whatsapp_bot.pid", "r") as f:
+            with open(pid_path, "r") as f:
                 pid = int(f.read().strip())
             os.kill(pid, 0)
             bot_status = "متصل"
@@ -2998,12 +2999,13 @@ def whatsapp_integration(request):
                 messages.error(request, f"خطأ في التشغيل: {str(e)}")
             return redirect("whatsapp_integration")
         elif action == "stop_bot":
-            if os.path.exists("whatsapp_bot.pid"):
+            pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
+            if os.path.exists(pid_path):
                 try:
-                    with open("whatsapp_bot.pid", "r") as f:
+                    with open(pid_path, "r") as f:
                         pid = int(f.read().strip())
                     os.kill(pid, 9)
-                    os.remove("whatsapp_bot.pid")
+                    os.remove(pid_path)
                     messages.success(request, "تم إيقاف البوت")
                 except Exception:
                     pass
