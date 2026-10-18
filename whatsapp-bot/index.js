@@ -5,8 +5,23 @@ const fs = require('fs');
 require('dotenv').config();
 
 let sock = null;
+let monitoredGroupJid = process.env.GROUP_JID || '';
+
+async function fetchGroupJid() {
+    try {
+        const res = await axios.get('http://127.0.0.1:1500/api/whatsapp/config/');
+        monitoredGroupJid = res.data.group_jid || '';
+        console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل'));
+    } catch (e) { }
+}
+
+function isAllowed(jid) {
+    if (!monitoredGroupJid) return true;
+    return jid === monitoredGroupJid;
+}
 
 async function sendToDjango(msg) {
+    if (!isAllowed(msg.key.remoteJid)) return;
     const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
     if (!text) return;
     const sender = msg.key.participant || msg.key.remoteJid;
@@ -26,28 +41,27 @@ async function sendToDjango(msg) {
 
 async function syncMissedMessages(sinceTs) {
     if (!sock) return;
-    const chats = await sock.store?.chats || {};
-    const jids = Object.keys(chats);
-    if (jids.length === 0) {
-        jids.push(...Object.keys(sock.user?.lid ? {} : {}));
+    const targetJid = monitoredGroupJid;
+    if (!targetJid) {
+        console.log('⚠️ لا توجد مجموعة محددة - تخطي السحب');
+        return;
     }
-    const allJids = [...new Set([
-        ...jids,
-        ...(sock.store?.messages ? Object.keys(sock.store.messages) : [])
-    ])];
-    for (const jid of allJids) {
-        try {
-            const msgs = await sock.messages.fetch(jid, { limit: 100 });
-            const arr = msgs.messages || msgs;
-            for (const m of arr) {
-                if (!m.message) continue;
-                const ts = m.messageTimestamp;
-                if (typeof ts === 'number' && ts > sinceTs) {
-                    await sendToDjango(m);
-                    await new Promise(r => setTimeout(r, 300));
-                }
+    try {
+        const msgs = await sock.messages.fetch(targetJid, { limit: 100 });
+        const arr = msgs.messages || msgs;
+        let count = 0;
+        for (const m of arr) {
+            if (!m.message) continue;
+            const ts = m.messageTimestamp;
+            if (typeof ts === 'number' && ts > sinceTs) {
+                await sendToDjango(m);
+                count++;
+                await new Promise(r => setTimeout(r, 300));
             }
-        } catch (e) { }
+        }
+        console.log('✅ تم سحب ' + count + ' رسالة مفقودة');
+    } catch (e) {
+        console.log('❌ خطأ في السحب');
     }
 }
 
@@ -60,7 +74,6 @@ function watchSyncRequest() {
                 fs.unlinkSync(path);
                 console.log('🔄 سحب الرسائل المفقودة...');
                 await syncMissedMessages(sinceTs);
-                console.log('✅ تم السحب');
             } catch (e) {
                 console.log('❌ خطأ في السحب');
             }
@@ -69,6 +82,9 @@ function watchSyncRequest() {
 }
 
 async function startBot() {
+    await fetchGroupJid();
+    setInterval(fetchGroupJid, 10000);
+
     const { state, saveCreds } = await useMultiFileAuthState('auth_session');
     const { version } = await fetchLatestBaileysVersion();
 

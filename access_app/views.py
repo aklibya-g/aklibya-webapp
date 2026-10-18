@@ -3203,6 +3203,12 @@ def _is_pid_running(pid):
 
 
 @csrf_exempt
+def whatsapp_config(request):
+    setting = SystemSetting.get()
+    return JsonResponse({"group_jid": setting.monitored_group_jid or ""})
+
+
+@csrf_exempt
 def whatsapp_qr_update(request):
     if request.method == "POST":
         try:
