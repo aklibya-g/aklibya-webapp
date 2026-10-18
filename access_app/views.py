@@ -10,7 +10,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
-from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash, WhatsAppMessage
+from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash, WhatsAppMessage, WhatsAppQRState
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
@@ -2974,15 +2974,13 @@ def whatsapp_integration(request):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "start_bot":
-            group_jid = request.POST.get("group_jid", "").strip()
-            if not group_jid:
-                messages.error(request, "أدخل معرف الغرفة")
-                return redirect("whatsapp_integration")
             try:
                 subprocess.Popen(
-                    ["py", "-3.11", "whatsapp_bot.py"],
-                    cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                    ["node", "index.js"],
+                    cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NO_WINDOW
                 )
                 messages.success(request, "تم تشغيل بوت الواتساب")
             except Exception as e:
@@ -2999,8 +2997,93 @@ def whatsapp_integration(request):
                 except Exception:
                     pass
             return redirect("whatsapp_integration")
+        elif action == "delete_session":
+            import shutil
+            session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "auth_session")
+            if os.path.exists(session_path):
+                shutil.rmtree(session_path)
+                messages.success(request, "تم حذف الجلسة")
+            else:
+                messages.error(request, "لا توجد جلسة")
+            return redirect("whatsapp_integration")
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
         "messages_list": messages_list,
         "bot_status": bot_status,
     })
+
+
+@csrf_exempt
+def whatsapp_qr_update(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            state = WhatsAppQRState.get()
+            state.qr_code = data.get("qr")
+            state.status = data.get("status", "disconnected")
+            state.save()
+            return JsonResponse({"ok": True})
+        except Exception:
+            return JsonResponse({"ok": False}, status=400)
+    return JsonResponse({"ok": False}, status=405)
+
+
+def whatsapp_qr_status(request):
+    import qrcode
+    import base64
+    from io import BytesIO
+    state = WhatsAppQRState.get()
+    qr_data = state.qr_code
+    if qr_data and state.status == "waiting":
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        img_str = base64.b64encode(buffer.getvalue()).decode()
+        return JsonResponse({"qr": img_str, "status": state.status})
+    return JsonResponse({"qr": qr_data, "status": state.status})
+
+
+@csrf_exempt
+def whatsapp_webhook(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            text = data.get("message", "")
+            sender = data.get("sender", "")
+            jid = data.get("jid", "")
+            amount, rate, commission, currency = _parse_wa_message(text)
+            WhatsAppMessage.objects.create(
+                sender=sender,
+                group_jid=jid,
+                message_text=text,
+                amount=amount,
+                exchange_rate=rate,
+                commission=commission,
+                currency=currency,
+            )
+            return JsonResponse({"status": "success", "saved": True})
+        except Exception:
+            return JsonResponse({"status": "error"}, status=400)
+    return JsonResponse({"status": "error"}, status=405)
+
+
+def _parse_wa_message(text):
+    amount = None
+    exchange_rate = None
+    commission = None
+    currency = None
+    if "ليبى" in text or "دينار" in text or "LYD" in text:
+        currency = "دينار ليبي"
+    elif "مصري" in text or "جنيه" in text or "EGP" in text:
+        currency = "جنيه مصري"
+    numbers = re.findall(r"\d+(?:\.\d+)?", text)
+    if len(numbers) > 0:
+        amount = float(numbers[0])
+    if len(numbers) > 1:
+        exchange_rate = float(numbers[1])
+    if len(numbers) > 2:
+        commission = float(numbers[2])
+    return amount, exchange_rate, commission, currency
