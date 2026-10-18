@@ -3270,8 +3270,7 @@ def _parse_wa_message(text):
         elif len(phone_number) == 9:
             phone_number = '0' + phone_number
 
-    phone_pattern = r'(?:01\d{9}|09\d{9})'
-    cleaned_text = re.sub(phone_pattern, '', text)
+    cleaned_text = re.sub(r'(?:01\d{9}|09\d{9}|0\d{9})', '', text)
 
     value_patterns = [
         r'القيمه\s*:?\s*([\d,]+)',
@@ -3312,10 +3311,13 @@ def _parse_wa_message(text):
             if small_numbers:
                 amount = small_numbers[0]
 
-    rate_match = re.search(r'سعر\s*:?\s*([\d.]+)', cleaned_text)
+    rate_match = re.search(r'(?:سعر\s*الصرف|سعر)\s*:?\s*([\d]+[.,][\d]+)', cleaned_text)
+    if not rate_match:
+        rate_match = re.search(r'(?<![\d,])([\d]+[.,][\d]{1,2})(?![\d,])', cleaned_text)
     if rate_match:
         try:
-            exchange_rate = float(rate_match.group(1))
+            val = rate_match.group(1).replace(',', '.')
+            exchange_rate = float(val)
         except ValueError:
             pass
 
