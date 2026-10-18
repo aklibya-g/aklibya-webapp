@@ -2965,8 +2965,19 @@ def whatsapp_messages_api(request):
     })
 
 
-@login_required_custom
-def whatsapp_integration(request):
+def _is_pid_running(pid):
+    if not pid:
+        return False
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if handle == 0:
+            return False
+        kernel32.CloseHandle(handle)
+        return True
+    except Exception:
+        return False
     user = get_current_user(request)
     if not user:
         return redirect("index")
@@ -2977,21 +2988,22 @@ def whatsapp_integration(request):
         try:
             with open(pid_path, "r") as f:
                 pid = int(f.read().strip())
-            os.kill(pid, 0)
-            bot_status = "متصل"
-        except (ProcessLookupError, ValueError, PermissionError):
+            if _is_pid_running(pid):
+                bot_status = "متصل"
+        except (ValueError, PermissionError):
             bot_status = "مفصول"
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "start_bot":
-            if os.path.exists("whatsapp_bot.pid"):
+            pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
+            if os.path.exists(pid_path):
                 try:
-                    with open("whatsapp_bot.pid", "r") as f:
+                    with open(pid_path, "r") as f:
                         pid = int(f.read().strip())
-                    os.kill(pid, 0)
-                    messages.error(request, "البوت يعمل بالفعل")
-                    return redirect("whatsapp_integration")
-                except (ProcessLookupError, ValueError, PermissionError):
+                    if _is_pid_running(pid):
+                        messages.error(request, "البوت يعمل بالفعل")
+                        return redirect("whatsapp_integration")
+                except (ValueError, PermissionError):
                     pass
             try:
                 subprocess.Popen(
