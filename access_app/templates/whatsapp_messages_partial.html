@@ -4,7 +4,7 @@
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
     <td style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
     <td style="text-align:center;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-    <td style="word-break:break-word;line-height:1.4">{{ msg.message_text }}</td>
+    <td style="white-space:pre-line;word-break:break-word;line-height:1.5">{{ msg.message_text }}</td>
     <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
     <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
     <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>

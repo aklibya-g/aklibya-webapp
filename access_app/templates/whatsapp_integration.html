@@ -125,6 +125,7 @@ body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !impor
                 <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">معدلة</button>
                 <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">ملغية</button>
                 <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ تطبيق الفلتر</button>
+                <button id="dataGridBtn" onclick="toggleDataGrid()" style="padding:5px 12px;border-radius:8px;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▦ عرض كجدول</button>
                 <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
                 <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
                 <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
@@ -176,7 +177,7 @@ body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !impor
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
                         <td style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-                        <td style="word-break:break-word;line-height:1.4">{{ msg.message_text }}</td>
+                        <td style="white-space:pre-line;word-break:break-word;line-height:1.5">{{ msg.message_text }}</td>
                         <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
                         <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
                         <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
@@ -208,6 +209,26 @@ body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !impor
                     </tr>
                     {% endfor %}
                 </tbody>
+            </table>
+        </div>
+        <div id="dataGrid" style="display:none;padding:8px 12px 16px">
+            <table class="wa-table">
+                <thead>
+                    <tr>
+                        <th style="width:4%">#</th>
+                        <th style="width:14%">التليفون</th>
+                        <th style="width:12%">المبلغ</th>
+                        <th style="width:8%">السعر</th>
+                        <th style="width:12%">بعد التحويل</th>
+                        <th style="width:6%">العملة</th>
+                        <th style="width:10%">النوع</th>
+                        <th style="width:7%">الاتجاه</th>
+                        <th style="width:7%">الحالة</th>
+                        <th style="width:8%">التاريخ</th>
+                        <th style="width:6%">الوقت</th>
+                    </tr>
+                </thead>
+                <tbody id="dataGridBody"></tbody>
             </table>
         </div>
     </div>
@@ -271,6 +292,73 @@ function fontDark() {
 }
 document.addEventListener('DOMContentLoaded', applyFontSettings);
 setTimeout(applyFontSettings, 300);
+
+// ===== DATA GRID TOGGLE =====
+var gridVisible = false;
+
+function buildDataGrid() {
+    const tbody = document.getElementById('dataGridBody');
+    if (!tbody) return;
+    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
+    let html = '';
+    let i = 0;
+    rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        i++;
+        const cells = row.querySelectorAll('td');
+        const phone = cells[2] ? cells[2].textContent.trim() : '-';
+        const amount = cells[4] ? cells[4].textContent.trim() : '-';
+        const rate = cells[5] ? cells[5].textContent.trim() : '-';
+        const conv = cells[6] ? cells[6].textContent.trim() : '-';
+        const cur = cells[7] ? cells[7].textContent.trim() : '-';
+        const type = cells[8] ? cells[8].textContent.trim() : '-';
+        const dir = cells[9] ? cells[9].innerHTML : '-';
+        const st = cells[10] ? cells[10].innerHTML : '-';
+        const date = cells[11] ? cells[11].textContent.trim() : '-';
+        const time = cells[12] ? cells[12].textContent.trim() : '-';
+        html += '<tr>'
+            + '<td style="text-align:center;color:var(--text-muted)">' + i + '</td>'
+            + '<td style="text-align:center;font-family:monospace;font-weight:700" dir="ltr">' + escapeHtml(phone) + '</td>'
+            + '<td class="num-cell" style="text-align:center" dir="ltr">' + escapeHtml(amount) + '</td>'
+            + '<td class="rate-cell" style="text-align:center" dir="ltr">' + escapeHtml(rate) + '</td>'
+            + '<td class="conv-cell" style="text-align:center" dir="ltr">' + escapeHtml(conv) + '</td>'
+            + '<td style="text-align:center">' + escapeHtml(cur) + '</td>'
+            + '<td style="text-align:center">' + escapeHtml(type) + '</td>'
+            + '<td style="text-align:center">' + dir + '</td>'
+            + '<td style="text-align:center">' + st + '</td>'
+            + '<td style="text-align:center;color:var(--text-muted)">' + escapeHtml(date) + '</td>'
+            + '<td style="text-align:center;color:var(--text-muted)">' + escapeHtml(time) + '</td>'
+            + '</tr>';
+    });
+    if (!html) html = '<tr><td colspan="11" style="padding:30px;text-align:center;color:var(--text-muted)">لا توجد بيانات</td></tr>';
+    tbody.innerHTML = html;
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function toggleDataGrid() {
+    gridVisible = !gridVisible;
+    const grid = document.getElementById('dataGrid');
+    const tableWrap = grid ? grid.previousElementSibling : null;
+    const btn = document.getElementById('dataGridBtn');
+    if (!grid) return;
+    if (gridVisible) {
+        buildDataGrid();
+        grid.style.display = 'block';
+        if (tableWrap) tableWrap.style.display = 'none';
+        btn.textContent = '✖ إخفاء الجدول';
+        btn.style.background = '#dc2626';
+    } else {
+        grid.style.display = 'none';
+        if (tableWrap) tableWrap.style.display = '';
+        btn.textContent = '▦ عرض كجدول';
+        btn.style.background = '#7c3aed';
+    }
+}
 
 function toggleBotBox() {
     const box = document.getElementById('botBox');
@@ -344,6 +432,7 @@ function applyFilters() {
     }
     const sc = document.getElementById('selectedCount');
     if (sc && filtersApplied) sc.textContent = 'النتائج: ' + shown;
+    if (gridVisible) buildDataGrid();
 }
 
 function clearFilters() {
@@ -389,6 +478,7 @@ function loadMessages() {
             const sa = document.getElementById('selectAll');
             if (sa) sa.checked = false;
             if (filtersApplied) applyFilters();
+            if (gridVisible) buildDataGrid();
             updateSelectedCount();
         })
         .catch(() => {});
