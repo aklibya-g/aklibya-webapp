@@ -8,6 +8,8 @@ from django.contrib import messages
 from django.db import models
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
+from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
@@ -3239,6 +3241,7 @@ def whatsapp_webhook(request):
                 currency=currency,
                 direction=data.get("direction", "وارد"),
                 status=data.get("status", "فعالة"),
+                timestamp=timezone.now(),
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:
