@@ -124,12 +124,12 @@
                         <th style="padding:6px 3px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:24px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:12%">المرسل</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:9%">التليفون</th>
-                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:22%">الرسالة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:20%">الرسالة</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:8%">المبلغ</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:6%">السعر</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:9%">بعد التحويل</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:5%">العملة</th>
-                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:7%">النوع</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:10%">النوع</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:5%">الاتجاه</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:5%">الحالة</th>
                         <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:6%">التاريخ</th>
@@ -148,7 +148,7 @@
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.68rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
-                        <td style="padding:4px 4px;font-size:.62rem;text-align:center;overflow:hidden;white-space:nowrap">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;text-align:center;white-space:normal;word-break:break-word">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.62rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">وارد</span>{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.62rem;text-align:center">{% if msg.status == 'معدلة' %}<span style="background:#fef9c3;color:#ca8a04;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">معدلة</span>{% elif msg.status == 'ملغية' %}<span style="background:#fef2f2;color:#dc2626;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">ملغية</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">فعالة</span>{% endif %}</td>
                         <td style="padding:4px 4px;font-size:.62rem;color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"y-m-d" }}</td>
