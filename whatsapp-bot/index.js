@@ -38,7 +38,10 @@ async function startBot() {
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             if (statusCode !== DisconnectReason.loggedOut) {
-                startBot();
+startBot();
+
+const fs = require('fs');
+fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
             }
         }
     });
