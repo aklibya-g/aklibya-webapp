@@ -1,3 +1,4 @@
+{% load humanize %}
 {% for msg in messages_list %}
 <tr data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}" style="border-bottom:1px solid var(--border)">
     <td style="padding:10px 14px;font-size:.82rem;font-weight:600" dir="ltr">{{ msg.sender }}</td>
