@@ -73,36 +73,22 @@
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">
-        <div style="padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-                <span style="font-weight:700;font-size:.9rem"><i class="bi bi-chat-dots"></i> آخر الرسائل الواردة</span>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                    <button class="fbtn" data-filter="" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">الكل</button>
-                    <button class="fbtn" data-filter="وارد" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">وارد</button>
-                    <button class="fbtn" data-filter="صادر" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">صادر</button>
-                    <button class="fbtn" data-filter="فعالة" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">فعالة</button>
-                    <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">معدلة</button>
-                    <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 12px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.75rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer">ملغية</button>
-                    <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 14px;border-radius:8px;background:#2563eb;color:#fff;font-size:.75rem;font-weight:700;border:none;cursor:pointer">▶ تطبيق الفلتر</button>
-                </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
-                <div>
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">بحث</label>
-                    <input type="text" id="searchInput" placeholder="ابحث بأي نص..."
-                           style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem;width:200px">
-                </div>
-                <div>
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">من تاريخ</label>
-                    <input type="date" id="dateFrom"
-                           style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
-                </div>
-                <div>
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:2px">إلى تاريخ</label>
-                    <input type="date" id="dateTo"
-                           style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
-                </div>
-                <select id="directionFilter" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:.82rem">
+        <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
+                <span style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-chat-dots"></i> الرسائل</span>
+                <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+                <button class="fbtn" data-filter="" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">الكل</button>
+                <button class="fbtn" data-filter="وارد" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">وارد</button>
+                <button class="fbtn" data-filter="صادر" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">صادر</button>
+                <button class="fbtn" data-filter="فعالة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">فعالة</button>
+                <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">معدلة</button>
+                <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">ملغية</button>
+                <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ تطبيق الفلتر</button>
+                <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+                <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
+                <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                <select id="directionFilter" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                     <option value="">كل الاتجاهات</option>
                     <option value="وارد">وارد</option>
                     <option value="صادر">صادر</option>
