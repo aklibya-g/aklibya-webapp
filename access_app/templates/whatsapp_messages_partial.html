@@ -3,7 +3,7 @@
 <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}" style="border-bottom:1px solid var(--border)">
     <td style="padding:4px 3px;text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount()"></td>
     <td style="padding:4px 4px;font-size:.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.sender }}</td>
-    <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
+    <td style="padding:4px 4px;font-size:.68rem;text-align:center;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
     <td style="padding:4px 4px;font-size:.68rem;word-break:break-word">{{ msg.message_text }}</td>
     <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
     <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
