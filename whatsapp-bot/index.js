@@ -54,10 +54,6 @@ async function startBot() {
         const msg = messages[0];
         if (!msg.message) return;
 
-        const targetGroupJid = process.env.GROUP_JID || '';
-
-        if (targetGroupJid && msg.key.remoteJid !== targetGroupJid) return;
-
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
         const sender = msg.key.participant || msg.key.remoteJid;
 
