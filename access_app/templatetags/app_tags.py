@@ -23,3 +23,13 @@ def split_filter(value, sep=","):
     if not value:
         return []
     return str(value).split(sep)
+
+
+@register.filter(name="div")
+def div_filter(value, arg):
+    try:
+        if float(arg) == 0:
+            return None
+        return float(value) / float(arg)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return None

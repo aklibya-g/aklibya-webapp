@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize %}{% load app_tags %}
 {% for msg in messages_list %}
 <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}" style="border-bottom:1px solid var(--border)">
     <td style="padding:4px 3px;text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount()"></td>
@@ -7,7 +7,7 @@
     <td style="padding:4px 4px;font-size:.68rem;word-break:break-word">{{ msg.message_text }}</td>
     <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
     <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
-    <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|dividedby:msg.exchange_rate|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+    <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
     <td style="padding:4px 4px;font-size:.68rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
     <td style="padding:4px 4px;font-size:.62rem;text-align:center;overflow:hidden;white-space:nowrap">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
     <td style="padding:4px 4px;font-size:.62rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">وارد</span>{% endif %}</td>
