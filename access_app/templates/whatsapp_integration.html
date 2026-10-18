@@ -4,10 +4,15 @@
 <div style="max-width:1600px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
         <h4 style="margin:0;font-weight:800"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
-        <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button id="toggleBotBox" onclick="toggleBotBox()" title="إظهار/إخفاء لوحة الاتصال" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
+                <i class="bi bi-eye" id="botBoxEye"></i>
+            </button>
+            <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
+        </div>
     </div>
 
-    <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);padding:24px;margin-bottom:20px">
+    <div id="botBox" style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);padding:24px;margin-bottom:20px;display:none">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
             <span style="font-weight:700">حالة الاتصال:</span>
             <span id="botStatus" style="padding:5px 15px;border-radius:20px;font-weight:700;font-size:.85rem;{% if bot_status == 'متصل' %}background:#dcfce7;color:#16a34a{% else %}background:#fef2f2;color:#dc2626{% endif %}">
@@ -214,6 +219,23 @@ function deleteSelected() {
 }
 var activeFilter = '';
 var filtersApplied = false;
+
+function toggleBotBox() {
+    const box = document.getElementById('botBox');
+    const eye = document.getElementById('botBoxEye');
+    const visible = box.style.display !== 'none';
+    box.style.display = visible ? 'none' : 'block';
+    eye.className = visible ? 'bi bi-eye-slash' : 'bi bi-eye';
+    localStorage.setItem('botBoxVisible', visible ? '0' : '1');
+}
+(function() {
+    if (localStorage.getItem('botBoxVisible') === '1') {
+        const box = document.getElementById('botBox');
+        const eye = document.getElementById('botBoxEye');
+        if (box) box.style.display = 'block';
+        if (eye) eye.className = 'bi bi-eye-slash';
+    }
+})();
 
 function setFilter(btn) {
     document.querySelectorAll('.fbtn').forEach(b => {
