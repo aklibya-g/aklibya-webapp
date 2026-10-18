@@ -3222,6 +3222,17 @@ def _parse_wa_message(text):
                 pass
         if remaining:
             amount = remaining[0]
+        else:
+            small_numbers = []
+            for n in numbers:
+                try:
+                    val = int(n.replace(',', ''))
+                    if 1000 <= val <= 9999 and len(n.replace(',', '')) == 4:
+                        small_numbers.append(val)
+                except ValueError:
+                    pass
+            if small_numbers:
+                amount = small_numbers[0]
 
     rate_match = __import__('re').search(r'سعر\s*:?\s*([\d.]+)', cleaned_text)
     if rate_match:
