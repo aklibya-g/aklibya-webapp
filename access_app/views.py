@@ -3007,74 +3007,6 @@ def whatsapp_messages_api(request):
     })
 
 
-@login_required_custom
-def whatsapp_integration(request):
-    user = get_current_user(request)
-    if not user:
-        return redirect("index")
-    messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
-    bot_status = "مفصول"
-    pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
-    if os.path.exists(pid_path):
-        try:
-            with open(pid_path, "r") as f:
-                pid = int(f.read().strip())
-            if _is_pid_running(pid):
-                bot_status = "متصل"
-        except (ValueError, PermissionError):
-            bot_status = "مفصول"
-    if request.method == "POST":
-        action = request.POST.get("action")
-        if action == "start_bot":
-            if os.path.exists(pid_path):
-                try:
-                    with open(pid_path, "r") as f:
-                        pid = int(f.read().strip())
-                    if _is_pid_running(pid):
-                        messages.error(request, "البوت يعمل بالفعل")
-                        return redirect("whatsapp_integration")
-                except (ValueError, PermissionError):
-                    pass
-            try:
-                subprocess.Popen(
-                    ["node", "index.js"],
-                    cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                    shell=True
-                )
-                messages.success(request, "تم تشغيل بوت الواتساب")
-            except Exception as e:
-                messages.error(request, f"خطأ في التشغيل: {str(e)}")
-            return redirect("whatsapp_integration")
-        elif action == "stop_bot":
-            if os.path.exists(pid_path):
-                try:
-                    with open(pid_path, "r") as f:
-                        pid = int(f.read().strip())
-                    os.kill(pid, 9)
-                    os.remove(pid_path)
-                    messages.success(request, "تم إيقاف البوت")
-                except Exception:
-                    pass
-            return redirect("whatsapp_integration")
-        elif action == "delete_session":
-            import shutil
-            session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "auth_session")
-            if os.path.exists(session_path):
-                shutil.rmtree(session_path)
-                messages.success(request, "تم حذف الجلسة")
-            else:
-                messages.error(request, "لا توجد جلسة")
-            return redirect("whatsapp_integration")
-    return render(request, "whatsapp_integration.html", {
-        "title": "ربط الواتساب",
-        "messages_list": messages_list,
-        "bot_status": bot_status,
-    })
-
-
 def _is_pid_running(pid):
     if not pid:
         return False
@@ -3088,6 +3020,10 @@ def _is_pid_running(pid):
         return True
     except Exception:
         return False
+
+
+@login_required_custom
+def whatsapp_integration(request):
     user = get_current_user(request)
     if not user:
         return redirect("index")
@@ -3193,6 +3129,11 @@ def _is_pid_running(pid):
             else:
                 messages.error(request, "لا توجد جلسة")
             return redirect("whatsapp_integration")
+        elif action == "delete_all_messages":
+            count = WhatsAppMessage.objects.count()
+            WhatsAppMessage.objects.all().delete()
+            messages.success(request, f"تم حذف جميع الرسائل ({count})")
+            return redirect("whatsapp_integration")
     setting = SystemSetting.get()
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
@@ -3206,6 +3147,21 @@ def _is_pid_running(pid):
 def whatsapp_config(request):
     setting = SystemSetting.get()
     return JsonResponse({"group_jid": setting.monitored_group_jid or ""})
+
+
+@csrf_exempt
+def whatsapp_bulk_delete(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            ids = data.get("ids", [])
+            if ids:
+                deleted = WhatsAppMessage.objects.filter(id__in=ids).delete()
+                return JsonResponse({"ok": True, "count": deleted[0]})
+            return JsonResponse({"ok": False, "error": "no ids"})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+    return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
 
 
 @csrf_exempt

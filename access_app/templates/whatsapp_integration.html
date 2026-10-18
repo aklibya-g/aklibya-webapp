@@ -104,54 +104,69 @@
             </div>
         </div>
 {% load humanize %}
+        <div style="display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap">
+            <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
+                <i class="bi bi-trash"></i> حذف المحدد
+            </button>
+            <form method="POST" style="display:inline" onsubmit="return confirm('هل تريد حذف جميع الرسائل؟')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_all_messages">
+                <button type="submit" style="padding:6px 14px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">
+                    <i class="bi bi-trash-fill"></i> حذف الكل
+                </button>
+            </form>
+            <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
+        </div>
         <div class="table-responsive" style="overflow-x:auto;max-width:100%"></div>
             <table style="width:100%;border-collapse:collapse;table-layout:fixed">
                 <thead>
                     <tr style="border-bottom:2px solid var(--border)">
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المرسل</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">التليفون</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الرسالة</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المبلغ</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">السعر</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">العمولة</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">العملة</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">النوع</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الاتجاه</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الحالة</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">التاريخ</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الوقت</th>
-                        <th style="padding:6px 6px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">إجراءات</th>
+                        <th style="padding:6px 3px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);width:22px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المرسل</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">التليفون</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الرسالة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">المبلغ</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">السعر</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">العمولة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">العملة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">النوع</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الاتجاه</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الحالة</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">التاريخ</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">الوقت</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted)">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="messagesTableBody">
                     {% for msg in messages_list %}
-                    <tr data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}" style="border-bottom:1px solid var(--border)">
-                        <td style="padding:5px 6px;font-size:.7rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.sender }}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.message_text|truncatechars:30 }}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:0 }}{% else %}-{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.commission %}{{ msg.commission|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.7rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.65rem;text-align:center;overflow:hidden;white-space:nowrap">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.65rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">وارد</span>{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.65rem;text-align:center">{% if msg.status == 'معدلة' %}<span style="background:#fef9c3;color:#ca8a04;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">معدلة</span>{% elif msg.status == 'ملغية' %}<span style="background:#fef2f2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">ملغية</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 5px;border-radius:4px;font-size:.65rem;font-weight:700">فعالة</span>{% endif %}</td>
-                        <td style="padding:5px 6px;font-size:.65rem;color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"y-m-d" }}</td>
-                        <td style="padding:5px 6px;font-size:.65rem;color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"h:i A" }}</td>
-                        <td style="padding:5px 6px;text-align:center">
+                    <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}" style="border-bottom:1px solid var(--border)">
+                        <td style="padding:4px 3px;text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount()"></td>
+                        <td style="padding:4px 4px;font-size:.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.sender }}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ msg.message_text|truncatechars:25 }}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:0 }}{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center;overflow:hidden;white-space:nowrap" dir="ltr">{% if msg.commission %}{{ msg.commission|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.68rem;text-align:center">{% if msg.currency %}{{ msg.currency }}{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;text-align:center;overflow:hidden;white-space:nowrap">{% if msg.transfer_type %}<span style="background:#f0fdf4;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;text-align:center">{% if msg.direction == 'صادر' %}<span style="background:#dbeafe;color:#1d4ed8;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">صادر</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">وارد</span>{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;text-align:center">{% if msg.status == 'معدلة' %}<span style="background:#fef9c3;color:#ca8a04;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">معدلة</span>{% elif msg.status == 'ملغية' %}<span style="background:#fef2f2;color:#dc2626;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">ملغية</span>{% else %}<span style="background:#dcfce7;color:#16a34a;padding:1px 4px;border-radius:3px;font-size:.62rem;font-weight:700">فعالة</span>{% endif %}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"y-m-d" }}</td>
+                        <td style="padding:4px 4px;font-size:.62rem;color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"h:i A" }}</td>
+                        <td style="padding:4px 4px;text-align:center">
                             <div style="display:flex;gap:2px;justify-content:center">
                                 <form method="POST" action="{% url 'whatsapp_integration' %}" style="display:inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="reprocess">
                                     <input type="hidden" name="msg_id" value="{{ msg.id }}">
-                                    <button type="submit" style="padding:2px 6px;border-radius:4px;background:#fef9c3;color:#ca8a04;font-size:.65rem;font-weight:700;border:none;cursor:pointer">
+                                    <button type="submit" style="padding:2px 5px;border-radius:3px;background:#fef9c3;color:#ca8a04;font-size:.62rem;font-weight:700;border:none;cursor:pointer">
                                         <i class="bi bi-arrow-repeat"></i>
                                     </button>
                                 </form>
-                                <a href="{% url 'whatsapp_message_edit' msg.id %}" style="padding:2px 6px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:.65rem;font-weight:700;text-decoration:none">
+                                <a href="{% url 'whatsapp_message_edit' msg.id %}" style="padding:2px 5px;border-radius:3px;background:#dbeafe;color:#2563eb;font-size:.62rem;font-weight:700;text-decoration:none">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'whatsapp_message_delete' msg.id %}" onclick="return confirm('هل تريد حذف هذه الرسالة？')" style="padding:2px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;font-size:.65rem;font-weight:700;text-decoration:none">
+                                <a href="{% url 'whatsapp_message_delete' msg.id %}" onclick="return confirm('هل تريد حذف هذه الرسالة؟')" style="padding:2px 5px;border-radius:3px;background:#fef2f2;color:#dc2626;font-size:.62rem;font-weight:700;text-decoration:none">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>
@@ -159,7 +174,7 @@
                     </tr>
                      {% empty %}
                     <tr>
-                        <td colspan="13" style="padding:40px;text-align:center;color:var(--text-muted)">
+                        <td colspan="14" style="padding:40px;text-align:center;color:var(--text-muted)">
                             <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
                             لا توجد رسائل واردة
                         </td>
@@ -174,32 +189,34 @@
 
 {% block extra_js %}
 <script>
+function toggleSelectAll(master) {
+    document.querySelectorAll('.rowCheck').forEach(cb => cb.checked = master.checked);
+    updateSelectedCount();
+}
+function updateSelectedCount() {
+    const n = document.querySelectorAll('.rowCheck:checked').length;
+    const el = document.getElementById('selectedCount');
+    if (el) el.textContent = n > 0 ? 'تم تحديد ' + n + ' رسالة' : '';
+}
+function deleteSelected() {
+    const ids = Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value);
+    if (!ids.length) { alert('حدد رسائل أولاً'); return; }
+    if (!confirm('حذف ' + ids.length + ' رسالة محددة؟')) return;
+    fetch("{% url 'whatsapp_bulk_delete' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+        body: JSON.stringify({ids: ids})
+    }).then(r => r.json()).then(d => {
+        if (d.ok) loadMessages();
+        else alert('خطأ في الحذف');
+    });
+}
 function filterTable(direction, status) {
     const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
     rows.forEach(row => {
         const dirOk = !direction || row.dataset.direction === direction;
         const statusOk = !status || row.dataset.status === status;
         row.style.display = (dirOk && statusOk) ? '' : 'none';
-    });
-}
-    });
-}
-
-function filterTable(direction) {
-    const rows = document.querySelectorAll("#messagesTableBody tr");
-    const search = (document.getElementById("searchInput") ? document.getElementById("searchInput").value : "").toLowerCase();
-    const dateFrom = document.getElementById("dateFrom") ? document.getElementById("dateFrom").value : "";
-    const dateTo = document.getElementById("dateTo") ? document.getElementById("dateTo").value : "";
-    rows.forEach(row => {
-        const dirMatch = direction === "" || row.dataset.direction === direction || row.dataset.status === direction;
-        const searchMatch = search === "" || (row.dataset.search || "").toLowerCase().includes(search);
-        const rowDate = row.dataset.date || "";
-        const dateMatch = (!dateFrom || rowDate >= dateFrom) && (!dateTo || rowDate <= dateTo);
-        if (dirMatch && searchMatch && dateMatch) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
     });
 }
 
@@ -211,6 +228,9 @@ function loadMessages() {
             if (tbody) {
                 tbody.innerHTML = html;
             }
+            const sa = document.getElementById('selectAll');
+            if (sa) sa.checked = false;
+            updateSelectedCount();
         })
         .catch(() => {});
 }
