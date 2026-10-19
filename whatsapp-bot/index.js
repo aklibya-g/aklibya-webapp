@@ -36,6 +36,7 @@ function toSec(ts) {
     return n > 1e12 ? Math.floor(n / 1000) : Math.floor(n);
 }
 
+let lastConfigLog = '';
 async function fetchGroupJid() {
     for (let i = 0; i < 8; i++) {
         try {
@@ -45,7 +46,11 @@ async function fetchGroupJid() {
             syncFullHistory = !!res.data.sync_full_history;
             configReady = true;
             const mode = monitorAll ? 'الكل' : (monitoredGroupJid || 'الكل');
-            console.log('📋 المجموعة المراقبة: ' + mode + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
+            const sig = mode + '|' + syncFullHistory;
+            if (sig !== lastConfigLog) {
+                lastConfigLog = sig;
+                console.log('📋 المجموعة المراقبة: ' + mode + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
+            }
             return true;
         } catch (e) {
             console.log('⚠️ تعذر جلب الإعدادات من السيرفر (محاولة ' + (i + 1) + '/8)');
@@ -87,6 +92,26 @@ function sameGroup(a, b) {
     return na === nb;
 }
 
+function selfNumerics() {
+    if (!sock || !sock.user) return [];
+    const out = [];
+    for (const v of [sock.user.id, sock.user.lid]) {
+        if (!v) continue;
+        const num = String(v).split(':')[0].split('@')[0];
+        if (num) out.push(num);
+    }
+    return out;
+}
+
+function isSelfJid(jid) {
+    if (!jid) return false;
+    const at = jid.lastIndexOf('@');
+    if (at < 0) return false;
+    const id = jid.slice(0, at).split(':')[0];
+    if (!id) return false;
+    return selfNumerics().includes(id);
+}
+
 async function reportGroup(jid) {
     jid = normalizeGroupJid(jid);
     if (!jid || !jid.endsWith('@g.us')) return;
@@ -100,6 +125,7 @@ async function reportGroup(jid) {
 }
 
 function isAllowed(jid) {
+    if (isSelfJid(jid)) return true;
     if (!isGroupJid(jid)) return false;
     if (monitorAll) return true;
     if (!monitoredGroupJid) return jid.slice(-5) === '@g.us';
@@ -152,6 +178,9 @@ async function sendToDjango(msg, opts) {
             console.log('🚫 تجاهل رسالة من مجموعة غير مراقبة: ' + jid);
         }
         return 'skip';
+    }
+    if (isSelfJid(jid)) {
+        console.log('🫧 رسالة شات ذاتية مقبولة: ' + jid);
     }
     const text = extractText(msg.message);
     if (!text) return 'skip';

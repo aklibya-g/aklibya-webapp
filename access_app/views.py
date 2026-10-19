@@ -3472,6 +3472,7 @@ def _parse_wa_message(text):
             phone_number = '0' + phone_number
 
     cleaned_text = re.sub(r'(?:01\d{9}|09\d{9}|0\d{9})', '', text)
+    cleaned_text = re.sub(r'@\d{6,}', '', cleaned_text)
 
     value_patterns = [
         r'القيمه\s*:?\s*([\d,]+)',
@@ -3493,8 +3494,11 @@ def _parse_wa_message(text):
         numbers = re.findall(r'[\d,]+', cleaned_text)
         for n in numbers:
             try:
-                val = float(n.replace(',', ''))
-                if val >= 100 and len(n.replace(',', '')) >= 4:
+                digits = n.replace(',', '')
+                if len(digits) > 12:
+                    continue
+                val = float(digits)
+                if val >= 100 and len(digits) >= 4:
                     remaining.append(val)
             except ValueError:
                 pass
