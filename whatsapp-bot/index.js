@@ -8,7 +8,7 @@ const DJANGO = 'http://127.0.0.1:1500';
 const HISTORY_SYNC_ON_DEMAND = 6;
 const MAX_ROUNDS = 60;
 const BATCH_SIZE = 100;
-const BATCH_TIMEOUT_MS = 45000;
+const BATCH_TIMEOUT_MS = 20000;
 
 let sock = null;
 let monitoredGroupJid = process.env.GROUP_JID || '';
@@ -228,7 +228,7 @@ async function pullRange(since, until, allowDup) {
         result.rounds++;
         const batch = await requestHistoryBatch(cur.key, cur.ts);
         if (!batch) {
-            if (!result.error) result.error = 'انتهت مهلة انتظار رد واتساب (تأكد أن هاتفك متصفح)';
+            if (!result.error) result.error = 'واتساب لم يرد على طلب السحب - قد لا يدعم جهازك السحب عند الطلب، جرب تفعيل مزامنة التاريخ الكامل وإعادة الربط';
             break;
         }
         const msgs = (batch.messages || []).filter(m => m && m.key && m.message && m.key.remoteJid === targetJid);

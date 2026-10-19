@@ -3263,7 +3263,7 @@ def whatsapp_integration(request):
                 )
         else:
             err = result.get("error", "خطأ غير معروف")
-            if "لا يوجد رد" in err or "انتهت مهلة" in err:
+            if any(k in err for k in ("لا يوجد رد", "انتهت مهلة", "لم يرد")):
                 err += " | جرّب تفعيل مزامنة التاريخ الكامل ثم أعد ربط الواتساب"
             messages.error(request, f"فشل السحب: {err}")
     return render(request, "whatsapp_integration.html", {
