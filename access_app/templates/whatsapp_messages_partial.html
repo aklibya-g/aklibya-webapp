@@ -5,10 +5,11 @@
     <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
     <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
     <td>
-        <div class="wa-msg-box">
-            {% if msg.amount %}<div class="wa-mb-amount">المبلغ: {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency }}{% endif %}</div>{% endif %}
-            {% if msg.transfer_type %}<div class="wa-mb-type"><span class="dot"></span>{{ msg.transfer_type }}</div>{% endif %}
-            <div class="wa-mb-text">{{ msg.message_text }}</div>
+        <div class="wa-card" title="{{ msg.message_text }}">
+            {% if msg.transfer_type %}<div class="wa-card-type">💸 {{ msg.transfer_type }}</div>{% endif %}
+            {% if msg.phone_number %}<div class="wa-card-phone">{{ msg.phone_number }}</div>{% endif %}
+            {% if msg.amount %}<div class="wa-card-amount">المبلغ {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% endif %}
+            {% with note=msg|wa_note %}{% if note %}<div class="wa-card-note">{{ note }}</div>{% endif %}{% endwith %}
         </div>
     </td>
     <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|western }}{% else %}-{% endif %}</td>

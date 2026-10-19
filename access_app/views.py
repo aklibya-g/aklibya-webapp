@@ -3451,9 +3451,10 @@ def _parse_wa_message(text):
     currency = None
     phone_number = ""
     transfer_type = "تحويل"
-    if "ليبى" in text or "دينار" in text or "LYD" in text:
+    import re
+    if re.search(r'ليبى|دينار|LYD|د\.?\s?ل', text):
         currency = "د ل"
-    elif "مصري" in text or "جنيه" in text or "EGP" in text or "ج م" in text:
+    elif re.search(r'مصري|جنيه|EGP|ج\.?\s?م|🇪🇬', text):
         currency = "ج م"
     if "فودافون كاش" in text:
         transfer_type = "فودافون كاش"
@@ -3462,7 +3463,6 @@ def _parse_wa_message(text):
     elif "محفظة" in text:
         transfer_type = "محفظة"
 
-    import re
     phone_matches = re.findall(r'(?:01\d{9}|09\d{9}|0\d{9})', text)
     if phone_matches:
         phone_number = phone_matches[0]

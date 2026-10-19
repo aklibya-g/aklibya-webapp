@@ -24,14 +24,11 @@
 .badge-type-wallet { background:#f0fdfa; color:#0f766e; border:1px solid #99f6e4; }
 .badge-cur { background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }
 .badge-cur-eg { background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; }
-.wa-msg-box { max-height:96px; overflow-y:auto; text-align:right; padding:1px 2px; }
-.wa-msg-box::-webkit-scrollbar { width:4px; }
-.wa-msg-box::-webkit-scrollbar-track { background:#f1f5f9; border-radius:4px; }
-.wa-msg-box::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
-.wa-mb-amount { font-weight:700; color:#312e81; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:4px; }
-.wa-mb-type { display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; margin-bottom:4px; }
-.wa-mb-type .dot { width:7px; height:7px; border-radius:50%; background:#8b5cf6; flex-shrink:0; }
-.wa-mb-text { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:4px 7px; color:#475569; font-size:.68rem; line-height:1.65; white-space:pre-line; word-break:break-word; }
+.wa-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:8px 12px; text-align:right; font-size:.78rem; line-height:1.95; overflow:hidden; }
+.wa-card-type { font-weight:700; color:#166534; }
+.wa-card-phone { color:#334155; }
+.wa-card-amount { font-weight:700; color:#1e3a8a; }
+.wa-card-note { color:#64748b; font-size:.72rem; }
 .wa-count-badge { font-size:.72rem; font-weight:600; padding:5px 13px; border-radius:6px; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; white-space:nowrap; }
 .wa-table .wt-time { font-size:.62rem; color:#94a3b8; display:block; font-weight:500; }
 .wa-table .act-btn { width:24px; height:24px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; border:1px solid transparent; cursor:pointer; transition:all .15s; text-decoration:none; background:transparent; padding:0; }
@@ -49,11 +46,11 @@ body.wa-dark-font .wa-table thead th { background:#0f172a; color:#cbd5e1; border
 body.wa-dark-font .wa-table tbody td { background:#1a2436; color:#e2e8f0; border-color:#334155; }
 body.wa-dark-font .wa-table tbody tr:hover td { background:#243356; }
 body.wa-dark-font .wa-table tbody tr.selected-row td { background:#1e3a5f; }
-body.wa-dark-font .wa-mb-amount { color:#c7d2fe; border-bottom-color:#334155; }
-body.wa-dark-font .wa-mb-type { color:#cbd5e1; }
-body.wa-dark-font .wa-mb-text { background:#0f172a; border-color:#334155; color:#cbd5e1; }
-body.wa-dark-font .wa-msg-box::-webkit-scrollbar-track { background:#0f172a; }
-body.wa-dark-font .wa-msg-box::-webkit-scrollbar-thumb { background:#475569; }
+body.wa-dark-font .wa-card { background:#0f172a; border-color:#334155; }
+body.wa-dark-font .wa-card-type { color:#4ade80; }
+body.wa-dark-font .wa-card-phone { color:#e2e8f0; }
+body.wa-dark-font .wa-card-amount { color:#93c5fd; }
+body.wa-dark-font .wa-card-note { color:#94a3b8; }
 body.wa-dark-font .wa-count-badge { background:#1e293b; border-color:#475569; color:#a5b4fc; }
 body.wa-dark-font .wa-table .num-cell, body.wa-dark-font .wa-table .rate-cell, body.wa-dark-font .wa-table .conv-cell { color:#fbbf24; }
 body.wa-dark-font .wa-table .wt-time { color:#94a3b8; }
@@ -286,10 +283,11 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                         <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
                         <td>
-                            <div class="wa-msg-box">
-                                {% if msg.amount %}<div class="wa-mb-amount">المبلغ: {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency }}{% endif %}</div>{% endif %}
-                                {% if msg.transfer_type %}<div class="wa-mb-type"><span class="dot"></span>{{ msg.transfer_type }}</div>{% endif %}
-                                <div class="wa-mb-text">{{ msg.message_text }}</div>
+                            <div class="wa-card" title="{{ msg.message_text }}">
+                                {% if msg.transfer_type %}<div class="wa-card-type">💸 {{ msg.transfer_type }}</div>{% endif %}
+                                {% if msg.phone_number %}<div class="wa-card-phone">{{ msg.phone_number }}</div>{% endif %}
+                                {% if msg.amount %}<div class="wa-card-amount">المبلغ {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% endif %}
+                                {% with note=msg|wa_note %}{% if note %}<div class="wa-card-note">{{ note }}</div>{% endif %}{% endwith %}
                             </div>
                         </td>
                         <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|western }}{% else %}-{% endif %}</td>
