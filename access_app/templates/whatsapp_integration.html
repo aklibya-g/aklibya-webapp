@@ -325,6 +325,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:5px 12px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
+                <a href="{% url 'whatsapp_settlement' %}" title="كشف مقاصة الحسابات بين المكاتب (دائن/مدين بالليبي)" style="padding:5px 12px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:700;border:1px solid #ddd6fe;font-size:.78rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-arrow-left-right"></i> مقاصة</a>
                 <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على خلية (مبلغ/سعر/هاتف...) لتعديلها مباشرة</span>
             </div>
         </div>

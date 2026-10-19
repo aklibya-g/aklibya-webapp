@@ -3138,6 +3138,86 @@ def whatsapp_message_delete(request, msg_id):
     return redirect("whatsapp_integration")
 
 
+WA_ZAJEL_GROUP = "120363411662450255@g.us"
+
+
+@login_required_custom
+def whatsapp_settlement(request):
+    user = get_current_user(request)
+    if not user:
+        return redirect("index")
+
+    date_from = request.GET.get("from", "").strip()
+    date_to = request.GET.get("to", "").strip()
+
+    qs = WhatsAppMessage.objects.filter(group_jid=WA_ZAJEL_GROUP).order_by("timestamp", "id")
+    if date_from:
+        qs = qs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(timestamp__date__lte=date_to)
+
+    st = SystemSetting.get()
+    credit_rows = []
+    debit_rows = []
+    credit_total = 0.0
+    debit_total = 0.0
+    skipped_no_rate = 0
+
+    for msg in qs:
+        if not msg.amount:
+            continue
+        currency = (msg.currency or "").strip()
+        rate = msg.exchange_rate
+        if not rate and st.wa_current_rate and st.wa_rate_currency == currency:
+            rate = st.wa_current_rate
+
+        if currency == "ج م":
+            if not rate:
+                skipped_no_rate += 1
+                continue
+            lyd = msg.amount / rate
+            kind = "مصري ← ليبي"
+        elif currency == "د ل":
+            lyd = msg.amount
+            kind = "ليبي محلي"
+        else:
+            lyd = msg.amount
+            kind = "بدون عملة"
+
+        row = {"msg": msg, "lyd": lyd, "kind": kind}
+        if msg.direction == "وارد":
+            credit_rows.append(row)
+            credit_total += lyd
+        else:
+            debit_rows.append(row)
+            debit_total += lyd
+
+    balance = credit_total - debit_total
+    if balance > 0.004:
+        balance_label = "الزاجل مدين لك"
+        balance_sign = "دائن"
+    elif balance < -0.004:
+        balance_label = "أنت مدين للزاجل"
+        balance_sign = "مدين"
+    else:
+        balance_label = "متساوون"
+        balance_sign = ""
+
+    return render(request, "whatsapp_settlement.html", {
+        "title": "مقاصة الحسابات",
+        "credit_rows": credit_rows,
+        "debit_rows": debit_rows,
+        "credit_total": credit_total,
+        "debit_total": debit_total,
+        "balance": balance,
+        "balance_label": balance_label,
+        "balance_sign": balance_sign,
+        "date_from": date_from,
+        "date_to": date_to,
+        "skipped_no_rate": skipped_no_rate,
+    })
+
+
 @login_required_custom
 def whatsapp_messages_api(request):
     messages_list = WhatsAppMessage.objects.all().order_by("-timestamp", "-id")[:1000]

@@ -74,6 +74,7 @@ urlpatterns = [
     path('backups/download/<str:filename>/', views.backup_download, name='backup_download'),
     path('backups/delete/<str:filename>/', views.backup_delete, name='backup_delete'),
     path('whatsapp/', views.whatsapp_integration, name='whatsapp_integration'),
+    path('whatsapp/settlement/', views.whatsapp_settlement, name='whatsapp_settlement'),
     path('api/whatsapp/qr/', views.whatsapp_qr_update, name='whatsapp_qr_update'),
     path('api/whatsapp/qr/status/', views.whatsapp_qr_status, name='whatsapp_qr_status'),
     path('api/whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
