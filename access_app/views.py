@@ -3169,6 +3169,49 @@ def whatsapp_integration(request):
                 except Exception:
                     pass
             return redirect("whatsapp_integration")
+        elif action == "relink_bot":
+            bot_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot")
+            pid_path = os.path.join(bot_dir, "whatsapp_bot.pid")
+            steps = []
+            if os.path.exists(pid_path):
+                try:
+                    with open(pid_path, "r") as f:
+                        pid = int(f.read().strip())
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+                    os.remove(pid_path)
+                    steps.append("تم إيقاف البوت")
+                except Exception:
+                    pass
+            import shutil
+            session_path = os.path.join(bot_dir, "auth_session")
+            if os.path.exists(session_path):
+                shutil.rmtree(session_path)
+                steps.append("تم حذف الجلسة")
+            try:
+                env = os.environ.copy()
+                if SystemSetting.get().sync_full_history:
+                    env["SYNC_FULL_HISTORY"] = "1"
+                else:
+                    env.pop("SYNC_FULL_HISTORY", None)
+                if SystemSetting.get().monitor_all_groups:
+                    env["MONITOR_ALL"] = "1"
+                else:
+                    env.pop("MONITOR_ALL", None)
+                subprocess.Popen(
+                    ["node", "index.js"],
+                    cwd=bot_dir,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    shell=True,
+                    env=env,
+                )
+                steps.append("تم تشغيل البوت من جديد")
+            except Exception as e:
+                messages.error(request, f"خطأ في التشغيل: {str(e)}")
+                return redirect("whatsapp_integration")
+            messages.success(request, " | ".join(steps) + " — امسح رمز QR الجديد الآن")
+            return redirect("whatsapp_integration")
         elif action == "reprocess":
             msg_id = request.POST.get("msg_id")
             if msg_id:
