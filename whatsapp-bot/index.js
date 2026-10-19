@@ -74,7 +74,10 @@ async function reportGroup(jid) {
 }
 
 function isAllowed(jid) {
-    if (!monitoredGroupJid) return true;
+    if (!jid) return false;
+    if (!monitoredGroupJid) {
+        return jid.endsWith('@g.us');
+    }
     return jid === monitoredGroupJid;
 }
 
