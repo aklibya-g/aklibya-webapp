@@ -344,7 +344,8 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                     <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
                         data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
                         data-amount="{{ msg.amount|default:'' }}" data-rate="{{ msg.exchange_rate|default:'' }}" data-commission="{{ msg.commission|default:'' }}"
-                        data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}" style="cursor:pointer">
+                        data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
+                        data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}" style="cursor:pointer">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
                         <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
@@ -425,17 +426,18 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
 </div>
 
 <div id="waEditOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center" onclick="closeWaEdit(event)">
-    <div id="waEditModal" style="background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border,#e2e8f0);padding:22px;width:min(560px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div id="waEditModal" style="background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border,#e2e8f0);padding:22px;width:min(620px,94vw);max-height:92vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
             <h4 style="margin:0;font-weight:800;font-size:1rem"><i class="bi bi-pencil-square" style="color:var(--primary)"></i> تعديل الرسالة</h4>
             <button type="button" onclick="closeWaEdit()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
         </div>
+        <div id="weInfoBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid var(--border,#e2e8f0);font-size:.72rem"></div>
         <form id="waEditForm" method="POST" action="">
             {% csrf_token %}
             <input type="hidden" name="sender" id="we_sender">
             <div style="margin-bottom:12px">
                 <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نص الرسالة</label>
-                <textarea name="message_text" id="we_text" rows="3" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem;resize:vertical"></textarea>
+                <textarea name="message_text" id="we_text" rows="4" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem;resize:vertical;font-family:inherit"></textarea>
             </div>
             <div style="margin-bottom:12px">
                 <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">رقم الهاتف</label>
@@ -458,7 +460,14 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                 </div>
                 <div style="flex:1">
                     <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العملة</label>
-                    <input type="text" name="currency" id="we_currency" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                    <input type="text" name="currency" id="we_currency" list="waCurList" placeholder="ج م / د ل" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                    <datalist id="waCurList">
+                        <option value="ج م">جنيه مصري</option>
+                        <option value="د ل">جنيه ليبي</option>
+                        <option value="د.ل">د.ل (تتحول لـ د ل)</option>
+                        <option value="ج.م">ج.م (تتحول لـ ج م)</option>
+                        <option value="EG">EG</option>
+                    </datalist>
                 </div>
             </div>
             <div style="margin-bottom:14px">
@@ -507,6 +516,18 @@ function openWaEdit(tr) {
     var dir = document.getElementById('we_dir');
     var dval = tr.getAttribute('data-direction') || 'وارد';
     for (var i = 0; i < dir.options.length; i++) { if (dir.options[i].value === dval) { dir.selectedIndex = i; break; } }
+    var bar = document.getElementById('weInfoBar');
+    var st = tr.getAttribute('data-status') || 'فعالة';
+    var stColor = st === 'معدلة' ? '#d97706' : st === 'ملغية' ? '#dc2626' : '#16a34a';
+    var ttime = tr.getAttribute('data-time') || '';
+    var grp = tr.getAttribute('data-group') || '';
+    var sender = tr.getAttribute('data-sender') || '';
+    bar.innerHTML =
+        '<span style="background:#eef2ff;color:#4f46e5;padding:3px 10px;border-radius:6px;font-weight:700">#' + id + '</span>' +
+        '<span style="background:' + (stColor === '#16a34a' ? '#dcfce7' : stColor === '#d97706' ? '#fef3c7' : '#fee2e2') + ';color:' + stColor + ';padding:3px 10px;border-radius:6px;font-weight:700">' + st + '</span>' +
+        (ttime ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:6px;font-weight:600">🕐 ' + ttime + '</span>' : '') +
+        (sender ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:60px;font-weight:600;direction:ltr">👤 ' + sender.split('@')[0] + '</span>' : '') +
+        (grp ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:6px;font-weight:600;direction:ltr;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + grp + '">👥 ' + grp.split('@')[0] + '</span>' : '');
     ov.style.display = 'flex';
 }
 function closeWaEdit(e) {

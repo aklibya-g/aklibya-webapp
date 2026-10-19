@@ -3046,17 +3046,36 @@ def whatsapp_message_edit(request, msg_id):
         return redirect("index")
     msg = get_object_or_404(WhatsAppMessage, id=msg_id)
     if request.method == "POST":
+        old_amount, old_rate, old_commission, old_currency, old_phone, old_ttype = _parse_wa_message(msg.message_text)
         msg.sender = request.POST.get("sender", msg.sender)
         msg.message_text = request.POST.get("message_text", msg.message_text)
         msg.phone_number = request.POST.get("phone_number", "")
         msg.amount = request.POST.get("amount") or None
         msg.exchange_rate = request.POST.get("exchange_rate") or None
         msg.commission = request.POST.get("commission") or None
-        msg.currency = request.POST.get("currency", msg.currency)
+        cur = (request.POST.get("currency") or "").strip()
+        cur = cur.replace("د.ل", "د ل").replace("د.ل", "د ل").replace("ج.م", "ج م").replace("ج.م", "ج م")
+        if cur in ("د.ل", "d.ly", "LYD", "lyd"):
+            cur = "د ل"
+        elif cur in ("ج.م", "EGP", "egp", "EG", "eg"):
+            cur = "ج م"
+        msg.currency = cur
         msg.transfer_type = request.POST.get("transfer_type", msg.transfer_type)
         msg.direction = request.POST.get("direction", msg.direction)
         msg.status = "معدلة"
         msg.save()
+        if (msg.amount and not old_amount) or (msg.exchange_rate and not old_rate) or \
+           (msg.commission and not old_commission) or (msg.currency and not old_currency) or \
+           (msg.phone_number and not old_phone):
+            _save_parser_rule(
+                msg.message_text,
+                msg.amount or old_amount,
+                msg.exchange_rate or old_rate,
+                msg.commission or old_commission,
+                msg.currency or old_currency,
+                msg.phone_number or old_phone,
+                msg.transfer_type,
+            )
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse({"ok": True})
         messages.success(request, "تم تعديل الرسالة")
@@ -3216,7 +3235,7 @@ def whatsapp_integration(request):
             msg_id = request.POST.get("msg_id")
             if msg_id:
                 msg = get_object_or_404(WhatsAppMessage, id=msg_id)
-                amount, rate, commission, currency, phone, _ = _parse_wa_message(msg.message_text)
+                amount, rate, commission, currency, phone, _ = _parse_wa_message_learned(msg.message_text)
                 from urllib.parse import urlencode
                 params = urlencode({
                     "phone": phone or "",
@@ -3228,7 +3247,7 @@ def whatsapp_integration(request):
                 return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
             for msg in all_msgs:
-                amount, rate, commission, currency, _, ttype = _parse_wa_message(msg.message_text)
+                amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
                 msg.amount = amount
                 msg.exchange_rate = rate
                 msg.commission = commission
@@ -3505,7 +3524,7 @@ def whatsapp_webhook(request):
             allow_dup = _as_bool(data.get("allow_dup"), default=True)
             if not allow_dup and _wa_is_duplicate(wamsg_id, sender, jid, text):
                 return JsonResponse({"status": "success", "saved": False, "duplicate": True})
-            amount, rate, commission, currency, phone, ttype = _parse_wa_message(text)
+            amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
@@ -3528,93 +3547,163 @@ def whatsapp_webhook(request):
 
 
 def _parse_wa_message(text):
-    text = text.replace('،', '.')
+    import re
+    if not text:
+        return None, None, None, None, "", "تحويل"
+    # strip tashkeel (diacritics), tatweel, markdown decorations
+    t = re.sub(r'[ً-ْٰـ]', '', text)
+    t = t.replace('،', '.')
+    t = re.sub(r'[*_☆★#`~^=|]', ' ', t)
+    t = re.sub(r'\s+', ' ', t)
+
     amount = None
     exchange_rate = None
     commission = None
     currency = None
     phone_number = ""
     transfer_type = "تحويل"
-    import re
-    if re.search(r'ليبى|دينار|LYD|د\.?\s?ل', text):
+
+    if re.search(r'ليبى|ليبي|دينار|LYD|د\.?\s?ل|🇱🇾', t, re.IGNORECASE):
         currency = "د ل"
-    elif re.search(r'مصري|جنيه|EGP|ج\.?\s?م|🇪🇬', text):
+    elif re.search(r'مصري|جنيه|EGP|ج\.?\s?م|🇪🇬|\bEG\b', t, re.IGNORECASE):
         currency = "ج م"
-    if "فودافون كاش" in text:
+
+    if re.search(r'فودافون', t):
         transfer_type = "فودافون كاش"
-    elif "انستا كاش" in text:
+    elif re.search(r'انستا', t, re.IGNORECASE):
         transfer_type = "انستا كاش"
-    elif "محفظة" in text:
+    elif 'محفظة' in t:
         transfer_type = "محفظة"
 
-    phone_matches = re.findall(r'(?:01\d{9}|09\d{9}|0\d{9})', text)
+    # strip mentions BEFORE phone extraction (mentions are not phones)
+    t_nomention = re.sub(r'@\d{6,}', ' ', t)
+
+    phone_matches = re.findall(r'(?<!\d)(01\d{9}|09\d{9}|0\d{9})(?!\d)', t_nomention)
     if phone_matches:
-        phone_number = phone_matches[0]
-        if len(phone_number) == 10 and not phone_number.startswith('0'):
-            phone_number = '0' + phone_number
-        elif len(phone_number) == 9:
+        phone_number = max(phone_matches, key=len)
+        if len(phone_number) == 9:
             phone_number = '0' + phone_number
 
-    cleaned_text = re.sub(r'(?:01\d{9}|09\d{9}|0\d{9})', '', text)
-    cleaned_text = re.sub(r'@\d{6,}', '', cleaned_text)
+    cleaned = re.sub(r'(?<!\d)(01\d{9}|09\d{9}|0\d{9})(?!\d)', ' ', t_nomention)
+    cleaned = re.sub(r'@\d{6,}', ' ', cleaned)
 
-    value_patterns = [
-        r'القيمه\s*:?\s*([\d,]+)',
-        r'القيمة\s*:?\s*([\d,]+)',
-        r'مبلغ\s*:?\s*([\d,]+)',
-        r'المبلغ\s*:?\s*([\d,]+)',
-    ]
-    for pattern in value_patterns:
-        match = re.search(pattern, cleaned_text)
-        if match:
+    def _num(s):
+        s = s.strip().replace(',', '')
+        if re.fullmatch(r'\d{1,3}\.\d{3}', s):
+            return float(s.replace('.', ''))
+        return float(s.replace(',', ''))
+
+    for pat in (r'(?:القيمه|القيمة|المبلغ|مبلغ|بلغ)\s*:?\s*《?\s*([\d.,]+)',
+                r'([\d.,]+)\s*(?:د\.?\s?ل|ج\.?\s?م|جنيه|دينار|LYD|EGP)'):
+        m = re.search(pat, cleaned, re.IGNORECASE)
+        if m:
             try:
-                amount = float(match.group(1).replace(',', ''))
+                amount = _num(m.group(1))
                 break
             except ValueError:
                 pass
 
     if amount is None:
-        remaining = []
-        numbers = re.findall(r'[\d,]+', cleaned_text)
-        for n in numbers:
+        for n in re.findall(r'\d[\d.,]*', cleaned):
             try:
-                digits = n.replace(',', '')
-                if len(digits) > 12:
+                v = _num(n)
+                digits = re.sub(r'\D', '', n)
+                dec = re.search(r'[.,]\d{1,2}$', n)
+                if dec:
                     continue
-                val = float(digits)
-                if val >= 100 and len(digits) >= 4:
-                    remaining.append(val)
+                if len(digits) >= 3 and v >= 100 and v < 1e12:
+                    amount = v
+                    break
             except ValueError:
                 pass
-        if remaining:
-            amount = remaining[0]
-        else:
-            small_numbers = []
-            for n in numbers:
-                try:
-                    val = int(n.replace(',', ''))
-                    if 1000 <= val <= 9999 and len(n.replace(',', '')) == 4:
-                        small_numbers.append(val)
-                except ValueError:
-                    pass
-            if small_numbers:
-                amount = small_numbers[0]
 
-    rate_match = re.search(r'(?:سعر\s*الصرف|سعر)\s*:?\s*([\d]+[.,][\d]+)', cleaned_text)
-    if not rate_match:
-        rate_match = re.search(r'(?<![\d,])([\d]+[.,][\d]{1,2})(?![\d,])', cleaned_text)
-    if rate_match:
+    rm = re.search(r'(?:سعر\s*(?:الصرف)?|rate)\s*:?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+[.,]\d{1,2})', cleaned, re.IGNORECASE)
+    if not rm:
+        rm = re.search(r'(?<![\d.,])(\d+[.,]\d{1,2})(?![\d.,])', cleaned)
+    if rm:
         try:
-            val = rate_match.group(1).replace(',', '.')
-            exchange_rate = float(val)
+            exchange_rate = float(rm.group(1).replace(',', '.'))
         except ValueError:
             pass
 
-    commission_match = re.search(r'عموله\s*:?\s*([\d.]+)', cleaned_text)
-    if commission_match:
+    cm = re.search(r'عمول[هة]\s*:?\s*([\d.]+)', cleaned)
+    if cm:
         try:
-            commission = float(commission_match.group(1))
+            commission = float(cm.group(1).replace(',', '.'))
         except ValueError:
             pass
 
     return amount, exchange_rate, commission, currency, phone_number, transfer_type
+
+
+_PARSER_RULES_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "parser_rules.json")
+
+
+def _norm_learn_key(text):
+    import re
+    if not text:
+        return ""
+    t = re.sub(r'[ً-ْٰـ]', '', text)
+    t = re.sub(r'[*_☆★#`~^=|]', ' ', t)
+    t = re.sub(r'\s+', ' ', t).strip().lower()
+    return t
+
+
+def _load_parser_rules():
+    try:
+        with open(_PARSER_RULES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_parser_rule(text, amount, rate, commission, currency, phone, ttype):
+    key = _norm_learn_key(text)
+    if not key or len(key) < 8:
+        return
+    rules = _load_parser_rules()
+    entry = {}
+    if amount not in (None, ""):
+        entry["amount"] = float(amount)
+    if rate not in (None, ""):
+        entry["rate"] = float(rate)
+    if commission not in (None, ""):
+        entry["commission"] = float(commission)
+    if currency:
+        entry["currency"] = currency
+    if phone:
+        entry["phone"] = phone
+    if ttype:
+        entry["ttype"] = ttype
+    if not entry:
+        return
+    rules[key] = entry
+    with open(_PARSER_RULES_PATH, "w", encoding="utf-8") as f:
+        json.dump(rules, f, ensure_ascii=False, indent=0)
+
+
+def _apply_learned_rule(text, amount, rate, commission, currency, phone, ttype):
+    key = _norm_learn_key(text)
+    if not key:
+        return amount, rate, commission, currency, phone, ttype
+    entry = _load_parser_rules().get(key)
+    if not entry:
+        return amount, rate, commission, currency, phone, ttype
+    if amount in (None, "") and entry.get("amount") is not None:
+        amount = entry["amount"]
+    if rate in (None, "") and entry.get("rate") is not None:
+        rate = entry["rate"]
+    if commission in (None, "") and entry.get("commission") is not None:
+        commission = entry["commission"]
+    if not currency and entry.get("currency"):
+        currency = entry["currency"]
+    if not phone and entry.get("phone"):
+        phone = entry["phone"]
+    if ttype == "تحويل" and entry.get("ttype"):
+        ttype = entry["ttype"]
+    return amount, rate, commission, currency, phone, ttype
+
+
+def _parse_wa_message_learned(text):
+    amount, rate, commission, currency, phone, ttype = _parse_wa_message(text)
+    return _apply_learned_rule(text, amount, rate, commission, currency, phone, ttype)
