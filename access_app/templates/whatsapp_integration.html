@@ -276,49 +276,52 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
         </div>
     </div>
 
-    <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">
-        <div style="padding:13px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-            <h3 style="margin:0;font-size:.95rem;font-weight:800;color:var(--text)">
-                جدول المعاملات المالية
-                <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">(عرض بحدود شبكية كاملة ورسائل منسقة)</span>
-            </h3>
-            <span class="wa-count-badge" id="waCount">إجمالي المعاملات: {{ messages_list|length }}</span>
-        </div>
-        <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
-                <span style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-chat-dots"></i> الرسائل</span>
-                <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
-                <button class="fbtn" data-filter="" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">الكل</button>
-                <button class="fbtn" data-filter="وارد" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">وارد</button>
-                <button class="fbtn" data-filter="صادر" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">صادر</button>
-                <button class="fbtn" data-filter="فعالة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">فعالة</button>
-                <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">معدلة</button>
-                <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">ملغية</button>
-                <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ تطبيق الفلتر</button>
-                <button id="dataGridBtn" onclick="toggleDataGrid()" style="padding:5px 12px;border-radius:8px;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▦ عرض كجدول</button>
-                <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
-                <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
-                <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
-                <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
-                <select id="directionFilter" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
-                    <option value="">كل الاتجاهات</option>
-                    <option value="وارد">وارد</option>
-                    <option value="صادر">صادر</option>
-                </select>
+    <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border)">
+        <div id="waToolbar" style="position:sticky;top:0;z-index:60;background:var(--card-bg);border-radius:16px 16px 0 0;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+            <div style="padding:13px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                <h3 style="margin:0;font-size:.95rem;font-weight:800;color:var(--text)">
+                    جدول المعاملات المالية
+                    <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">(عرض بحدود شبكية كاملة ورسائل منسقة)</span>
+                </h3>
             </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap">
-            <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
-                <i class="bi bi-trash"></i> حذف المحدد
-            </button>
-            <form method="POST" style="display:inline" onsubmit="return confirmDeleteAll()">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="delete_all_messages">
-                <button type="submit" style="padding:6px 14px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">
-                    <i class="bi bi-trash-fill"></i> حذف الكل
+            <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
+                    <span style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-chat-dots"></i> الرسائل</span>
+                    <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+                    <button class="fbtn" data-filter="" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">الكل</button>
+                    <button class="fbtn" data-filter="وارد" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">وارد</button>
+                    <button class="fbtn" data-filter="صادر" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">صادر</button>
+                    <button class="fbtn" data-filter="فعالة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">فعالة</button>
+                    <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">معدلة</button>
+                    <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">ملغية</button>
+                    <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ تطبيق الفلتر</button>
+                    <button id="dataGridBtn" onclick="toggleDataGrid()" style="padding:5px 12px;border-radius:8px;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▦ عرض كجدول</button>
+                    <button id="aiBtn" onclick="openAiModal()" style="padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;display:none" title="تحليل الرسائل المحددة بالذكاء الاصطناعي">🤖 ذكاء اصطناعي</button>
+                    <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+                    <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
+                    <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                    <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                    <select id="directionFilter" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                        <option value="">كل الاتجاهات</option>
+                        <option value="وارد">وارد</option>
+                        <option value="صادر">صادر</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+                <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
+                    <i class="bi bi-trash"></i> حذف المحدد
                 </button>
-            </form>
-            <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
+                <form method="POST" style="display:inline" onsubmit="return confirmDeleteAll()">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_all_messages">
+                    <button type="submit" style="padding:6px 14px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">
+                        <i class="bi bi-trash-fill"></i> حذف الكل
+                    </button>
+                </form>
+                <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
+                <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
+            </div>
         </div>
         <div class="table-responsive" style="overflow-x:auto;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
@@ -421,6 +424,28 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                     <tbody id="dataGridBody"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="aiOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:210;align-items:center;justify-content:center;padding:20px" onclick="closeAiModal(event)">
+    <div id="aiModal" style="background:var(--card-bg,#fff);border-radius:18px;border:1px solid var(--border,#e2e8f0);width:min(860px,96vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.4)" onclick="event.stopPropagation()">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#eef2ff)">
+            <h3 style="margin:0;font-weight:800;font-size:1rem"><span style="background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;padding:3px 10px;border-radius:8px;font-size:.8rem;margin-inline-end:8px">🤖</span> تحليل ذكي للرسائل المحددة</h3>
+            <button type="button" onclick="closeAiModal()" style="background:transparent;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+        </div>
+        <div style="padding:10px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.75rem">
+            <span id="aiSummary" style="font-weight:700;color:var(--text)"></span>
+            <span style="flex:1"></span>
+            <button onclick="aiSelectAllTransfers()" style="padding:4px 10px;border-radius:6px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.72rem">تحديد الحوالات</button>
+            <button onclick="aiSelectAllInvalid()" style="padding:4px 10px;border-radius:6px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.72rem">تحديد غير صالحة</button>
+            <button onclick="aiResetFields()" style="padding:4px 10px;border-radius:6px;background:#fffbeb;color:#d97706;font-weight:700;border:1px solid #fde68a;cursor:pointer;font-size:.72rem">إعادة ضبط الحقول</button>
+        </div>
+        <div id="aiList" style="flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:12px"></div>
+        <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:var(--bg)">
+            <button onclick="closeAiModal()" style="padding:9px 20px;border-radius:10px;background:var(--card-bg);color:var(--text-muted);font-weight:700;border:1px solid var(--border);cursor:pointer;font-size:.82rem">إلغاء</button>
+            <button onclick="aiDeleteInvalid()" style="padding:9px 20px;border-radius:10px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.82rem"><i class="bi bi-trash"></i> حذف غير الصالحة</button>
+            <button onclick="aiConfirmAll()" style="padding:9px 24px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-weight:800;border:none;cursor:pointer;font-size:.85rem;box-shadow:0 3px 12px rgba(99,102,241,.4)"><i class="bi bi-check-lg"></i> تأكيد وحفظ الكل</button>
         </div>
     </div>
 </div>
@@ -571,7 +596,147 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// ===== AI ANALYZE MODAL =====
+var aiData = [];
+function getSelectedIds() {
+    var ids = [];
+    document.querySelectorAll('.rowCheck:checked').forEach(function(cb) { ids.push(cb.value); });
+    return ids;
+}
+function updateAiBtn() {
+    var n = document.querySelectorAll('.rowCheck:checked').length;
+    document.getElementById('aiBtn').style.display = n > 0 ? '' : 'none';
+}
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList && e.target.classList.contains('rowCheck')) updateAiBtn();
+});
+function openAiModal() {
+    var ids = getSelectedIds();
+    if (!ids.length) { alert('حدد رسالة واحدة على الأقل'); return; }
+    var ov = document.getElementById('aiOverlay');
+    var list = document.getElementById('aiList');
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">🤖 جاري التحليل الذكي...</div>';
+    ov.style.display = 'flex';
+    fetch('/api/whatsapp/ai-analyze/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+        body: JSON.stringify({ids: ids})
+    }).then(function(r){ return r.json(); }).then(function(d) {
+        if (!d.ok) { list.innerHTML = '<div style="text-align:center;padding:30px;color:#dc2626">فشل التحليل</div>'; return; }
+        aiData = d.results;
+        renderAiList();
+    }).catch(function(){ list.innerHTML = '<div style="text-align:center;padding:30px;color:#dc2626">خطأ في الاتصال</div>'; });
+}
+function renderAiList() {
+    var list = document.getElementById('aiList');
+    var transfers = 0, invalid = 0, missing = 0;
+    aiData.forEach(function(r) { if (r.is_transfer) transfers++; else invalid++; if (r.missing_fields && r.missing_fields.length) missing++; });
+    document.getElementById('aiSummary').innerHTML = '📊 <b>' + aiData.length + '</b> رسالة | ✅ حوالات: <b style="color:#16a34a">' + transfers + '</b> | ❌ غير صالحة: <b style="color:#dc2626">' + invalid + '</b> | ⚠️ حقول ناقصة: <b style="color:#d97706">' + missing + '</b>';
+    list.innerHTML = '';
+    aiData.forEach(function(r, i) {
+        var card = document.createElement('div');
+        var bg = r.is_transfer ? '#f0fdf4' : '#fef2f2';
+        var border = r.is_transfer ? '#86efac' : '#fca5a5';
+        card.style.cssText = 'border:2px solid ' + border + ';border-radius:12px;padding:12px;background:' + bg;
+        var missingBadges = (r.missing_fields || []).map(function(f) {
+            var labels = {amount:'المبلغ', rate:'السعر', phone:'الهاتف', currency:'العملة', ttype:'النوع'};
+            return '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:5px;font-size:.68rem;font-weight:700">⚠️ ' + (labels[f]||f) + '</span>';
+        }).join(' ');
+        var phoneWarn = '';
+        if (r.phone && !r.phone_valid) phoneWarn = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:5px;font-size:.68rem;font-weight:700">❌ هاتف غير صالح (' + (r.phone||'').length + ' رقم)</span>';
+        else if (r.phone_fixed) phoneWarn = '<span style="background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:5px;font-size:.68rem;font-weight:700">➕ أُضيف صفر</span>';
+        card.innerHTML =
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
+                '<input type="checkbox" class="aiCheck" data-i="' + i + '" ' + (r.is_transfer ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#8b5cf6">' +
+                '<span style="font-weight:800;font-size:.75rem">' + (r.is_transfer ? '✅ حوالة' : '❌ غير صالحة') + '</span>' +
+                missingBadges + phoneWarn +
+                '<span style="flex:1"></span>' +
+                '<span style="font-size:.65rem;color:var(--text-muted);font-family:monospace">#' + r.id + '</span>' +
+            '</div>' +
+            '<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5;background:var(--card-bg,#fff);padding:6px 10px;border-radius:8px;border:1px solid var(--border);max-height:60px;overflow:hidden">' + (r.text||'').substring(0, 200) + '</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                aiField('المبلغ', 'amount', i, r.amount, 'number') +
+                aiField('السعر', 'rate', i, r.rate, 'number') +
+                aiField('الهاتف', 'phone', i, r.phone, 'text') +
+                aiField('العملة', 'currency', i, r.currency, 'text') +
+            '</div>';
+        list.appendChild(card);
+    });
+}
+function aiField(label, name, i, val, type) {
+    return '<div style="flex:1;min-width:120px">' +
+        '<label style="font-size:.68rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:2px">' + label + '</label>' +
+        '<input type="' + type + '" ' + (type==='number' ? 'step="0.01"' : '') + ' class="aiField" data-i="' + i + '" data-name="' + name + '" value="' + (val != null ? val : '') + '" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:.8rem;box-sizing:border-box;background:var(--card-bg,#fff);color:var(--text)">' +
+    '</div>';
+}
+function aiSelectAllTransfers() {
+    document.querySelectorAll('.aiCheck').forEach(function(cb) {
+        var r = aiData[+cb.dataset.i];
+        cb.checked = r.is_transfer;
+    });
+}
+function aiSelectAllInvalid() {
+    document.querySelectorAll('.aiCheck').forEach(function(cb) {
+        var r = aiData[+cb.dataset.i];
+        cb.checked = !r.is_transfer;
+    });
+}
+function aiResetFields() {
+    document.querySelectorAll('.aiField').forEach(function(inp) {
+        var r = aiData[+inp.dataset.i];
+        var name = inp.dataset.name;
+        inp.value = r[name] != null ? r[name] : '';
+    });
+}
+function aiDeleteInvalid() {
+    var ids = [];
+    document.querySelectorAll('.aiCheck').forEach(function(cb) {
+        var r = aiData[+cb.dataset.i];
+        if (!r.is_transfer) ids.push(r.id);
+    });
+    if (!ids.length) { alert('لا توجد رسائل غير صالحة للحذف'); return; }
+    if (!confirm('حذف ' + ids.length + ' رسالة غير صالحة نهائياً؟')) return;
+    fetch('/api/whatsapp/bulk-delete/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids: ids})
+    }).then(function(){ location.reload(); });
+}
+function aiConfirmAll() {
+    var edits = [];
+    document.querySelectorAll('.aiField').forEach(function(inp) {
+        var i = +inp.dataset.i;
+        if (!edits[i]) edits[i] = {id: aiData[i].id};
+        edits[i][inp.dataset.name] = inp.value;
+    });
+    if (!edits.length) { alert('لا توجد بيانات للحفظ'); return; }
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحفظ...';
+    var promises = edits.filter(function(e){ return e; }).map(function(e) {
+        var fd = new FormData();
+        fd.append('sender', '');
+        fd.append('message_text', '');
+        fd.append('phone_number', e.phone || '');
+        fd.append('amount', e.amount || '');
+        fd.append('exchange_rate', e.rate || '');
+        fd.append('commission', '');
+        fd.append('currency', e.currency || '');
+        fd.append('transfer_type', aiData.find(function(x){return x.id===e.id;}).ttype || 'تحويل');
+        fd.append('direction', aiData.find(function(x){return x.id===e.id;}).direction || 'وارد');
+        fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        return fetch('/whatsapp/message/' + e.id + '/edit/', {method:'POST', body: fd, headers:{'X-Requested-With':'XMLHttpRequest'}});
+    });
+    Promise.all(promises).then(function(){ location.reload(); }).catch(function(){ btn.disabled=false; btn.innerHTML='<i class="bi bi-check-lg"></i> تأكيد وحفظ الكل'; });
+}
+function closeAiModal(e) {
+    if (e && e.target && e.target.id !== 'aiOverlay') return;
+    document.getElementById('aiOverlay').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAiModal(); });
+
 function toggleSelectAll(master) {
+
     document.querySelectorAll('.rowCheck').forEach(cb => cb.checked = master.checked);
     updateSelectedCount();
 }

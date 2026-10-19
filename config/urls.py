@@ -81,6 +81,7 @@ urlpatterns = [
     path('api/whatsapp/config/', views.whatsapp_config, name='whatsapp_config'),
     path('api/whatsapp/report-group/', views.whatsapp_report_group, name='whatsapp_report_group'),
     path('api/whatsapp/groups/', views.whatsapp_groups, name='whatsapp_groups'),
+    path('api/whatsapp/ai-analyze/', views.whatsapp_ai_analyze, name='whatsapp_ai_analyze'),
     path('api/whatsapp/bulk-delete/', views.whatsapp_bulk_delete, name='whatsapp_bulk_delete'),
     path('api/whatsapp/anchor/', views.whatsapp_anchor, name='whatsapp_anchor'),
     path('whatsapp/message/<int:msg_id>/edit/', views.whatsapp_message_edit, name='whatsapp_message_edit'),

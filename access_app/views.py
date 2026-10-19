@@ -3396,6 +3396,67 @@ def whatsapp_report_group(request):
     return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
 
 
+@csrf_exempt
+def whatsapp_ai_analyze(request):
+    import re
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    try:
+        data = json.loads(request.body)
+        ids = data.get("ids") or []
+        results = []
+        for msg in WhatsAppMessage.objects.filter(id__in=ids):
+            text = msg.message_text or ""
+            amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
+            phone_fixed = False
+            phone_valid = False
+            if phone:
+                digits = re.sub(r'\D', '', phone)
+                if len(digits) == 9 and digits.startswith('9'):
+                    phone = '0' + digits
+                    phone_fixed = True
+                    phone_valid = True
+                elif len(digits) == 10 and digits.startswith('1'):
+                    phone = '0' + digits
+                    phone_fixed = True
+                    phone_valid = True
+                elif len(digits) == 10 and digits.startswith('09'):
+                    phone_valid = True
+                elif len(digits) == 11 and digits.startswith('01'):
+                    phone_valid = True
+                else:
+                    phone_valid = False
+            missing = []
+            if not amount:
+                missing.append('amount')
+            if not phone:
+                missing.append('phone')
+            elif not phone_valid:
+                missing.append('phone')
+            if not rate:
+                missing.append('rate')
+            if not currency:
+                missing.append('currency')
+            is_transfer = bool(amount and phone and phone_valid)
+            results.append({
+                "id": msg.id,
+                "text": text[:300],
+                "amount": amount,
+                "rate": rate,
+                "currency": currency,
+                "phone": phone,
+                "phone_fixed": phone_fixed,
+                "phone_valid": phone_valid,
+                "ttype": ttype,
+                "direction": msg.direction,
+                "is_transfer": is_transfer,
+                "missing_fields": missing,
+            })
+        return JsonResponse({"ok": True, "results": results})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
 _GROUPS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "groups.json")
 
 
