@@ -56,6 +56,17 @@ def _as_bool(value, default=True):
     return bool(value)
 
 
+def _normalize_group_jid(jid):
+    jid = (jid or "").strip()
+    if not jid:
+        return ""
+    if "@g.us" in jid:
+        return jid.split("@g.us")[0] + "@g.us"
+    if jid.endswith("@id") or jid.endswith("@lid"):
+        return jid.rsplit("@", 1)[0] + "@g.us"
+    return jid
+
+
 def _wa_is_duplicate(wamsg_id, sender, jid, text):
     if wamsg_id:
         return WhatsAppMessage.objects.filter(wamsg_id=wamsg_id).exists()
@@ -3124,6 +3135,10 @@ def whatsapp_integration(request):
                     env["SYNC_FULL_HISTORY"] = "1"
                 else:
                     env.pop("SYNC_FULL_HISTORY", None)
+                if SystemSetting.get().monitor_all_groups:
+                    env["MONITOR_ALL"] = "1"
+                else:
+                    env.pop("MONITOR_ALL", None)
                 subprocess.Popen(
                     ["node", "index.js"],
                     cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
@@ -3215,10 +3230,21 @@ def whatsapp_integration(request):
                 f"({'مع التكرار' if allow_dup else 'بدون تكرار'})"
             )
             return redirect("whatsapp_integration")
+        elif action == "save_monitor_all":
+            setting = SystemSetting.get()
+            setting.monitor_all_groups = _as_bool(request.POST.get("monitor_all_groups"), default=False)
+            setting.save()
+            if setting.monitor_all_groups:
+                messages.success(request, "تم تفعيل استقبال رسائل كل المجموعات")
+            else:
+                messages.success(request, "تم إلغاء استقبال كل المجموعات - سيتم الاعتماد على المجموعة المحفوظة")
+            return redirect("whatsapp_integration")
         elif action == "save_group":
             group_jid = request.POST.get("group_jid", "").strip()
             setting = SystemSetting.get()
+            group_jid = _normalize_group_jid(group_jid)
             setting.monitored_group_jid = group_jid
+            setting.monitor_all_groups = False
             setting.save()
             messages.success(request, "تم حفظ معرف المجموعة")
             return redirect("whatsapp_integration")
@@ -3271,6 +3297,7 @@ def whatsapp_integration(request):
         "messages_list": messages_list,
         "bot_status": bot_status,
         "monitored_group": setting.monitored_group_jid,
+        "monitor_all_groups": setting.monitor_all_groups,
         "sync_full_history": setting.sync_full_history,
     })
 
@@ -3280,6 +3307,7 @@ def whatsapp_config(request):
     setting = SystemSetting.get()
     return JsonResponse({
         "group_jid": setting.monitored_group_jid or "",
+        "monitor_all": bool(setting.monitor_all_groups),
         "sync_full_history": bool(setting.sync_full_history),
     })
 
@@ -3289,7 +3317,7 @@ def whatsapp_report_group(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            group_jid = data.get("group_jid", "")
+            group_jid = _normalize_group_jid(data.get("group_jid", ""))
             if group_jid:
                 setting = SystemSetting.get()
                 setting.monitored_group_jid = group_jid

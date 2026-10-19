@@ -144,6 +144,15 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                     <i class="bi bi-save"></i> حفظ الغرفة
                 </button>
             </form>
+            <form method="POST" style="display:flex;align-items:center">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_monitor_all">
+                <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:{% if monitor_all_groups %}#ecfdf5{% else %}var(--bg){% endif %};border:1px solid {% if monitor_all_groups %}#6ee7b7{% else %}var(--border){% endif %};font-size:.88rem;font-weight:700;color:{% if monitor_all_groups %}#047857{% else %}var(--text-muted){% endif %};cursor:pointer;user-select:none">
+                    <input type="hidden" name="monitor_all_groups" value="0">
+                    <input type="checkbox" name="monitor_all_groups" value="1" {% if monitor_all_groups %}checked{% endif %} onchange="this.form.submit()" style="width:17px;height:17px;cursor:pointer;accent-color:#10b981">
+                    استقبال رسائل كل المجموعات
+                </label>
+            </form>
             <form method="POST" style="display:flex;gap:8px;flex-wrap:wrap">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="start_bot">

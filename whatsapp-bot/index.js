@@ -12,6 +12,7 @@ const BATCH_TIMEOUT_MS = 20000;
 
 let sock = null;
 let monitoredGroupJid = process.env.GROUP_JID || '';
+let monitorAll = process.env.MONITOR_ALL === '1';
 let syncFullHistory = process.env.SYNC_FULL_HISTORY === '1';
 let lastDetectedGroup = '';
 let lastSeenKey = null;
@@ -39,10 +40,12 @@ async function fetchGroupJid() {
     for (let i = 0; i < 8; i++) {
         try {
             const res = await axios.get(DJANGO + '/api/whatsapp/config/', { timeout: 5000 });
-            monitoredGroupJid = res.data.group_jid || '';
+            monitoredGroupJid = normalizeGroupJid(res.data.group_jid || '');
+            monitorAll = !!res.data.monitor_all;
             syncFullHistory = !!res.data.sync_full_history;
             configReady = true;
-            console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل') + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
+            const mode = monitorAll ? 'الكل' : (monitoredGroupJid || 'الكل');
+            console.log('📋 المجموعة المراقبة: ' + mode + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
             return true;
         } catch (e) {
             console.log('⚠️ تعذر جلب الإعدادات من السيرفر (محاولة ' + (i + 1) + '/8)');
@@ -62,7 +65,30 @@ function wipeAuth() {
     } catch (e) { }
 }
 
+function isGroupJid(jid) {
+    if (!jid) return false;
+    if (jid.slice(-5) === '@g.us') return true;
+    const at = jid.lastIndexOf('@');
+    if (at < 0) return false;
+    const id = jid.slice(0, at);
+    const suffix = jid.slice(at + 1);
+    return (suffix === 'id' || suffix === 'lid') && id.slice(0, 5) === '12036';
+}
+
+function normalizeGroupJid(jid) {
+    if (!isGroupJid(jid)) return jid || '';
+    return jid.slice(0, jid.lastIndexOf('@')) + '@g.us';
+}
+
+function sameGroup(a, b) {
+    const na = normalizeGroupJid(a);
+    const nb = normalizeGroupJid(b);
+    if (!na || !nb) return false;
+    return na === nb;
+}
+
 async function reportGroup(jid) {
+    jid = normalizeGroupJid(jid);
     if (!jid || !jid.endsWith('@g.us')) return;
     if (jid === lastDetectedGroup) return;
     lastDetectedGroup = jid;
@@ -74,11 +100,10 @@ async function reportGroup(jid) {
 }
 
 function isAllowed(jid) {
-    if (!jid) return false;
-    if (!monitoredGroupJid) {
-        return jid.endsWith('@g.us');
-    }
-    return jid === monitoredGroupJid;
+    if (!isGroupJid(jid)) return false;
+    if (monitorAll) return true;
+    if (!monitoredGroupJid) return jid.slice(-5) === '@g.us';
+    return sameGroup(jid, monitoredGroupJid);
 }
 
 function normalizeContent(msg) {
@@ -119,7 +144,7 @@ async function sendToDjango(msg, opts) {
     opts = opts || {};
     if (!configReady) return 'skip';
     const jid = msg.key.remoteJid;
-    if (!monitoredGroupJid && jid && jid.endsWith('@g.us')) {
+    if (!monitorAll && !monitoredGroupJid && isGroupJid(jid)) {
         await reportGroup(jid);
     }
     if (!isAllowed(jid)) {
@@ -163,6 +188,17 @@ function writeSyncResult(result) {
 
 async function detectGroup() {
     if (monitoredGroupJid) return monitoredGroupJid;
+    if (lastSeenKey && lastSeenKey.key && lastSeenKey.key.remoteJid) {
+        return normalizeGroupJid(lastSeenKey.key.remoteJid);
+    }
+    if (monitorAll) {
+        try {
+            const chats = await sock.groupFetchAllParticipating();
+            const groups = Object.values(chats || {});
+            if (groups.length > 0) return normalizeGroupJid(groups[0].id);
+        } catch (e) { }
+        return null;
+    }
     try {
         const chats = await sock.groupFetchAllParticipating();
         const groups = Object.values(chats || {});
@@ -317,7 +353,7 @@ const HISTORY_TYPE_NAMES = { 0: 'أولية', 2: 'كاملة', 3: 'حديثة', 
 async function forwardHistorySync(data) {
     const name = HISTORY_TYPE_NAMES[data.syncType] || String(data.syncType);
     const all = data.messages || [];
-    const msgs = all.filter(m => m && m.key && m.message && monitoredGroupJid && m.key.remoteJid === monitoredGroupJid);
+    const msgs = all.filter(m => m && m.key && m.message && isAllowed(m.key.remoteJid));
     if (!msgs.length) {
         console.log('📥 مزامنة تاريخ (' + name + '): لا رسائل للمجموعة المراقبة من أصل ' + all.length);
         return;

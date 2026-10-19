@@ -388,6 +388,7 @@ class SystemSetting(models.Model):
     maintenance_mode = models.BooleanField(default=False, verbose_name="وضع الصيانة")
     maintenance_message = models.TextField(default="النظام تحت الصيانة حالياً. يرجى المحاولة لاحقاً.", verbose_name="رسالة الصيانة")
     monitored_group_jid = models.CharField(max_length=200, default="", blank=True, verbose_name="معرف المجموعة المراقبة")
+    monitor_all_groups = models.BooleanField(default=False, verbose_name="استقبال رسائل كل المجموعات")
     sync_full_history = models.BooleanField(default=False, verbose_name="مزامنة التاريخ الكامل")
 
     class Meta:
