@@ -8,7 +8,7 @@
 #      sudo deploy/deploy.sh
 #
 #  ماذا يفعل:
-#    1) يثبّت المتطلبات (python3.11, node, nginx, pm2) إن لم تكن موجودة
+#    1) يثبّت المتطلبات (python3, node, nginx, pm2) إن لم تكن موجودة
 #    2) يبني venv ويثبت requirements.txt
 #    3) يجهّز قاعدة البيانات (migrate + collectstatic) إذا لم تكن موجودة
 #    4) يركّب خدمة gunicorn (systemd) + nginx
@@ -30,7 +30,9 @@ RUN_AS="www-data"
 echo "==== [1/6] تثبيت الحزم إن لزم ===="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y -qq
-apt-get install -y -qq python3.11 python3.11-venv python3-pip nginx git ufw curl
+apt-get install -y -qq python3 python3-venv python3-pip nginx git ufw curl
+PY_BIN="$(command -v python3.11 || command -v python3)"
+echo "  python: $PY_BIN ($($PY_BIN --version 2>&1))"
 
 if ! command -v node >/dev/null 2>&1; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -44,7 +46,7 @@ echo "  node=$(node -v 2>/dev/null || echo '?')  pm2=$(pm2 -v 2>/dev/null || ech
 echo "==== [2/6] بيئة بايثون + الحزم ===="
 cd "$APP_DIR"
 if [ ! -d venv ]; then
-    python3.11 -m venv venv
+    "$PY_BIN" -m venv venv
 fi
 venv/bin/pip install --upgrade pip -q
 venv/bin/pip install -r requirements.txt -q
