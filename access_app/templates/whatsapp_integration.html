@@ -58,39 +58,7 @@ body.wa-dark-font .badge-cur { background:#422006; color:#fcd34d; border-color:#
 body.wa-dark-font .badge-cur-eg { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 
-/* ===== PROFESSIONAL DATA GRID ===== */
-.grid-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:14px; overflow:hidden; box-shadow:0 4px 24px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06); background:#fff; }
-.grid-table thead th { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:11px 8px; font-size:.72rem; font-weight:800; text-align:center; letter-spacing:.4px; border-bottom:3px solid #312e81; position:sticky; top:47px; z-index:20; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-.grid-table thead th:first-child { border-top-right-radius:14px; }
-.grid-table thead th:last-child { border-top-left-radius:14px; }
-.grid-table tbody td { padding:9px 8px; font-size:.72rem; text-align:center; border-bottom:1px solid #eef2f7; vertical-align:middle; }
-.grid-table tbody tr:nth-child(even) { background:linear-gradient(90deg,#fafbff,#f5f7ff); }
-.grid-table tbody tr:nth-child(odd) { background:#fff; }
-.grid-table tbody tr:hover { background:linear-gradient(90deg,#eef2ff,#e0e7ff); transform:scale(1.001); }
-.grid-table tbody tr:last-child td { border-bottom:none; }
-.grid-table .g-idx { color:#a5b4fc; font-weight:800; font-size:.68rem; }
-.grid-table .g-phone { font-family:'Consolas',monospace; font-weight:700; color:#312e81; direction:ltr; }
-.grid-table .g-amount { font-family:'Consolas',monospace; font-weight:800; color:#0f172a; font-size:.78rem; }
-.grid-table .g-rate { font-family:'Consolas',monospace; font-weight:800; color:#7c3aed; font-size:.78rem; }
-.grid-table .g-conv { font-family:'Consolas',monospace; font-weight:800; color:#059669; font-size:.78rem; }
-.grid-table .g-msg { text-align:right; white-space:pre-line; word-break:break-word; line-height:1.5; font-size:.7rem; color:#334155; max-width:340px; }
-.grid-table .g-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.62rem; font-weight:800; }
-.grid-table .g-hide { display:none; }
-.colchk { display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:20px; background:#fff; border:1px solid #c7d2fe; font-size:.7rem; font-weight:700; color:#4338ca; cursor:pointer; transition:all .15s; user-select:none; }
-.colchk:hover { background:#eef2ff; border-color:#818cf8; }
-.colchk input { accent-color:#4f46e5; cursor:pointer; margin:0; }
-.colchk:has(input:checked) { background:#4f46e5; color:#fff; border-color:#4f46e5; }
-.colchk:has(input:checked) input { accent-color:#fff; }
-body.wa-dark-font .grid-table { background:#1a2436; box-shadow:0 4px 24px rgba(0,0,0,.4); }
-body.wa-dark-font .grid-table tbody td { color:#e2e8f0; border-bottom-color:#283548; }
-body.wa-dark-font .grid-table tbody tr:nth-child(even) { background:#16213a; }
-body.wa-dark-font .grid-table tbody tr:nth-child(odd) { background:#1a2436; }
-body.wa-dark-font .grid-table tbody tr:hover { background:#243356; }
-body.wa-dark-font .grid-table .g-phone, body.wa-dark-font .grid-table .g-amount { color:#c7d2fe; }
-body.wa-dark-font .grid-table .g-rate { color:#c4b5fd; }
-body.wa-dark-font .grid-table .g-conv { color:#6ee7b7; }
-body.wa-dark-font .grid-table .g-msg { color:#cbd5e1; }
-body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b4fc; }
+/* ===== WA TABLE (existing styles below) ===== */
 </style>
 <div style="max-width:1600px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
@@ -186,38 +154,41 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
             </div>
 
             <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch">
-                <form method="POST" style="display:flex;gap:10px;flex:1;min-width:340px;align-items:end">
+                <form method="POST" id="multiGroupForm" style="flex:1;min-width:340px">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="save_group">
-                    <div style="flex:1">
-                        <label style="font-size:.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">معرف المجموعة (Group JID)</label>
-                        <input type="text" name="group_jid" placeholder="120363xxxxxxxxx@g.us" value="{{ monitored_group }}"
-                               style="width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);font-size:.85rem;font-weight:600;box-sizing:border-box;direction:ltr;text-align:left;background:var(--bg);color:var(--text)">
+                    <input type="hidden" name="action" value="save_groups_multi">
+                    <input type="hidden" name="group_jids" id="multiGroupJids" value="{{ monitored_group_jids }}">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                        <label style="font-size:.75rem;font-weight:700;color:var(--text)">المجموعات المراقبة (اختر واحدة أو أكثر)</label>
+                        <button type="button" onclick="loadMultiGroups()" style="padding:4px 12px;border-radius:8px;background:#eef2ff;color:#4f46e5;font-weight:700;border:1px solid #c7d2fe;cursor:pointer;font-size:.72rem"><i class="bi bi-arrow-repeat"></i> تحديث القائمة</button>
                     </div>
-                    <button type="submit" style="padding:9px 18px;border-radius:10px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.82rem;white-space:nowrap">
-                        <i class="bi bi-save"></i> حفظ المجموعة
-                    </button>
+                    <div id="multiGroupsBox" style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg);max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+                        <div style="font-size:.75rem;color:var(--text-muted);text-align:center;padding:8px">جاري التحميل...</div>
+                    </div>
+                    <button type="submit" style="margin-top:8px;padding:9px 20px;border-radius:10px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.82rem"><i class="bi bi-save"></i> حفظ المجموعات المحددة</button>
                 </form>
 
-                <form method="POST" style="display:flex;align-items:stretch">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="save_monitor_all">
-                    <input type="hidden" name="monitor_all_groups" value="0">
-                    <label style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:{% if monitor_all_groups %}#ecfdf5{% else %}var(--bg){% endif %};border:2px solid {% if monitor_all_groups %}#10b981{% else %}var(--border){% endif %};font-size:.82rem;font-weight:700;color:{% if monitor_all_groups %}#047857{% else %}var(--text-muted){% endif %};cursor:pointer;user-select:none;transition:all .2s">
-                        <input type="checkbox" name="monitor_all_groups" value="1" {% if monitor_all_groups %}checked{% endif %} onchange="this.form.submit()" style="width:17px;height:17px;cursor:pointer;accent-color:#10b981">
-                        استقبال كل المجموعات
-                    </label>
-                </form>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <form method="POST" style="display:flex;align-items:stretch">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_monitor_all">
+                        <input type="hidden" name="monitor_all_groups" value="0">
+                        <label style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:{% if monitor_all_groups %}#ecfdf5{% else %}var(--bg){% endif %};border:2px solid {% if monitor_all_groups %}#10b981{% else %}var(--border){% endif %};font-size:.82rem;font-weight:700;color:{% if monitor_all_groups %}#047857{% else %}var(--text-muted){% endif %};cursor:pointer;user-select:none;transition:all .2s">
+                            <input type="checkbox" name="monitor_all_groups" value="1" {% if monitor_all_groups %}checked{% endif %} onchange="this.form.submit()" style="width:17px;height:17px;cursor:pointer;accent-color:#10b981">
+                            استقبال كل المجموعات
+                        </label>
+                    </form>
 
-                <form method="POST" style="display:flex;align-items:stretch">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="save_full_history">
-                    <input type="hidden" name="sync_full_history" value="0">
-                    <label style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:{% if sync_full_history %}#fef3c7{% else %}var(--bg){% endif %};border:2px solid {% if sync_full_history %}#f59e0b{% else %}var(--border){% endif %};font-size:.82rem;font-weight:700;color:{% if sync_full_history %}#92400e{% else %}var(--text-muted){% endif %};cursor:pointer;user-select:none;transition:all .2s" title="يتطلب حذف الجلسة وإعادة ربط الواتساب ليعمل">
-                        <input type="checkbox" name="sync_full_history" value="1" {% if sync_full_history %}checked{% endif %} onchange="this.form.submit()" style="width:17px;height:17px;cursor:pointer;accent-color:#f59e0b">
-                        مزامنة التاريخ الكامل
-                    </label>
-                </form>
+                    <form method="POST" style="display:flex;align-items:stretch">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_full_history">
+                        <input type="hidden" name="sync_full_history" value="0">
+                        <label style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:{% if sync_full_history %}#fef3c7{% else %}var(--bg){% endif %};border:2px solid {% if sync_full_history %}#f59e0b{% else %}var(--border){% endif %};font-size:.82rem;font-weight:700;color:{% if sync_full_history %}#92400e{% else %}var(--text-muted){% endif %};cursor:pointer;user-select:none;transition:all .2s" title="يتطلب حذف الجلسة وإعادة ربط الواتساب ليعمل">
+                            <input type="checkbox" name="sync_full_history" value="1" {% if sync_full_history %}checked{% endif %} onchange="this.form.submit()" style="width:17px;height:17px;cursor:pointer;accent-color:#f59e0b">
+                            مزامنة التاريخ الكامل
+                        </label>
+                    </form>
+                </div>
             </div>
             <p style="font-size:.7rem;color:var(--text-muted);margin:8px 0 0;line-height:1.6">
                 💡 <b>مزامنة التاريخ الكامل</b>: عند تفعيلها يجب حذف الجلسة وإعادة ربط الواتساب، ثم واتساب يرسل كل المحادثات القديمة تلقائياً.
@@ -295,9 +266,11 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                     <button class="fbtn" data-filter="معدلة" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">معدلة</button>
                     <button class="fbtn" data-filter="ملغية" onclick="setFilter(this)" style="padding:5px 10px;border-radius:8px;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;flex-shrink:0">ملغية</button>
                     <button id="applyClearBtn" onclick="toggleFilters()" style="padding:5px 12px;border-radius:8px;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ تطبيق الفلتر</button>
-                    <button id="dataGridBtn" onclick="toggleDataGrid()" style="padding:5px 12px;border-radius:8px;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">▦ عرض كجدول</button>
                     <button id="aiBtn" onclick="openAiModal()" style="padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-size:.72rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;display:none" title="تحليل الرسائل المحددة بالذكاء الاصطناعي">🤖 ذكاء اصطناعي</button>
                     <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
+                    <select id="groupFilter" onchange="applyFilters()" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0;max-width:170px">
+                        <option value="">كل الغرف</option>
+                    </select>
                     <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
                     <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                     <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
@@ -321,6 +294,7 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                 </form>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
+                <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على الصف لفتح التعديل</span>
             </div>
         </div>
         <div class="table-responsive" style="overflow-x:auto;max-width:100%;padding:0 4px 8px">
@@ -387,43 +361,6 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-        <div id="dataGrid" style="display:none;padding:0 0 16px">
-            <div id="gridColBar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border-bottom:1px solid var(--border)">
-                <span style="font-size:.72rem;font-weight:800;color:#6366f1;white-space:nowrap"><i class="bi bi-list-check"></i> الأعمدة:</span>
-                <label class="colchk"><input type="checkbox" checked data-col="1" onchange="toggleGridCol(this)"> التليفون</label>
-                <label class="colchk"><input type="checkbox" checked data-col="2" onchange="toggleGridCol(this)"> المبلغ</label>
-                <label class="colchk"><input type="checkbox" checked data-col="3" onchange="toggleGridCol(this)"> السعر</label>
-                <label class="colchk"><input type="checkbox" checked data-col="4" onchange="toggleGridCol(this)"> بعد التحويل</label>
-                <label class="colchk"><input type="checkbox" checked data-col="5" onchange="toggleGridCol(this)"> العملة</label>
-                <label class="colchk"><input type="checkbox" checked data-col="6" onchange="toggleGridCol(this)"> النوع</label>
-                <label class="colchk"><input type="checkbox" checked data-col="7" onchange="toggleGridCol(this)"> الاتجاه</label>
-                <label class="colchk"><input type="checkbox" checked data-col="8" onchange="toggleGridCol(this)"> الحالة</label>
-                <label class="colchk"><input type="checkbox" checked data-col="9" onchange="toggleGridCol(this)"> التاريخ</label>
-                <label class="colchk"><input type="checkbox" checked data-col="10" onchange="toggleGridCol(this)"> الوقت</label>
-                <label class="colchk"><input type="checkbox" checked data-col="11" onchange="toggleGridCol(this)"> الرسالة</label>
-            </div>
-            <div style="overflow-x:auto">
-                <table class="grid-table" id="gridTable">
-                    <thead>
-                        <tr>
-                            <th class="g-col" data-col="0" style="width:40px">#</th>
-                            <th class="g-col" data-col="1">التليفون</th>
-                            <th class="g-col" data-col="2">المبلغ</th>
-                            <th class="g-col" data-col="3">السعر</th>
-                            <th class="g-col" data-col="4">بعد التحويل</th>
-                            <th class="g-col" data-col="5">العملة</th>
-                            <th class="g-col" data-col="6">النوع</th>
-                            <th class="g-col" data-col="7">الاتجاه</th>
-                            <th class="g-col" data-col="8">الحالة</th>
-                            <th class="g-col" data-col="9">التاريخ</th>
-                            <th class="g-col" data-col="10">الوقت</th>
-                            <th class="g-col" data-col="11" style="width:30%">الرسالة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataGridBody"></tbody>
-                </table>
-            </div>
         </div>
     </div>
 </div>
@@ -589,7 +526,7 @@ document.getElementById('waEditForm').addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     var tb = document.getElementById('messagesTableBody');
     if (!tb) return;
-    tb.addEventListener('click', function(e) {
+    tb.addEventListener('dblclick', function(e) {
         if (e.target.closest('a, button, input, select, textarea, form, .act-btn, label')) return;
         var tr = e.target.closest('tr[data-id]');
         if (tr) openWaEdit(tr);
@@ -806,98 +743,11 @@ function fontDark() {
 document.addEventListener('DOMContentLoaded', applyFontSettings);
 setTimeout(applyFontSettings, 300);
 
-// ===== DATA GRID TOGGLE =====
-var gridVisible = false;
-
-function buildDataGrid() {
-    const tbody = document.getElementById('dataGridBody');
-    if (!tbody) return;
-    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
-    let html = '';
-    let i = 0;
-    rows.forEach(row => {
-        if (row.style.display === 'none') return;
-        i++;
-        const cells = row.querySelectorAll('td');
-        const phone = cells[2] ? cells[2].textContent.trim() : '-';
-        const amount = cells[4] ? cells[4].textContent.trim() : '-';
-        const rate = cells[5] ? cells[5].textContent.trim() : '-';
-        const conv = cells[6] ? cells[6].textContent.trim() : '-';
-        const cur = cells[7] ? cells[7].textContent.trim() : '-';
-        const type = cells[8] ? cells[8].textContent.trim() : '-';
-        const dir = cells[9] ? cells[9].innerHTML : '-';
-        const st = cells[10] ? cells[10].innerHTML : '-';
-        const dateEl = cells[11] ? cells[11].querySelector('div') : null;
-        const timeEl = cells[11] ? cells[11].querySelector('.wt-time') : null;
-        const date = dateEl ? dateEl.textContent.trim() : '-';
-        const time = timeEl ? timeEl.textContent.trim() : '-';
-        const msg = cells[3] ? cells[3].textContent.trim() : '-';
-        html += '<tr>'
-            + '<td class="g-col g-idx" data-col="0">' + i + '</td>'
-            + '<td class="g-col g-phone" data-col="1">' + escapeHtml(phone) + '</td>'
-            + '<td class="g-col g-amount" data-col="2">' + escapeHtml(amount) + '</td>'
-            + '<td class="g-col g-rate" data-col="3">' + escapeHtml(rate) + '</td>'
-            + '<td class="g-col g-conv" data-col="4">' + escapeHtml(conv) + '</td>'
-            + '<td class="g-col" data-col="5">' + (cur !== '-' ? '<span class="g-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">' + escapeHtml(cur) + '</span>' : '-') + '</td>'
-            + '<td class="g-col" data-col="6">' + (type !== '-' ? '<span class="g-badge" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac">' + escapeHtml(type) + '</span>' : '-') + '</td>'
-            + '<td class="g-col" data-col="7">' + dir + '</td>'
-            + '<td class="g-col" data-col="8">' + st + '</td>'
-            + '<td class="g-col" data-col="9" style="color:var(--text-muted)">' + escapeHtml(date) + '</td>'
-            + '<td class="g-col" data-col="10" style="color:var(--text-muted)">' + escapeHtml(time) + '</td>'
-            + '<td class="g-col g-msg" data-col="11">' + escapeHtml(msg) + '</td>'
-            + '</tr>';
-    });
-    if (!html) html = '<tr><td colspan="12" style="padding:36px;text-align:center;color:var(--text-muted)">لا توجد بيانات</td></tr>';
-    tbody.innerHTML = html;
-    applyColVisibility();
-}
-
+// ===== DATA GRID REMOVED =====
 function escapeHtml(s) {
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
-}
-
-function applyColVisibility() {
-    document.querySelectorAll('#gridColBar .colchk input').forEach(cb => {
-        const col = cb.dataset.col;
-        const hidden = !cb.checked;
-        document.querySelectorAll('#gridTable [data-col="' + col + '"]').forEach(el => {
-            el.classList.toggle('g-hide', hidden);
-        });
-    });
-}
-
-function toggleGridCol(cb) {
-    localStorage.setItem('gridCol_' + cb.dataset.col, cb.checked ? '1' : '0');
-    applyColVisibility();
-}
-
-(function() {
-    document.querySelectorAll('#gridColBar .colchk input').forEach(cb => {
-        const saved = localStorage.getItem('gridCol_' + cb.dataset.col);
-        if (saved !== null) cb.checked = saved === '1';
-    });
-})();
-
-function toggleDataGrid() {
-    gridVisible = !gridVisible;
-    const grid = document.getElementById('dataGrid');
-    const tableWrap = grid ? grid.previousElementSibling : null;
-    const btn = document.getElementById('dataGridBtn');
-    if (!grid) return;
-    if (gridVisible) {
-        buildDataGrid();
-        grid.style.display = 'block';
-        if (tableWrap) tableWrap.style.display = 'none';
-        btn.textContent = '✖ إخفاء الجدول';
-        btn.style.background = '#dc2626';
-    } else {
-        grid.style.display = 'none';
-        if (tableWrap) tableWrap.style.display = '';
-        btn.textContent = '▦ عرض كجدول';
-        btn.style.background = '#7c3aed';
-    }
 }
 
 function toggleBotBox() {
@@ -935,6 +785,7 @@ function applyFilters() {
     const dateFrom = document.getElementById('dateFrom').value || '';
     const dateTo = document.getElementById('dateTo').value || '';
     const dirSel = document.getElementById('directionFilter').value || '';
+    const grpSel = document.getElementById('groupFilter').value || '';
     const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
     let shown = 0;
     rows.forEach(row => {
@@ -946,6 +797,7 @@ function applyFilters() {
             if (row.dataset.status !== f) ok = false;
         }
         if (ok && dirSel && row.dataset.direction !== dirSel) ok = false;
+        if (ok && grpSel && (row.dataset.group || '') !== grpSel) ok = false;
         if (ok && search) {
             const hay = (row.dataset.search || '').toLowerCase();
             if (!hay.includes(search)) ok = false;
@@ -959,7 +811,7 @@ function applyFilters() {
         row.style.display = ok ? '' : 'none';
         if (ok) shown++;
     });
-    filtersApplied = !!(activeFilter || search || dateFrom || dateTo || dirSel);
+    filtersApplied = !!(activeFilter || search || dateFrom || dateTo || dirSel || grpSel);
     const btn = document.getElementById('applyClearBtn');
     if (btn) {
         if (filtersApplied) {
@@ -972,7 +824,6 @@ function applyFilters() {
     }
     const sc = document.getElementById('selectedCount');
     if (sc && filtersApplied) sc.textContent = 'النتائج: ' + shown;
-    if (gridVisible) buildDataGrid();
 }
 
 function clearFilters() {
@@ -986,6 +837,7 @@ function clearFilters() {
     document.getElementById('dateFrom').value = '';
     document.getElementById('dateTo').value = '';
     document.getElementById('directionFilter').value = '';
+    document.getElementById('groupFilter').value = '';
     applyFilters();
 }
 
@@ -1021,8 +873,8 @@ function loadMessages() {
             const wc = document.getElementById('waCount');
             if (wc) wc.textContent = 'إجمالي المعاملات: ' + document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
             if (filtersApplied) applyFilters();
-            if (gridVisible) buildDataGrid();
             updateSelectedCount();
+            refreshGroupFilter();
             window.scrollTo(0, scrollY);
         })
         .catch(() => {});
@@ -1126,5 +978,65 @@ function pollQR() {
     setTimeout(pollQR, 2000);
 }
 pollQR();
+
+// ===== GROUP FILTER + MULTI-GROUP PICKER =====
+var waGroupNames = {};
+function refreshGroupFilter() {
+    var sel = document.getElementById('groupFilter');
+    if (!sel) return;
+    var prev = sel.value;
+    var jids = {};
+    document.querySelectorAll('#messagesTableBody tr[data-group]').forEach(function(tr) {
+        var g = tr.dataset.group || '';
+        if (g) jids[g] = true;
+    });
+    var html = '<option value="">كل الغرف</option>';
+    Object.keys(jids).sort().forEach(function(jid) {
+        var label = waGroupNames[jid] || jid;
+        html += '<option value="' + escapeHtml(jid) + '"' + (jid === prev ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+    });
+    sel.innerHTML = html;
+    if (prev) sel.value = prev;
+}
+function loadMultiGroups() {
+    var box = document.getElementById('multiGroupsBox');
+    if (!box) return;
+    var checked = {};
+    (document.getElementById('multiGroupJids').value || '').split(',').forEach(function(j) { if (j.trim()) checked[j.trim()] = true; });
+    fetch("{% url 'whatsapp_groups' %}")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var groups = (data && data.groups) || [];
+            waGroupNames = {};
+            groups.forEach(function(g) { waGroupNames[g.id] = g.name; });
+            refreshGroupFilter();
+            if (!groups.length) {
+                box.innerHTML = '<div style="font-size:.75rem;color:var(--text-muted);text-align:center;padding:10px">لا توجد غرف - شغّل البوت أولاً لجلب القائمة</div>';
+                return;
+            }
+            var html = '';
+            groups.forEach(function(g) {
+                var isChecked = checked[g.id] ? 'checked' : '';
+                html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--card-bg,#fff);border:1px solid var(--border);cursor:pointer;font-size:.78rem">'
+                    + '<input type="checkbox" class="mgChk" value="' + escapeHtml(g.id) + '" ' + isChecked + ' style="width:15px;height:15px;accent-color:#0891b2;cursor:pointer">'
+                    + '<span style="font-weight:700;flex:1">' + escapeHtml(g.name || g.id) + '</span>'
+                    + '<span style="color:var(--text-muted);font-size:.68rem">' + (g.members || 0) + ' عضو</span>'
+                    + '</label>';
+            });
+            box.innerHTML = html;
+        })
+        .catch(function() {
+            box.innerHTML = '<div style="font-size:.75rem;color:#dc2626;text-align:center;padding:10px">تعذر جلب قائمة الغرف</div>';
+        });
+}
+document.getElementById('multiGroupForm').addEventListener('submit', function() {
+    var ids = [];
+    document.querySelectorAll('.mgChk:checked').forEach(function(cb) { ids.push(cb.value); });
+    document.getElementById('multiGroupJids').value = ids.join(',');
+});
+document.addEventListener('DOMContentLoaded', function() {
+    loadMultiGroups();
+    refreshGroupFilter();
+});
 </script>
 {% endblock %}

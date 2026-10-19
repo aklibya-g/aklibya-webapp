@@ -12,6 +12,7 @@ const BATCH_TIMEOUT_MS = 20000;
 
 let sock = null;
 let monitoredGroupJid = process.env.GROUP_JID || '';
+let monitoredGroupJids = [];
 let monitorAll = process.env.MONITOR_ALL === '1';
 let syncFullHistory = process.env.SYNC_FULL_HISTORY === '1';
 let lastDetectedGroup = '';
@@ -42,10 +43,11 @@ async function fetchGroupJid() {
         try {
             const res = await axios.get(DJANGO + '/api/whatsapp/config/', { timeout: 5000 });
             monitoredGroupJid = normalizeGroupJid(res.data.group_jid || '');
+            monitoredGroupJids = (res.data.group_jids || '').split(',').map(s => normalizeGroupJid(s.trim())).filter(Boolean);
             monitorAll = !!res.data.monitor_all;
             syncFullHistory = !!res.data.sync_full_history;
             configReady = true;
-            const mode = monitorAll ? 'الكل' : (monitoredGroupJid || 'الكل');
+            const mode = monitorAll ? 'الكل' : (monitoredGroupJids.length ? monitoredGroupJids.length + ' غرف' : (monitoredGroupJid || 'الكل'));
             const sig = mode + '|' + syncFullHistory;
             if (sig !== lastConfigLog) {
                 lastConfigLog = sig;
@@ -128,6 +130,9 @@ function isAllowed(jid) {
     if (isSelfJid(jid)) return true;
     if (!isGroupJid(jid)) return false;
     if (monitorAll) return true;
+    if (monitoredGroupJids.length) {
+        return monitoredGroupJids.some(g => sameGroup(jid, g));
+    }
     if (!monitoredGroupJid) return jid.slice(-5) === '@g.us';
     return sameGroup(jid, monitoredGroupJid);
 }
@@ -216,6 +221,7 @@ function writeSyncResult(result) {
 }
 
 async function detectGroup() {
+    if (monitoredGroupJids.length) return monitoredGroupJids[0];
     if (monitoredGroupJid) return monitoredGroupJid;
     if (lastSeenKey && lastSeenKey.key && lastSeenKey.key.remoteJid) {
         return normalizeGroupJid(lastSeenKey.key.remoteJid);

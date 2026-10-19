@@ -3315,6 +3315,21 @@ def whatsapp_integration(request):
             setting.save()
             messages.success(request, "تم حفظ معرف المجموعة")
             return redirect("whatsapp_integration")
+        elif action == "save_groups_multi":
+            raw = request.POST.get("group_jids", "")
+            jids = []
+            for part in raw.split(","):
+                j = _normalize_group_jid(part.strip())
+                if j and j not in jids:
+                    jids.append(j)
+            setting = SystemSetting.get()
+            setting.monitored_group_jids = ",".join(jids)
+            if jids:
+                setting.monitored_group_jid = jids[0]
+                setting.monitor_all_groups = False
+            setting.save()
+            messages.success(request, f"تم حفظ {len(jids)} غرفة للمراقبة")
+            return redirect("whatsapp_integration")
         elif action == "save_full_history":
             setting = SystemSetting.get()
             setting.sync_full_history = _as_bool(request.POST.get("sync_full_history"), default=False)
@@ -3364,6 +3379,7 @@ def whatsapp_integration(request):
         "messages_list": messages_list,
         "bot_status": bot_status,
         "monitored_group": setting.monitored_group_jid,
+        "monitored_group_jids": setting.monitored_group_jids,
         "monitor_all_groups": setting.monitor_all_groups,
         "sync_full_history": setting.sync_full_history,
     })
@@ -3374,6 +3390,7 @@ def whatsapp_config(request):
     setting = SystemSetting.get()
     return JsonResponse({
         "group_jid": setting.monitored_group_jid or "",
+        "group_jids": setting.monitored_group_jids or "",
         "monitor_all": bool(setting.monitor_all_groups),
         "sync_full_history": bool(setting.sync_full_history),
     })
@@ -3502,8 +3519,11 @@ def whatsapp_anchor(request):
         since = 0
     qs = WhatsAppMessage.objects.exclude(wamsg_id="").order_by("timestamp")
     setting = SystemSetting.get()
-    if setting.monitored_group_jid:
-        qs = qs.filter(group_jid=setting.monitored_group_jid)
+    jids = [j for j in (setting.monitored_group_jids or "").split(",") if j.strip()]
+    if not jids and setting.monitored_group_jid:
+        jids = [setting.monitored_group_jid]
+    if jids:
+        qs = qs.filter(group_jid__in=jids)
     anchor = None
     covers_since = False
     if since:
