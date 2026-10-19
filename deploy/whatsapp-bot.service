@@ -1,0 +1,16 @@
+[Unit]
+Description=WhatsApp bot (Baileys/Node.js) via pm2
+After=network.target
+
+[Service]
+Type=forking
+User=www-data
+WorkingDirectory=/var/www/webapp/whatsapp-bot
+ExecStart=/usr/bin/pm2 resurrect
+ExecReload=/usr/bin/pm2 reload all
+ExecStop=/usr/bin/pm2 dump
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

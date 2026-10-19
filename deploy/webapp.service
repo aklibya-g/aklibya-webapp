@@ -1,0 +1,15 @@
+[Unit]
+Description=Al-Yamamah webapp (Django via gunicorn)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/webapp
+ExecStart=/var/www/webapp/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:1500 --workers 3 --timeout 120 --access-logfile /var/log/webapp-access.log --error-logfile /var/log/webapp-error.log
+Restart=always
+RestartSec=5
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
