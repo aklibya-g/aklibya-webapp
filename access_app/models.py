@@ -357,6 +357,8 @@ class WhatsAppMessage(models.Model):
     transfer_type = models.CharField(max_length=100, default="تحويل", verbose_name="نوع التحويل")
     wamsg_id = models.CharField(max_length=100, blank=True, default="", db_index=True, verbose_name="معرف الرسالة")
     timestamp = models.DateTimeField(verbose_name="التوقيت", default=timezone.now)
+    edited_by = models.CharField(max_length=20, blank=True, default="", verbose_name="عدّل بواسطة")  # ai / inline / manual
+    edit_log = models.TextField(blank=True, default="", verbose_name="سجل التعديلات (JSON)")
 
     class Meta:
         verbose_name = "رسالة واتساب"

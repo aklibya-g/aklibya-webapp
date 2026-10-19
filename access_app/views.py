@@ -3047,6 +3047,18 @@ def whatsapp_message_edit(request, msg_id):
     msg = get_object_or_404(WhatsAppMessage, id=msg_id)
     if request.method == "POST":
         old_amount, old_rate, old_commission, old_currency, old_phone, old_ttype = _parse_wa_message(msg.message_text)
+        old_values = {
+            "phone_number": msg.phone_number or "",
+            "amount": ("" if msg.amount is None else str(msg.amount)),
+            "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
+            "commission": ("" if msg.commission is None else str(msg.commission)),
+            "currency": msg.currency or "",
+            "transfer_type": msg.transfer_type or "",
+            "direction": msg.direction or "",
+        }
+        edit_source = (request.POST.get("edit_source") or "").strip()
+        if edit_source not in ("ai", "inline", "manual"):
+            edit_source = "manual"
         msg.sender = request.POST.get("sender", msg.sender)
         msg.message_text = request.POST.get("message_text", msg.message_text)
         msg.phone_number = request.POST.get("phone_number", "")
@@ -3062,7 +3074,32 @@ def whatsapp_message_edit(request, msg_id):
         msg.currency = cur
         msg.transfer_type = request.POST.get("transfer_type", msg.transfer_type)
         msg.direction = request.POST.get("direction", msg.direction)
-        msg.status = "معدلة"
+        new_values = {
+            "phone_number": msg.phone_number or "",
+            "amount": ("" if msg.amount is None else str(msg.amount)),
+            "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
+            "commission": ("" if msg.commission is None else str(msg.commission)),
+            "currency": msg.currency or "",
+            "transfer_type": msg.transfer_type or "",
+            "direction": msg.direction or "",
+        }
+        field_labels = {
+            "phone_number": "التليفون", "amount": "المبلغ", "exchange_rate": "السعر",
+            "commission": "العمولة", "currency": "العملة", "transfer_type": "النوع", "direction": "الاتجاه",
+        }
+        changes = []
+        for k, nv in new_values.items():
+            if (nv or "") != (old_values.get(k) or ""):
+                changes.append({"field": k, "label": field_labels.get(k, k), "old": old_values.get(k) or "—", "new": nv or "—"})
+        if changes:
+            msg.status = "معدلة"
+            msg.edited_by = edit_source
+            try:
+                prev_log = json.loads(msg.edit_log) if msg.edit_log else []
+            except Exception:
+                prev_log = []
+            prev_log.append({"source": edit_source, "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "changes": changes})
+            msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
         msg.save()
         if (msg.amount and not old_amount) or (msg.exchange_rate and not old_rate) or \
            (msg.commission and not old_commission) or (msg.currency and not old_currency) or \
@@ -3246,15 +3283,48 @@ def whatsapp_integration(request):
                 })
                 return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
+            fixed_count = 0
             for msg in all_msgs:
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
+                old_values = {
+                    "amount": ("" if msg.amount is None else str(msg.amount)),
+                    "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
+                    "commission": ("" if msg.commission is None else str(msg.commission)),
+                    "currency": msg.currency or "",
+                    "transfer_type": msg.transfer_type or "",
+                }
                 msg.amount = amount
                 msg.exchange_rate = rate
                 msg.commission = commission
                 msg.currency = currency
                 msg.transfer_type = ttype
+                new_values = {
+                    "amount": ("" if msg.amount is None else str(msg.amount)),
+                    "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
+                    "commission": ("" if msg.commission is None else str(msg.commission)),
+                    "currency": msg.currency or "",
+                    "transfer_type": msg.transfer_type or "",
+                }
+                field_labels = {
+                    "amount": "المبلغ", "exchange_rate": "السعر", "commission": "العمولة",
+                    "currency": "العملة", "transfer_type": "النوع",
+                }
+                changes = []
+                for k, nv in new_values.items():
+                    if (nv or "") != (old_values.get(k) or ""):
+                        changes.append({"field": k, "label": field_labels.get(k, k), "old": old_values.get(k) or "—", "new": nv or "—"})
+                if changes:
+                    fixed_count += 1
+                    msg.status = "معدلة"
+                    msg.edited_by = "reprocess"
+                    try:
+                        prev_log = json.loads(msg.edit_log) if msg.edit_log else []
+                    except Exception:
+                        prev_log = []
+                    prev_log.append({"source": "reprocess", "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "changes": changes})
+                    msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
                 msg.save()
-            messages.success(request, f"تم تصحيح {all_msgs.count()} رسالة")
+            messages.success(request, f"تمت معالجة {all_msgs.count()} رسالة — عُدل منها {fixed_count}")
             return redirect("whatsapp_integration")
         elif action == "sync_messages":
             _write_sync_request({

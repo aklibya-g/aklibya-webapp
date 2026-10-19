@@ -17,6 +17,12 @@
 .badge-out { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 .badge-active { background:#ecfdf5; color:#047857; border:1px solid #6ee7b7; }
 .badge-edited { background:#fffbeb; color:#b45309; border:1px solid #fcd34d; }
+.badge-edited-ai { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
+.badge-edited-reprocess { background:#fff7ed; color:#c2410c; border:1px solid #fdba74; }
+.wa-changed-cell { background:#fef2f2 !important; box-shadow:inset 0 0 0 1px #fca5a5; }
+.wa-changed-cell::after { content:'✏'; font-size:.55rem; color:#dc2626; vertical-align:super; margin-inline-start:2px; }
+#waLogOverlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:220; align-items:center; justify-content:center; }
+#waLogModal { background:var(--card-bg,#fff); border-radius:16px; border:1px solid var(--border,#e2e8f0); padding:22px; width:min(560px,94vw); max-height:85vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,.35); }
 .badge-cancelled { background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; }
 .badge-type { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 .badge-type-vcash { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
@@ -327,7 +333,8 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
                         data-amount="{{ msg.amount|default:'' }}" data-rate="{{ msg.exchange_rate|default:'' }}" data-commission="{{ msg.commission|default:'' }}"
                         data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
-                        data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}" style="cursor:pointer">
+                        data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
+                        data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
                         <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
@@ -345,7 +352,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         <td style="text-align:center">{% if msg.currency %}{% if msg.currency == 'EG' %}<span class="badge badge-cur-eg">EG</span>{% else %}<span class="badge badge-cur">{{ msg.currency }}</span>{% endif %}{% else %}-{% endif %}</td>
                         <td style="text-align:center">{% if msg.transfer_type == 'فودافون كاش' %}<span class="badge badge-type-vcash">فودافون كاش</span>{% elif msg.transfer_type == 'انستا كاش' %}<span class="badge badge-type-acash">انستا كاش</span>{% elif msg.transfer_type == 'محفظة' %}<span class="badge badge-type-wallet">محفظة</span>{% elif msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
                         <td style="text-align:center">{% if msg.direction == 'صادر' %}<span class="badge badge-out">صادر</span>{% else %}<span class="badge badge-in">وارد</span>{% endif %}</td>
-                        <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge badge-edited">معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active"><span class="dot"></span>فعالة</span>{% endif %}</td>
+                        <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge {% if msg.edited_by == 'ai' %}badge-edited-ai{% elif msg.edited_by == 'reprocess' %}badge-edited-reprocess{% else %}badge-edited{% endif %}" title="{% if msg.edited_by == 'ai' %}عُدّلت بالذكاء الاصطناعي{% elif msg.edited_by == 'reprocess' %}عُدّلت بالمصحح التلقائي{% elif msg.edited_by == 'inline' %}عُدّلت يدوياً من الجدول{% else %}عُدّلت يدوياً{% endif %}">{% if msg.edited_by == 'ai' %}🤖 {% elif msg.edited_by == 'reprocess' %}🛠 {% endif %}معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active"><span class="dot"></span>فعالة</span>{% endif %}{% if msg.edit_log %} <span class="wa-edit-log-dot" title="اضغط لعرض سجل التعديلات" onclick="event.stopPropagation();waShowEditLog(this)" data-log="{{ msg.edit_log|escape }}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;cursor:pointer;vertical-align:middle"></span>{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap">
                             <div style="font-family:Consolas,monospace;color:#475569;font-size:.7rem">{{ msg.timestamp|date:"Y-m-d" }}</div>
                             <span class="wt-time">{{ msg.timestamp|date:"h:i A" }}</span>
@@ -389,6 +396,16 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
             <button onclick="aiDeleteInvalid()" style="padding:9px 20px;border-radius:10px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.82rem"><i class="bi bi-trash"></i> حذف غير الصالحة</button>
             <button onclick="aiConfirmAll()" style="padding:9px 24px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-weight:800;border:none;cursor:pointer;font-size:.85rem;box-shadow:0 3px 12px rgba(99,102,241,.4)"><i class="bi bi-check-lg"></i> تأكيد وحفظ الكل</button>
         </div>
+    </div>
+</div>
+
+<div id="waLogOverlay" onclick="closeWaEditLog(event)">
+    <div id="waLogModal" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h4 style="margin:0;font-weight:800;font-size:1rem"><i class="bi bi-clock-history" style="color:#f59e0b"></i> سجل التعديلات</h4>
+            <button type="button" onclick="closeWaEditLog()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+        </div>
+        <div id="waLogBody"></div>
     </div>
 </div>
 {% endblock %}
@@ -510,6 +527,7 @@ function waCommitInlineEdit() {
     fd.append('transfer_type', tr.getAttribute('data-ttype') || '');
     fd.append('direction', tr.getAttribute('data-direction') || '');
     fd.set(field, val);
+    fd.append('edit_source', 'inline');
 
     td.innerHTML = '<span style="color:#94a3b8;font-size:.65rem">جاري الحفظ...</span>';
 
@@ -524,8 +542,12 @@ function waCommitInlineEdit() {
             td.innerHTML = waRenderCell(field, val);
             td.classList.add('wa-flash-ok');
             setTimeout(function() { td.classList.remove('wa-flash-ok'); }, 900);
+            tr.setAttribute('data-edited-by', 'inline');
+            var existingLog = waParseLog(tr.getAttribute('data-edit-log'));
+            existingLog.push({ source: 'inline', at: new Date().toISOString().slice(0, 19).replace('T', ' '), changes: [{ field: field, label: { phone_number: 'التليفون', amount: 'المبلغ', exchange_rate: 'السعر', currency: 'العملة', transfer_type: 'النوع', direction: 'الاتجاه' }[field] || field, old: oldVal || '—', new: val || '—' }] });
+            tr.setAttribute('data-edit-log', JSON.stringify(existingLog.slice(-20)));
             var stCell = tr.children[10];
-            if (stCell) stCell.innerHTML = '<span class="badge badge-edited">معدلة</span>';
+            if (stCell) stCell.innerHTML = '<span class="badge badge-edited" title="عُدّلت يدوياً من الجدول">✏ معدلة</span> <span class="wa-edit-log-dot" title="اضغط لعرض سجل التعديلات" onclick="event.stopPropagation();waShowEditLog(this)" data-log="' + escapeHtml(tr.getAttribute('data-edit-log')) + '" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;cursor:pointer;vertical-align:middle"></span>';
             var convCell = tr.children[6];
             if (convCell) {
                 var a = parseFloat(tr.getAttribute('data-amount')), r = parseFloat(tr.getAttribute('data-rate'));
@@ -579,6 +601,76 @@ document.addEventListener('click', function(e) {
     if (waInlineEdit && !e.target.closest('.wa-cell-editing')) waCommitInlineEdit();
 });
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') waCancelInlineEdit(); });
+
+// ===== EDIT LOG VIEWER + CHANGED-CELL HIGHLIGHT =====
+var WA_FIELD_COL = { phone_number: 2, amount: 4, exchange_rate: 5, currency: 7, transfer_type: 8, direction: 9 };
+var WA_SOURCE_LABEL = { ai: '🤖 ذكاء اصطناعي', reprocess: '🛠 مصحح تلقائي', inline: '✏ تعديل من الجدول', manual: '✋ تعديل يدوي' };
+
+function waParseLog(raw) {
+    if (!raw) return [];
+    try { return JSON.parse(raw); } catch (e) { return []; }
+}
+
+function waMarkChangedCells(tr) {
+    tr.querySelectorAll('.wa-changed-cell').forEach(function(td) { td.classList.remove('wa-changed-cell'); });
+    tr.removeAttribute('title');
+    var log = waParseLog(tr.getAttribute('data-edit-log'));
+    if (!log.length) return;
+    var last = log[log.length - 1];
+    if (!last || !last.changes) return;
+    var tips = [];
+    last.changes.forEach(function(ch) {
+        var col = WA_FIELD_COL[ch.field];
+        if (col === undefined) return;
+        var td = tr.children[col];
+        if (!td) return;
+        td.classList.add('wa-changed-cell');
+        tips.push(ch.label + ': ' + ch.old + ' ← ' + ch.new);
+    });
+    if (tips.length) tr.setAttribute('title', (WA_SOURCE_LABEL[last.source] || last.source || '') + ' | ' + tips.join(' | '));
+}
+
+function waMarkAllChanged() {
+    document.querySelectorAll('#messagesTableBody tr[data-edit-log]').forEach(waMarkChangedCells);
+}
+document.addEventListener('DOMContentLoaded', waMarkAllChanged);
+setTimeout(waMarkAllChanged, 600);
+
+function waShowEditLog(el) {
+    var log = waParseLog(el.getAttribute('data-log'));
+    var body = document.getElementById('waLogBody');
+    if (!log.length) { body.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem;text-align:center;padding:20px">لا يوجد سجل</div>'; }
+    else {
+        var html = '';
+        for (var i = log.length - 1; i >= 0; i--) {
+            var entry = log[i];
+            var srcLabel = WA_SOURCE_LABEL[entry.source] || entry.source || '?';
+            var srcColor = entry.source === 'ai' ? '#6d28d9' : entry.source === 'reprocess' ? '#c2410c' : '#b45309';
+            html += '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--bg)">';
+            html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">';
+            html += '<span style="background:' + (srcColor === '#6d28d9' ? '#f5f3ff' : srcColor === '#c2410c' ? '#fff7ed' : '#fffbeb') + ';color:' + srcColor + ';padding:2px 10px;border-radius:6px;font-weight:700;font-size:.72rem">' + escapeHtml(srcLabel) + '</span>';
+            html += '<span style="color:var(--text-muted);font-size:.68rem">' + escapeHtml(entry.at || '') + '</span>';
+            html += '</div>';
+            (entry.changes || []).forEach(function(ch) {
+                html += '<div style="display:flex;gap:6px;align-items:center;font-size:.76rem;padding:3px 0;flex-wrap:wrap">';
+                html += '<span style="font-weight:700;color:var(--text)">' + escapeHtml(ch.label) + ':</span>';
+                html += '<span style="background:#fef2f2;color:#b91c1c;padding:1px 8px;border-radius:5px;text-decoration:line-through;font-family:Consolas,monospace">' + escapeHtml(ch.old) + '</span>';
+                html += '<span style="color:var(--text-muted)">←</span>';
+                html += '<span style="background:#f0fdf4;color:#15803d;padding:1px 8px;border-radius:5px;font-weight:700;font-family:Consolas,monospace">' + escapeHtml(ch.new) + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        body.innerHTML = html;
+    }
+    document.getElementById('waLogOverlay').style.display = 'flex';
+}
+function closeWaEditLog(e) {
+    if (e && e.target && e.target.id !== 'waLogOverlay') return;
+    document.getElementById('waLogOverlay').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeWaEditLog(); });
+
 
 
 // ===== AI ANALYZE MODAL =====
@@ -710,6 +802,7 @@ function aiConfirmAll() {
         fd.append('transfer_type', aiData.find(function(x){return x.id===e.id;}).ttype || 'تحويل');
         fd.append('direction', aiData.find(function(x){return x.id===e.id;}).direction || 'وارد');
         fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        fd.append('edit_source', 'ai');
         return fetch('/whatsapp/message/' + e.id + '/edit/', {method:'POST', body: fd, headers:{'X-Requested-With':'XMLHttpRequest'}});
     });
     Promise.all(promises).then(function(){ location.reload(); }).catch(function(){ btn.disabled=false; btn.innerHTML='<i class="bi bi-check-lg"></i> تأكيد وحفظ الكل'; });
