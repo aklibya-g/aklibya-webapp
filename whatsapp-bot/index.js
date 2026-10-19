@@ -172,6 +172,7 @@ function noteKey(msg) {
 }
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash'];
 
 async function analyzeImageWithGemini(msg) {
     if (!GEMINI_KEY || !sock) return null;
@@ -187,25 +188,42 @@ async function analyzeImageWithGemini(msg) {
         const b64 = buffer.toString('base64');
         const mime = imgNode.mimetype || 'image/jpeg';
         const prompt = 'هذه صورة من غرفة واتساب لشركة تحويلات مالية. اقرأ كل الأرقام والنصوص المالية الظاهرة فيها. أعد JSON فقط بدون أي نص آخر بالشكل: {"rate": number|null, "currency": "د ل"|"ج م"|null, "amount": number|null, "phone": string|null, "transfer_type": "تحويل"|"محفظة"|"فودافون كاش"|"انستا كاش"|null, "summary": "ملخص عربي قصير لمحتوى الصورة"}. rate هو سعر التحويل الظاهر في الصورة (مثال: 5.30 أو 13.25). currency استنتجها من سياق الصورة (مصر=ج م، ليبيا/تونس/الجزائر=د ل). إذا الصورة إعلان سعر فقط بدون معاملة فاترك amount و phone و transfer_type = null.';
-        const res = await axios.post(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + GEMINI_KEY,
-            {
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        { inline_data: { mime_type: mime, data: b64 } }
-                    ]
-                }],
-                generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
-            },
-            { timeout: 30000 }
-        );
-        const txt = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const jsonMatch = txt.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) return null;
-        const parsed = JSON.parse(jsonMatch[0]);
-        console.log('👁️ صورة محللة: rate=' + parsed.rate + ' cur=' + parsed.currency + ' — ' + (parsed.summary || '').substring(0, 60));
-        return parsed;
+        for (const model of GEMINI_MODELS) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const res = await axios.post(
+                        'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + GEMINI_KEY,
+                        {
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    { inline_data: { mime_type: mime, data: b64 } }
+                                ]
+                            }],
+                            generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+                        },
+                        { timeout: 45000 }
+                    );
+                    const txt = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    const jsonMatch = txt.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) return null;
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    console.log('👁️ صورة محللة (' + model + '): rate=' + parsed.rate + ' cur=' + parsed.currency + ' — ' + (parsed.summary || '').substring(0, 60));
+                    return parsed;
+                } catch (e) {
+                    const code = e && e.response && e.response.status;
+                    if (code === 404) break;
+                    if ((code === 503 || code === 429) && attempt === 0) {
+                        console.log('⚠️ ' + model + ' مشغول (HTTP ' + code + ') — إعادة محاولة...');
+                        await sleep(3000);
+                        continue;
+                    }
+                    console.log('⚠️ فشل تحليل الصورة عبر ' + model + ': HTTP ' + code + ' ' + (e && e.message));
+                    break;
+                }
+            }
+        }
+        return null;
     } catch (e) {
         console.log('⚠️ فشل تحليل الصورة: ' + (e && e.message));
         return null;
@@ -241,13 +259,10 @@ async function sendToDjango(msg, opts) {
     let finalText = text || '';
     if (!finalText && imageAnalysis && imageAnalysis.summary) {
         finalText = '[صورة] ' + imageAnalysis.summary;
+    } else if (!finalText && isImage) {
+        finalText = '[صورة] بانتظار التحليل';
     }
-    if (!finalText) {
-        if (isImage) {
-            console.log('🖼️ صورة بدون تحليل ولم تُحفظ');
-        }
-        return 'skip';
-    }
+    if (!finalText) return 'skip';
     try {
         const payload = {
             jid: msg.key.remoteJid,
