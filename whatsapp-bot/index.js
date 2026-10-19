@@ -12,6 +12,7 @@ const BATCH_TIMEOUT_MS = 45000;
 
 let sock = null;
 let monitoredGroupJid = process.env.GROUP_JID || '';
+let syncFullHistory = process.env.SYNC_FULL_HISTORY === '1';
 let lastDetectedGroup = '';
 let lastSeenKey = null;
 let pulling = false;
@@ -36,7 +37,8 @@ async function fetchGroupJid() {
     try {
         const res = await axios.get(DJANGO + '/api/whatsapp/config/');
         monitoredGroupJid = res.data.group_jid || '';
-        console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل'));
+        syncFullHistory = !!res.data.sync_full_history;
+        console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل') + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
     } catch (e) { }
 }
 
@@ -96,7 +98,12 @@ async function sendToDjango(msg, opts) {
     if (!monitoredGroupJid && jid && jid.endsWith('@g.us')) {
         await reportGroup(jid);
     }
-    if (!isAllowed(jid)) return 'skip';
+    if (!isAllowed(jid)) {
+        if (jid && jid.endsWith('@g.us')) {
+            console.log('🚫 تجاهل رسالة من مجموعة غير مراقبة: ' + jid);
+        }
+        return 'skip';
+    }
     const text = extractText(msg.message);
     if (!text) return 'skip';
     const sender = msg.key.participant || msg.key.remoteJid;
@@ -281,6 +288,67 @@ async function pullRange(since, until, allowDup) {
     return result;
 }
 
+const HISTORY_TYPE_NAMES = { 0: 'أولية', 2: 'كاملة', 3: 'حديثة', 6: 'عند الطلب' };
+
+async function forwardHistorySync(data) {
+    const name = HISTORY_TYPE_NAMES[data.syncType] || String(data.syncType);
+    const all = data.messages || [];
+    const msgs = all.filter(m => m && m.key && m.message && monitoredGroupJid && m.key.remoteJid === monitoredGroupJid);
+    if (!msgs.length) {
+        console.log('📥 مزامنة تاريخ (' + name + '): لا رسائل للمجموعة المراقبة من أصل ' + all.length);
+        return;
+    }
+    console.log('📥 مزامنة تاريخ (' + name + '): ' + msgs.length + ' رسالة للمجموعة المراقبة');
+    let saved = 0;
+    let dups = 0;
+    for (const m of msgs) {
+        const status = await sendToDjango(m, { allowDup: false });
+        if (status === 'dup') dups++;
+        else if (status === 'saved') saved++;
+        await sleep(120);
+    }
+    console.log('✅ انتهت مزامنة التاريخ (' + name + '): جديد ' + saved + ' | مكرر ' + dups);
+    if (!pulling) {
+        writeSyncResult({
+            ok: true, found: msgs.length, saved: saved, duplicates: dups, rounds: 1,
+            error: null, mode: 'history-' + data.syncType
+        });
+    }
+}
+
+async function selfProbe() {
+    const result = { ok: false, found: 0, rounds: 1, error: null, mode: 'selfprobe' };
+    if (!sock || !sock.user) {
+        result.error = 'البوت غير متصل';
+        return result;
+    }
+    const me = (sock.user.id || '').split(':')[0] + '@s.whatsapp.net';
+    const nowSec = Math.floor(Date.now() / 1000);
+    let pdoId;
+    try {
+        pdoId = await sock.fetchMessageHistory(
+            BATCH_SIZE,
+            { remoteJid: me, fromMe: true, id: 'SELFPROBE0' },
+            nowSec * 1000
+        );
+        console.log('📤 selfprobe PDO id=' + pdoId + ' chat=' + me);
+    } catch (e) {
+        result.error = 'فشل إرسال الطلب: ' + ((e && e.message) || e);
+        return result;
+    }
+    await sleep(1500);
+    const batch = await requestHistoryBatch({ remoteJid: me, fromMe: true, id: pdoId }, nowSec);
+    if (!batch) {
+        result.error = 'لا يوجد رد من الهاتف على طلب السحب (selfprobe)';
+        return result;
+    }
+    result.found = (batch.messages || []).length;
+    result.chats = (batch.chats || []).length;
+    result.syncType = batch.syncType;
+    result.ok = true;
+    return result;
+}
+
 async function runPull(req) {
     if (pulling) {
         queuedRequests.push(req);
@@ -289,7 +357,11 @@ async function runPull(req) {
     pulling = true;
     let result;
     try {
-        result = await pullRange(Number(req.since) || 0, Number(req.until) || Math.floor(Date.now() / 1000), !!req.allow_dup);
+        if (req.mode === 'selfprobe') {
+            result = await selfProbe();
+        } else {
+            result = await pullRange(Number(req.since) || 0, Number(req.until) || Math.floor(Date.now() / 1000), !!req.allow_dup);
+        }
     } catch (e) {
         result = { ok: false, found: 0, saved: 0, duplicates: 0, rounds: 0, error: (e && e.message) || 'خطأ غير معروف' };
     }
@@ -367,13 +439,17 @@ async function startBot() {
         version,
         auth: state,
         printQRInTerminal: false,
-        browser: ['Chrome', 'Desktop', '10.0'],
-        syncFullHistory: false,
+        browser: syncFullHistory ? ['Windows', 'Chrome', '10.0'] : ['Chrome', 'Desktop', '10.0'],
+        syncFullHistory: syncFullHistory,
         defaultQueryTimeoutMs: undefined,
         markOnlineOnConnect: false,
         fireInitQueries: false,
         generateHighQualityLinkPreview: false,
-        shouldSyncHistoryMessage: (h) => !!h && h.syncType === HISTORY_SYNC_ON_DEMAND,
+        shouldSyncHistoryMessage: (h) => {
+            if (!h) return false;
+            if (syncFullHistory) return true;
+            return h.syncType === HISTORY_SYNC_ON_DEMAND;
+        },
     });
 
     fs.writeFileSync('whatsapp_bot.pid', process.pid.toString());
@@ -381,12 +457,18 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('messaging-history.set', (data) => {
-        if (!data || data.syncType !== HISTORY_SYNC_ON_DEMAND) return;
-        if (pendingHistoryResolve) {
-            const resolver = pendingHistoryResolve;
-            pendingHistoryResolve = null;
-            resolver(data);
+    sock.ev.on('messaging-history.set', async (data) => {
+        if (!data) return;
+        if (data.syncType === HISTORY_SYNC_ON_DEMAND) {
+            if (pendingHistoryResolve) {
+                const resolver = pendingHistoryResolve;
+                pendingHistoryResolve = null;
+                resolver(data);
+            }
+            return;
+        }
+        if (syncFullHistory && (data.syncType === 0 || data.syncType === 2 || data.syncType === 3)) {
+            await forwardHistorySync(data);
         }
     });
 

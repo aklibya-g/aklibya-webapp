@@ -3119,13 +3119,19 @@ def whatsapp_integration(request):
                 except (ValueError, PermissionError):
                     pass
             try:
+                env = os.environ.copy()
+                if SystemSetting.get().sync_full_history:
+                    env["SYNC_FULL_HISTORY"] = "1"
+                else:
+                    env.pop("SYNC_FULL_HISTORY", None)
                 subprocess.Popen(
                     ["node", "index.js"],
                     cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    shell=True
+                    shell=True,
+                    env=env,
                 )
                 messages.success(request, "تم تشغيل بوت الواتساب")
             except Exception as e:
@@ -3216,6 +3222,15 @@ def whatsapp_integration(request):
             setting.save()
             messages.success(request, "تم حفظ معرف المجموعة")
             return redirect("whatsapp_integration")
+        elif action == "save_full_history":
+            setting = SystemSetting.get()
+            setting.sync_full_history = _as_bool(request.POST.get("sync_full_history"), default=False)
+            setting.save()
+            if setting.sync_full_history:
+                messages.success(request, "تم تفعيل مزامنة التاريخ الكامل - أوقف البوت ثم أعد تشغيله (ويفضل حذف الجلسة وإعادة الربط)")
+            else:
+                messages.success(request, "تم إلغاء مزامنة التاريخ الكامل")
+            return redirect("whatsapp_integration")
         elif action == "delete_session":
             import shutil
             session_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "auth_session")
@@ -3234,25 +3249,39 @@ def whatsapp_integration(request):
     result = _consume_sync_result()
     if result:
         if result.get("ok"):
-            messages.success(
-                request,
-                f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
-                f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
-            )
+            if str(result.get("mode", "")).startswith("history"):
+                messages.success(
+                    request,
+                    f"وصلت مزامنة تاريخ واتساب: وُجد {result.get('found', 0)} | "
+                    f"جديد {result.get('saved', 0)} | مكرر {result.get('duplicates', 0)}"
+                )
+            else:
+                messages.success(
+                    request,
+                    f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
+                    f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
+                )
         else:
-            messages.error(request, f"فشل السحب: {result.get('error', 'خطأ غير معروف')}")
+            err = result.get("error", "خطأ غير معروف")
+            if "لا يوجد رد" in err or "انتهت مهلة" in err:
+                err += " | جرّب تفعيل مزامنة التاريخ الكامل ثم أعد ربط الواتساب"
+            messages.error(request, f"فشل السحب: {err}")
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
         "messages_list": messages_list,
         "bot_status": bot_status,
         "monitored_group": setting.monitored_group_jid,
+        "sync_full_history": setting.sync_full_history,
     })
 
 
 @csrf_exempt
 def whatsapp_config(request):
     setting = SystemSetting.get()
-    return JsonResponse({"group_jid": setting.monitored_group_jid or ""})
+    return JsonResponse({
+        "group_jid": setting.monitored_group_jid or "",
+        "sync_full_history": bool(setting.sync_full_history),
+    })
 
 
 @csrf_exempt
