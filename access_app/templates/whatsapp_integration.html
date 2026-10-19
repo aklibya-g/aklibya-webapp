@@ -145,6 +145,29 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                 </button>
             </form>
         </div>
+
+        <form method="POST" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="sync_range">
+            <div>
+                <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">من تاريخ</label>
+                <input type="date" name="date_from" required style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.88rem;background:var(--card-bg);color:var(--text)">
+            </div>
+            <div>
+                <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">إلى تاريخ</label>
+                <input type="date" name="date_to" required style="padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.88rem;background:var(--card-bg);color:var(--text)">
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;font-size:.85rem;font-weight:700;color:#92400e;cursor:pointer;user-select:none">
+                <input type="checkbox" name="allow_dup" value="1" style="width:17px;height:17px;cursor:pointer;accent-color:#f59e0b">
+                السماح بالتكرار
+            </label>
+            <button type="submit" style="padding:10px 20px;border-radius:10px;background:#7c3aed;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.88rem">
+                <i class="bi bi-calendar-range"></i> سحب حسب التاريخ
+            </button>
+            <span style="font-size:.75rem;color:var(--text-muted);max-width:420px;line-height:1.6">
+                يسحب الرسائل الموجودة <b>قبل</b> آخر رسالة محفوظة ضمن المدة المحددة. بدون تكرار = يتم تجاهل الرسائل المحفوظة سابقاً.
+            </span>
+        </form>
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">

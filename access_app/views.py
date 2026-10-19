@@ -3,6 +3,7 @@ import os
 import csv
 import subprocess
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import models
@@ -11,6 +12,7 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash, WhatsAppMessage, WhatsAppQRState
@@ -19,6 +21,71 @@ from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
 
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backups")
+
+WA_TZ = ZoneInfo("Africa/Tripoli")
+
+
+def _bot_dir():
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot")
+
+
+def _wa_ts_to_naive(ts):
+    try:
+        t = float(ts)
+        if t > 1e12:
+            t = t / 1000.0
+        if t <= 0:
+            raise ValueError
+        return datetime.fromtimestamp(t, WA_TZ).replace(tzinfo=None)
+    except Exception:
+        return timezone.now()
+
+
+def _naive_to_unix(dt):
+    try:
+        return int(dt.replace(tzinfo=WA_TZ).timestamp())
+    except Exception:
+        return 0
+
+
+def _as_bool(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
+
+
+def _wa_is_duplicate(wamsg_id, sender, jid, text):
+    if wamsg_id:
+        return WhatsAppMessage.objects.filter(wamsg_id=wamsg_id).exists()
+    return WhatsAppMessage.objects.filter(
+        wamsg_id="", sender=sender, group_jid=jid, message_text=text
+    ).exists()
+
+
+def _write_sync_request(payload):
+    path = os.path.join(_bot_dir(), "sync_request")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False)
+    return path
+
+
+def _consume_sync_result():
+    path = os.path.join(_bot_dir(), "sync_result")
+    if not os.path.exists(path):
+        return None
+    data = None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        pass
+    try:
+        os.remove(path)
+    except Exception:
+        pass
+    return data
 
 
 def _ensure_backup_dir():
@@ -3001,7 +3068,7 @@ def whatsapp_message_delete(request, msg_id):
 
 @login_required_custom
 def whatsapp_messages_api(request):
-    messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
+    messages_list = WhatsAppMessage.objects.all().order_by("-timestamp", "-id")[:1000]
     return render(request, "whatsapp_messages_partial.html", {
         "messages_list": messages_list,
     })
@@ -3027,7 +3094,7 @@ def whatsapp_integration(request):
     user = get_current_user(request)
     if not user:
         return redirect("index")
-    messages_list = WhatsAppMessage.objects.all().order_by("-id")[:50]
+    messages_list = WhatsAppMessage.objects.all().order_by("-timestamp", "-id")[:1000]
     bot_status = "مفصول"
     pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
     if os.path.exists(pid_path):
@@ -3102,16 +3169,45 @@ def whatsapp_integration(request):
             messages.success(request, f"تم تصحيح {all_msgs.count()} رسالة")
             return redirect("whatsapp_integration")
         elif action == "sync_messages":
-            last_msg = WhatsAppMessage.objects.order_by("-timestamp").first()
-            since_ts = int(last_msg.timestamp.timestamp()) if last_msg else 0
-            sync_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "whatsapp-bot", "sync_request"
+            _write_sync_request({
+                "mode": "all",
+                "since": 0,
+                "until": int(timezone.now().timestamp()),
+                "allow_dup": False,
+            })
+            messages.success(request, "تم إرسال طلب سحب كل الرسائل السابقة (تحديث تلقائي للرسائل المفقودة)")
+            return redirect("whatsapp_integration")
+        elif action == "sync_range":
+            date_from = (request.POST.get("date_from") or "").strip()
+            date_to = (request.POST.get("date_to") or "").strip()
+            allow_dup = _as_bool(request.POST.get("allow_dup"), default=False)
+            if not date_from or not date_to:
+                messages.error(request, "يجب تحديد تاريخ البداية والنهاية")
+                return redirect("whatsapp_integration")
+            try:
+                d1 = datetime.strptime(date_from, "%Y-%m-%d")
+                d2 = datetime.strptime(date_to, "%Y-%m-%d")
+            except ValueError:
+                messages.error(request, "صيغة التاريخ غير صحيحة")
+                return redirect("whatsapp_integration")
+            if d2 < d1:
+                messages.error(request, "تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
+                return redirect("whatsapp_integration")
+            since_ts = int(d1.replace(tzinfo=WA_TZ).timestamp())
+            until_ts = int(d2.replace(hour=23, minute=59, second=59, tzinfo=WA_TZ).timestamp())
+            if until_ts > int(timezone.now().timestamp()) + 60:
+                until_ts = int(timezone.now().timestamp())
+            _write_sync_request({
+                "mode": "range",
+                "since": since_ts,
+                "until": until_ts,
+                "allow_dup": allow_dup,
+            })
+            messages.success(
+                request,
+                f"تم إرسال طلب سحب رسائل من {date_from} إلى {date_to} "
+                f"({'مع التكرار' if allow_dup else 'بدون تكرار'})"
             )
-            import time as _time
-            with open(sync_path, "w") as f:
-                f.write(str(since_ts))
-            messages.success(request, "تم إرسال طلب سحب الرسائل المفقودة")
             return redirect("whatsapp_integration")
         elif action == "save_group":
             group_jid = request.POST.get("group_jid", "").strip()
@@ -3135,6 +3231,16 @@ def whatsapp_integration(request):
             messages.success(request, f"تم حذف جميع الرسائل ({count})")
             return redirect("whatsapp_integration")
     setting = SystemSetting.get()
+    result = _consume_sync_result()
+    if result:
+        if result.get("ok"):
+            messages.success(
+                request,
+                f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
+                f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
+            )
+        else:
+            messages.error(request, f"فشل السحب: {result.get('error', 'خطأ غير معروف')}")
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
         "messages_list": messages_list,
@@ -3164,6 +3270,38 @@ def whatsapp_report_group(request):
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)}, status=400)
     return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
+
+
+@csrf_exempt
+def whatsapp_anchor(request):
+    since = 0
+    try:
+        since = int(request.GET.get("since") or 0)
+    except (TypeError, ValueError):
+        since = 0
+    qs = WhatsAppMessage.objects.exclude(wamsg_id="").order_by("timestamp")
+    setting = SystemSetting.get()
+    if setting.monitored_group_jid:
+        qs = qs.filter(group_jid=setting.monitored_group_jid)
+    anchor = None
+    covers_since = False
+    if since:
+        since_dt = datetime.fromtimestamp(since, WA_TZ).replace(tzinfo=None)
+        anchor = qs.filter(timestamp__gte=since_dt).first()
+        covers_since = anchor is not None
+    if anchor is None:
+        anchor = qs.last()
+        covers_since = anchor is not None and _naive_to_unix(anchor.timestamp) >= since
+    if anchor is None:
+        return JsonResponse({"available": False, "has_wamsg": False})
+    return JsonResponse({
+        "available": True,
+        "has_wamsg": True,
+        "covers_since": covers_since,
+        "id": anchor.wamsg_id,
+        "from_me": anchor.direction == "صادر",
+        "ts": _naive_to_unix(anchor.timestamp),
+    })
 
 
 @csrf_exempt
@@ -3222,6 +3360,10 @@ def whatsapp_webhook(request):
             text = data.get("message", "")
             sender = data.get("sender", "")
             jid = data.get("jid", "")
+            wamsg_id = str(data.get("msg_id") or "").strip()
+            allow_dup = _as_bool(data.get("allow_dup"), default=True)
+            if not allow_dup and _wa_is_duplicate(wamsg_id, sender, jid, text):
+                return JsonResponse({"status": "success", "saved": False, "duplicate": True})
             amount, rate, commission, currency, phone, ttype = _parse_wa_message(text)
             WhatsAppMessage.objects.create(
                 sender=sender,
@@ -3235,7 +3377,8 @@ def whatsapp_webhook(request):
                 direction=data.get("direction", "وارد"),
                 status=data.get("status", "فعالة"),
                 transfer_type=ttype,
-                timestamp=timezone.now(),
+                wamsg_id=wamsg_id,
+                timestamp=_wa_ts_to_naive(data.get("timestamp")),
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:

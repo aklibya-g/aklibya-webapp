@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
 
 
@@ -354,7 +355,8 @@ class WhatsAppMessage(models.Model):
     direction = models.CharField(max_length=10, default="وارد", verbose_name="الاتجاه")
     status = models.CharField(max_length=10, default="فعالة", verbose_name="الحالة")
     transfer_type = models.CharField(max_length=100, default="تحويل", verbose_name="نوع التحويل")
-    timestamp = models.DateTimeField(verbose_name="التوقيت", auto_now_add=True)
+    wamsg_id = models.CharField(max_length=100, blank=True, default="", db_index=True, verbose_name="معرف الرسالة")
+    timestamp = models.DateTimeField(verbose_name="التوقيت", default=timezone.now)
 
     class Meta:
         verbose_name = "رسالة واتساب"

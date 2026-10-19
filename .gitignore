@@ -14,4 +14,5 @@ whatsapp-bot/node_modules/
 whatsapp-bot/whatsapp_bot.pid
 whatsapp-bot/wa_bot.log
 whatsapp-bot/sync_request
+whatsapp-bot/sync_result
 whatsapp-bot/auth_session/
