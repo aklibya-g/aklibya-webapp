@@ -2,166 +2,122 @@
 {% load humanize %}{% load app_tags %}{% load l10n %}
 {% block content %}
 <style>
-.set-tbl { width:100%; border-collapse:collapse; font-size:.78rem; background:#fff; }
-.set-tbl th { background:#1e293b; color:#f1f5f9; padding:10px 8px; font-weight:700; text-align:center; border:1px solid #475569; white-space:nowrap; }
-.set-tbl td { padding:8px; border:1px solid #e2e8f0; text-align:center; }
-.set-tbl tbody tr:hover td { background:#f8fafc; }
-.set-tbl .num { font-family:Consolas,monospace; font-weight:700; }
-.set-box { border-radius:14px; border:1px solid var(--border); padding:16px 18px; background:var(--card-bg); }
-.set-sum { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
-.set-sum .b { flex:1; min-width:180px; border-radius:12px; padding:14px 16px; text-align:center; border:2px solid; }
-.set-sum .b .l { font-size:.75rem; font-weight:700; margin-bottom:4px; }
-.set-sum .b .v { font-size:1.25rem; font-weight:800; font-family:Consolas,monospace; }
-.sec-title { font-weight:800; font-size:.95rem; margin:18px 0 10px; display:flex; align-items:center; gap:8px; }
+.stmt-wrap { max-width:1180px; margin:0 auto; background:#fff; border:1px solid #d4d0c8; }
 @media print {
     body * { visibility:hidden !important; }
-    #setPrint, #setPrint * { visibility:visible !important; }
-    #setPrint { position:absolute; top:0; right:0; left:0; padding:0; }
+    #stmtPrint, #stmtPrint * { visibility:visible !important; }
+    #stmtPrint { position:absolute; top:0; right:0; left:0; }
     .no-print { display:none !important; }
+    .stmt-wrap { border:none; }
 }
+/* ترويسة */
+.stmt-head { background:#8c8c8c; color:#fff; text-align:center; font-weight:800; padding:14px; font-size:1.15rem; letter-spacing:1px; }
+.stmt-titlebar { display:flex; align-items:center; justify-content:space-between; padding:16px 22px 10px; gap:16px; flex-wrap:wrap; }
+.stmt-titlebar .t-right { font-size:1.35rem; font-weight:900; color:#111; }
+.stmt-titlebar .t-mid { font-size:.95rem; font-weight:700; color:#333; }
+.stmt-titlebar .t-left { font-size:.95rem; font-weight:700; color:#333; }
+.stmt-daterow { padding:2px 22px 14px; font-size:.95rem; font-weight:700; color:#222; display:flex; gap:8px; align-items:center; }
+/* الجدول */
+table.stmt { width:100%; border-collapse:collapse; direction:rtl; font-size:.82rem; }
+table.stmt th, table.stmt td { border:1px solid #999; padding:8px 10px; text-align:center; vertical-align:middle; }
+table.stmt thead th { background:#c8c8c8; color:#111; font-weight:800; font-size:.85rem; }
+table.stmt thead th.h-credit { background:#bfe6c8; color:#0a5c2e; }
+table.stmt thead th.h-debit { background:#f3c2c2; color:#7a1010; }
+table.stmt td { background:#fff; }
+table.stmt td.date { background:#fff6b0; font-weight:700; white-space:nowrap; }
+table.stmt td.credit { background:#e7f6ec; font-family:Consolas,monospace; font-weight:700; color:#0a5c2e; }
+table.stmt td.debit { background:#fdecec; font-family:Consolas,monospace; font-weight:700; color:#7a1010; }
+table.stmt td.bal { font-family:Consolas,monospace; font-weight:700; }
+table.stmt td.bal.neg { color:#b91c1c; }
+table.stmt td.bal.pos { color:#15803d; }
+table.stmt td.amount { font-family:Consolas,monospace; font-weight:700; }
+table.stmt td.notes { text-align:right; font-size:.78rem; color:#333; max-width:220px; }
+table.stmt td.ref { font-family:Consolas,monospace; font-size:.78rem; }
+table.stmt tbody tr:hover td { filter:brightness(.97); }
+/* النهاية */
+.stmt-foot { display:flex; align-items:stretch; justify-content:space-between; gap:16px; padding:14px 22px; flex-wrap:wrap; }
+.stmt-foot .ft-note { flex:2; min-width:260px; font-size:.78rem; color:#333; line-height:1.7; }
+.stmt-foot .ft-total { flex:1; min-width:260px; display:flex; align-items:center; gap:0; border:2px solid #999; }
+.stmt-foot .ft-total .lbl { background:#eee; padding:10px 14px; font-weight:800; font-size:.85rem; white-space:nowrap; }
+.stmt-foot .ft-total .val { padding:10px 18px; font-weight:900; color:#fff; font-family:Consolas,monospace; font-size:1.05rem; flex:1; text-align:center; }
+.stmt-foot .ft-cur { background:#eee; padding:10px 14px; font-weight:800; font-size:.85rem; white-space:nowrap; }
+/* شريط الأدوات */
+.stmt-bar { max-width:1180px; margin:0 auto 12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.stmt-bar form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.stmt-bar input[type=date] { padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-size:.8rem; }
+.stmt-bar button, .stmt-bar a.btn { padding:6px 14px; border-radius:8px; font-weight:700; font-size:.8rem; cursor:pointer; border:1px solid transparent; text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
+.stmt-warn { max-width:1180px; margin:0 auto 12px; padding:8px 14px; border-radius:8px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:.78rem; font-weight:600; }
 </style>
 
-<div style="max-width:1500px;margin:0 auto">
-    <div id="setPrint">
-        <div class="set-box">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-                <h3 style="margin:0;font-weight:800"><i class="bi bi-arrow-left-right" style="color:#6366f1"></i> كشف مقاصة الحسابات</h3>
-                <div class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <form method="GET" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <input type="date" name="from" value="{{ date_from }}" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:.78rem">
-                        <span style="color:var(--text-muted);font-size:.75rem">إلى</span>
-                        <input type="date" name="to" value="{{ date_to }}" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:.78rem">
-                        <button type="submit" style="padding:6px 16px;border-radius:8px;background:#6366f1;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">تطبيق</button>
-                        {% if date_from or date_to %}<a href="{% url 'whatsapp_settlement' %}" style="padding:6px 12px;border-radius:8px;background:#f1f5f9;color:#475569;font-weight:700;border:1px solid var(--border);font-size:.78rem;text-decoration:none">الكل</a>{% endif %}
-                    </form>
-                    <button onclick="window.print()" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem"><i class="bi bi-printer"></i> طباعة</button>
-                    <a href="{% url 'whatsapp_integration' %}" style="padding:6px 14px;border-radius:8px;background:#f1f5f9;color:#475569;font-weight:700;border:1px solid var(--border);font-size:.78rem;text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
-                </div>
-            </div>
+<div class="stmt-bar no-print">
+    <form method="GET">
+        <input type="date" name="from" value="{{ date_from }}">
+        <span style="color:#666;font-size:.8rem">إلى</span>
+        <input type="date" name="to" value="{{ date_to }}">
+        <button type="submit" style="background:#6366f1;color:#fff">تطبيق</button>
+        {% if date_from or date_to %}<a href="{% url 'whatsapp_settlement' %}" class="btn" style="background:#f1f5f9;color:#475569;border-color:#ddd">الكل</a>{% endif %}
+    </form>
+    <button onclick="window.print()" style="background:#fff7ed;color:#ea580c;border-color:#fed7aa"><i class="bi bi-printer"></i> طباعة / PDF</button>
+    <a href="{% url 'whatsapp_integration' %}" class="btn" style="background:#f1f5f9;color:#475569;border-color:#ddd"><i class="bi bi-arrow-right"></i> رجوع</a>
+</div>
 
-            <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:14px;line-height:1.7">
-                <b>مكتب شعبان العربي ⚜️</b> ↔ <b>مكتب الزاجل الجميل 📍</b> — غرفة: الزاجل (الجميل)📍- العربي⚜️<br>
-                كل المبالغ محسوبة <b>بالليبي (د ل)</b>. تحويلات مصر تُحوَّل بالسعر الساري وقتها.
-            </div>
+{% if skipped_no_rate %}
+<div class="stmt-warn"><i class="bi bi-exclamation-triangle"></i> {{ skipped_no_rate }} تحويل مصري تخطّى (لا يوجد سعر صرف مسجّل له)</div>
+{% endif %}
 
-            <div class="set-sum">
-                <div class="b" style="background:#f0fdf4;border-color:#22c55e">
-                    <div class="l" style="color:#15803d">الدائن — من الزاجل لك (وارد)</div>
-                    <div class="v" style="color:#15803d">{{ credit_total|floatformat:2 }}</div>
-                    <div style="font-size:.7rem;color:#16a34a;margin-top:2px">د ل ({{ credit_rows|length }} تحويل)</div>
-                </div>
-                <div class="b" style="background:#fef2f2;border-color:#ef4444">
-                    <div class="l" style="color:#b91c1c">المدين — منك للزاجل (صادر)</div>
-                    <div class="v" style="color:#b91c1c">{{ debit_total|floatformat:2 }}</div>
-                    <div style="font-size:.7rem;color:#dc2626;margin-top:2px">د ل ({{ debit_rows|length }} تحويل)</div>
-                </div>
-                <div class="b" style="background:{% if balance > 0 %}#f0fdf4;border-color:#22c55e{% elif balance < 0 %}#fef2f2;border-color:#ef4444{% else %}#f8fafc;border-color:#cbd5e1{% endif %}">
-                    <div class="l" style="color:var(--text)">الصافي — {{ balance_label }}</div>
-                    <div class="v" style="color:{% if balance > 0 %}#15803d{% elif balance < 0 %}#b91c1c{% else %}#475569{% endif %}">{{ balance|floatformat:2 }}</div>
-                    <div style="font-size:.7rem;color:var(--text-muted);margin-top:2px">د ل</div>
-                </div>
-            </div>
+<div class="stmt-wrap" id="stmtPrint">
+    <div class="stmt-head">اليمامة</div>
 
-            {% if skipped_no_rate %}
-            <div style="padding:8px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.75rem;font-weight:600;margin-bottom:14px">
-                <i class="bi bi-exclamation-triangle"></i> {{ skipped_no_rate }} تحويل مصري تخطّى (لا يوجد سعر صرف مسجّل له)
-            </div>
-            {% endif %}
+    <div class="stmt-titlebar">
+        <div class="t-right">كشف حسابكم لدينا</div>
+        <div class="t-mid">{{ stmt_no }}</div>
+        <div class="t-left">دينار ليبي</div>
+    </div>
 
-            <div class="sec-title" style="color:#15803d"><i class="bi bi-arrow-down-left"></i> الدائن — تحويلات واردة من الزاجل (مصري + ليبي)</div>
-            <div style="overflow-x:auto">
-                <table class="set-tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>التاريخ</th>
-                            <th>النوع</th>
-                            <th>المبلغ الأصلي</th>
-                            <th>العملة</th>
-                            <th>السعر</th>
-                            <th>القيمة بالليبي</th>
-                            <th>التليفون</th>
-                            <th>المستفيد / النص</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in credit_rows %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td style="white-space:nowrap;font-size:.72rem">{{ r.msg.timestamp|date:"Y-m-d" }}<br><span style="color:#64748b">{{ r.msg.timestamp|date:"h:i A" }}</span></td>
-                            <td><span style="padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700;background:{% if r.kind == 'مصري ← ليبي' %}#dbeafe;color:#1d4ed8{% else %}#ede9fe;color:#6d28d9{% endif %}">{{ r.kind }}</span></td>
-                            <td class="num" dir="ltr">{{ r.msg.amount|western:2 }}</td>
-                            <td>{{ r.msg.currency|default:"-" }}</td>
-                            <td class="num" dir="ltr">{{ r.msg.exchange_rate|default:"-"|western:2 }}</td>
-                            <td class="num" style="color:#15803d" dir="ltr">{{ r.lyd|western:2 }}</td>
-                            <td dir="ltr" style="font-family:Consolas,monospace;font-size:.72rem">{{ r.msg.phone_number|default:"-" }}</td>
-                            <td style="text-align:right;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem" title="{{ r.msg.message_text }}">{{ r.msg.message_text|truncatechars:60 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="9" style="color:var(--text-muted);padding:20px">لا توجد تحويلات واردة</td></tr>
-                        {% endfor %}
-                    </tbody>
-                    {% if credit_rows %}
-                    <tfoot>
-                        <tr style="background:#f0fdf4;font-weight:800">
-                            <td colspan="6" style="text-align:left">إجمالي الدائن</td>
-                            <td class="num" style="color:#15803d" dir="ltr">{{ credit_total|western:2 }}</td>
-                            <td colspan="2"></td>
-                        </tr>
-                    </tfoot>
-                    {% endif %}
-                </table>
-            </div>
+    <div class="stmt-daterow">
+        <span>من {{ date_from|default:"—" }} &nbsp;إلى {{ date_to|default:"—" }}</span>
+        <span style="margin-inline-start:auto;font-weight:600;color:#555;font-size:.8rem">{{ stmt_name }} — عدد الحركات: {{ row_count }}</span>
+    </div>
 
-            <div class="sec-title" style="color:#b91c1c;margin-top:24px"><i class="bi bi-arrow-up-right"></i> المدين — تحويلات صادرة منك للزاجل (ليبي محلي)</div>
-            <div style="overflow-x:auto">
-                <table class="set-tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>التاريخ</th>
-                            <th>النوع</th>
-                            <th>المبلغ الأصلي</th>
-                            <th>العملة</th>
-                            <th>السعر</th>
-                            <th>القيمة بالليبي</th>
-                            <th>التليفون</th>
-                            <th>المستفيد / النص</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in debit_rows %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td style="white-space:nowrap;font-size:.72rem">{{ r.msg.timestamp|date:"Y-m-d" }}<br><span style="color:#64748b">{{ r.msg.timestamp|date:"h:i A" }}</span></td>
-                            <td><span style="padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700;background:{% if r.kind == 'مصري ← ليبي' %}#dbeafe;color:#1d4ed8{% else %}#ede9fe;color:#6d28d9{% endif %}">{{ r.kind }}</span></td>
-                            <td class="num" dir="ltr">{{ r.msg.amount|western:2 }}</td>
-                            <td>{{ r.msg.currency|default:"-" }}</td>
-                            <td class="num" dir="ltr">{{ r.msg.exchange_rate|default:"-"|western:2 }}</td>
-                            <td class="num" style="color:#b91c1c" dir="ltr">{{ r.lyd|western:2 }}</td>
-                            <td dir="ltr" style="font-family:Consolas,monospace;font-size:.72rem">{{ r.msg.phone_number|default:"-" }}</td>
-                            <td style="text-align:right;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem" title="{{ r.msg.message_text }}">{{ r.msg.message_text|truncatechars:60 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="9" style="color:var(--text-muted);padding:20px">لا توجد تحويلات صادرة</td></tr>
-                        {% endfor %}
-                    </tbody>
-                    {% if debit_rows %}
-                    <tfoot>
-                        <tr style="background:#fef2f2;font-weight:800">
-                            <td colspan="6" style="text-align:left">إجمالي المدين</td>
-                            <td class="num" style="color:#b91c1c" dir="ltr">{{ debit_total|western:2 }}</td>
-                            <td colspan="2"></td>
-                        </tr>
-                    </tfoot>
-                    {% endif %}
-                </table>
-            </div>
+    <table class="stmt">
+        <thead>
+            <tr>
+                <th>المبلغ العملي</th>
+                <th>نوع العملية</th>
+                <th>التأريخ</th>
+                <th class="h-credit">دائن</th>
+                <th class="h-debit">مدين</th>
+                <th>الرصيد</th>
+                <th>ملاحظات</th>
+                <th>الرقم الإشاري</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td class="amount">{{ r.msg.amount|western:2 }} {{ r.msg.currency|default:"" }}</td>
+                <td>{{ r.kind }}</td>
+                <td class="date">{{ r.msg.timestamp|date:"Y-m-d" }}</td>
+                <td class="credit">{% if r.credit %}{{ r.credit|western:3 }}{% else %}0.000{% endif %}</td>
+                <td class="debit">{% if r.debit %}{{ r.debit|western:3 }}{% else %}0.000{% endif %}</td>
+                <td class="bal {% if r.balance < 0 %}neg{% elif r.balance > 0 %}pos{% endif %}">{{ r.balance|western:3 }}</td>
+                <td class="notes" title="{{ r.msg.message_text }}">{{ r.msg.message_text|truncatechars:48 }}{% if r.msg.phone_number %} — {{ r.msg.phone_number }}{% endif %}</td>
+                <td class="ref">{{ r.ref }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" style="color:#888;padding:24px">لا توجد حركات</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-            <div style="margin-top:20px;padding:14px 18px;border-radius:12px;border:2px solid {% if balance > 0 %}#22c55e{% elif balance < 0 %}#ef4444{% else %}#cbd5e1{% endif %};background:{% if balance > 0 %}#f0fdf4{% elif balance < 0 %}#fef2f2{% else %}#f8fafc{% endif %};display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-                <div style="font-weight:800;font-size:.95rem">النتيجة النهائية: <span style="color:{% if balance > 0 %}#15803d{% elif balance < 0 %}#b91c1c{% else %}#475569{% endif %}">{{ balance_label }}{% if balance_sign %} ({{ balance_sign }}){% endif %}</span></div>
-                <div style="font-family:Consolas,monospace;font-weight:800;font-size:1.3rem;color:{% if balance > 0 %}#15803d{% elif balance < 0 %}#b91c1c{% else %}#475569{% endif %}">{{ balance|floatformat:2 }} د ل</div>
-            </div>
+    <div class="stmt-foot">
+        <div class="ft-note">
+            الحساب مدين بقيمة: {{ balance_words }} — لا غير.
+        </div>
+        <div class="ft-total">
+            <div class="lbl">{{ balance_label }}</div>
+            <div class="val" style="background:{{ balance_color }}">{{ balance|western:3 }}</div>
+            <div class="ft-cur">دينار ليبي</div>
         </div>
     </div>
 </div>

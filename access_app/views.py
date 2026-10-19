@@ -3139,6 +3139,73 @@ def whatsapp_message_delete(request, msg_id):
 
 
 WA_ZAJEL_GROUP = "120363411662450255@g.us"
+WA_STATEMENT_NAME = "مكتب الزاجل الجميل"
+WA_STATEMENT_NO = "141"
+
+
+def _ar_int_words(n):
+    n = int(n)
+    if n == 0:
+        return "صفر"
+    ones = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة",
+            "عشرة", "أحد عشر", "اثنا عشر", "ثلاثة عشر", "أربعة عشر", "خمسة عشر", "ستة عشر",
+            "سبعة عشر", "ثمانية عشر", "تسعة عشر"]
+    tens = ["", "", "عشرون", "ثلاثون", "أربعون", "خمسون", "ستون", "سبعون", "ثمانون", "تسعون"]
+    hundreds = ["", "مائة", "مائتان", "ثلاثمائة", "أربعمائة", "خمسمائة", "ستمائة", "سبعمائة",
+                "ثمانمائة", "تسعمائة"]
+
+    def three(num):
+        parts = []
+        h, rest = divmod(num, 100)
+        if h:
+            parts.append(hundreds[h])
+        if rest:
+            if rest < 20:
+                parts.append(ones[rest])
+            else:
+                t, o = divmod(rest, 10)
+                if o:
+                    parts.append(ones[o] + " و" + tens[t])
+                else:
+                    parts.append(tens[t])
+        return " و".join(parts)
+
+    groups = []
+    millions, rem = divmod(n, 1000000)
+    thousands, ones_part = divmod(rem, 1000)
+    if millions:
+        if millions == 1:
+            groups.append("مليون")
+        elif millions == 2:
+            groups.append("مليونان")
+        elif 3 <= millions <= 10:
+            groups.append(_ar_int_words(millions) + " ملايين")
+        else:
+            groups.append(_ar_int_words(millions) + " مليوناً")
+    if thousands:
+        if thousands == 1:
+            groups.append("ألف")
+        elif thousands == 2:
+            groups.append("ألفان")
+        elif 3 <= thousands <= 10:
+            groups.append(_ar_int_words(thousands) + " آلاف")
+        else:
+            groups.append(_ar_int_words(thousands) + " ألفاً")
+    if ones_part:
+        groups.append(three(ones_part))
+    return " و".join(groups)
+
+
+def _ar_amount_words(amount):
+    amount = round(abs(float(amount)), 3)
+    dinars = int(amount)
+    piasters = int(round((amount - dinars) * 1000))
+    parts = []
+    if dinars or piasters == 0:
+        parts.append(_ar_int_words(dinars) + " دينار ليبي")
+    if piasters:
+        parts.append(_ar_int_words(piasters) + " قرشاً")
+    return " و".join(parts)
 
 
 @login_required_custom
@@ -3157,13 +3224,13 @@ def whatsapp_settlement(request):
         qs = qs.filter(timestamp__date__lte=date_to)
 
     st = SystemSetting.get()
-    credit_rows = []
-    debit_rows = []
+    rows = []
+    skipped_no_rate = 0
     credit_total = 0.0
     debit_total = 0.0
-    skipped_no_rate = 0
+    running = 0.0
 
-    for msg in qs:
+    for idx, msg in enumerate(qs, start=1):
         if not msg.amount:
             continue
         currency = (msg.currency or "").strip()
@@ -3184,37 +3251,56 @@ def whatsapp_settlement(request):
             lyd = msg.amount
             kind = "بدون عملة"
 
-        row = {"msg": msg, "lyd": lyd, "kind": kind}
+        credit = 0.0
+        debit = 0.0
         if msg.direction == "وارد":
-            credit_rows.append(row)
-            credit_total += lyd
-        else:
-            debit_rows.append(row)
+            debit = lyd
             debit_total += lyd
+        else:
+            credit = lyd
+            credit_total += lyd
 
-    balance = credit_total - debit_total
-    if balance > 0.004:
-        balance_label = "الزاجل مدين لك"
-        balance_sign = "دائن"
-    elif balance < -0.004:
-        balance_label = "أنت مدين للزاجل"
-        balance_sign = "مدين"
+        running += credit - debit
+        rows.append({
+            "msg": msg,
+            "ref": "%s-%s" % (WA_STATEMENT_NO, 67600 + idx),
+            "kind": kind,
+            "lyd": lyd,
+            "credit": credit,
+            "debit": debit,
+            "balance": running,
+        })
+
+    balance = running
+    if balance < -0.004:
+        balance_kind = "مدين"
+        balance_label = "الرصيد مدين بقيمة"
+        balance_color = "#dc2626"
+    elif balance > 0.004:
+        balance_kind = "دائن"
+        balance_label = "الرصيد دائن بقيمة"
+        balance_color = "#16a34a"
     else:
-        balance_label = "متساوون"
-        balance_sign = ""
+        balance_kind = "متساوي"
+        balance_label = "الرصيد متساوي (صفر)"
+        balance_color = "#475569"
 
     return render(request, "whatsapp_settlement.html", {
-        "title": "مقاصة الحسابات",
-        "credit_rows": credit_rows,
-        "debit_rows": debit_rows,
+        "title": "كشف حساب",
+        "rows": rows,
         "credit_total": credit_total,
         "debit_total": debit_total,
         "balance": balance,
+        "balance_kind": balance_kind,
         "balance_label": balance_label,
-        "balance_sign": balance_sign,
+        "balance_color": balance_color,
+        "balance_words": _ar_amount_words(balance),
         "date_from": date_from,
         "date_to": date_to,
         "skipped_no_rate": skipped_no_rate,
+        "stmt_name": WA_STATEMENT_NAME,
+        "stmt_no": WA_STATEMENT_NO,
+        "row_count": len(rows),
     })
 
 
