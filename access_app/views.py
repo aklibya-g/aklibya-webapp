@@ -3041,6 +3041,8 @@ def backup_delete(request, filename):
 def whatsapp_message_edit(request, msg_id):
     user = get_current_user(request)
     if not user:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": "auth"}, status=401)
         return redirect("index")
     msg = get_object_or_404(WhatsAppMessage, id=msg_id)
     if request.method == "POST":
@@ -3053,7 +3055,10 @@ def whatsapp_message_edit(request, msg_id):
         msg.currency = request.POST.get("currency", msg.currency)
         msg.transfer_type = request.POST.get("transfer_type", msg.transfer_type)
         msg.direction = request.POST.get("direction", msg.direction)
+        msg.status = "معدلة"
         msg.save()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": True})
         messages.success(request, "تم تعديل الرسالة")
         return redirect("whatsapp_integration")
     prefill = {

@@ -3,7 +3,7 @@
 {% block content %}
 <style>
 .wa-table { width:100%; border-collapse:collapse; table-layout:auto; min-width:1280px; border:1px solid #cbd5e1; font-size:.72rem; background:#fff; color:#1e293b; }
-.wa-table thead th { background:#1e293b; color:#f1f5f9; padding:11px 8px; font-size:.73rem; font-weight:700; text-align:center; border:1px solid #475569; position:sticky; top:47px; z-index:20; white-space:nowrap; }
+.wa-table thead th { background:#1e293b; color:#f1f5f9; padding:11px 8px; font-size:.73rem; font-weight:700; text-align:center; border:1px solid #475569; white-space:nowrap; }
 .wa-table thead th input[type=checkbox] { accent-color:#6366f1; cursor:pointer; }
 .wa-table tbody td { padding:9px 8px; border:1px solid #e2e8f0; vertical-align:middle; background:#fff; color:#1e293b; transition:background .15s; }
 .wa-table tbody tr:hover td { background:#f8fafc; }
@@ -278,7 +278,10 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                 </thead>
                 <tbody id="messagesTableBody">
                     {% for msg in messages_list %}
-                    <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}">
+                    <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
+                        data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
+                        data-amount="{{ msg.amount|default:'' }}" data-rate="{{ msg.exchange_rate|default:'' }}" data-commission="{{ msg.commission|default:'' }}"
+                        data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}" style="cursor:pointer">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
                         <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
                         <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
@@ -357,10 +360,133 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
         </div>
     </div>
 </div>
+
+<div id="waEditOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center" onclick="closeWaEdit(event)">
+    <div id="waEditModal" style="background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border,#e2e8f0);padding:22px;width:min(560px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h4 style="margin:0;font-weight:800;font-size:1rem"><i class="bi bi-pencil-square" style="color:var(--primary)"></i> تعديل الرسالة</h4>
+            <button type="button" onclick="closeWaEdit()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+        </div>
+        <form id="waEditForm" method="POST" action="">
+            {% csrf_token %}
+            <input type="hidden" name="sender" id="we_sender">
+            <div style="margin-bottom:12px">
+                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نص الرسالة</label>
+                <textarea name="message_text" id="we_text" rows="3" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem;resize:vertical"></textarea>
+            </div>
+            <div style="margin-bottom:12px">
+                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">رقم الهاتف</label>
+                <input type="text" name="phone_number" id="we_phone" dir="ltr" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:12px">
+                <div style="flex:1">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">المبلغ</label>
+                    <input type="number" step="0.01" name="amount" id="we_amount" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">سعر الصرف</label>
+                    <input type="number" step="0.01" name="exchange_rate" id="we_rate" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-bottom:12px">
+                <div style="flex:1">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العمولة</label>
+                    <input type="number" step="0.01" name="commission" id="we_commission" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العملة</label>
+                    <input type="text" name="currency" id="we_currency" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                </div>
+            </div>
+            <div style="margin-bottom:14px">
+                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نوع التحويل</label>
+                <select name="transfer_type" id="we_ttype" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                    <option value="تحويل">تحويل</option>
+                    <option value="محفظة">محفظة</option>
+                    <option value="فودافون كاش">فودافون كاش</option>
+                    <option value="انستا كاش">انستا كاش</option>
+                </select>
+            </div>
+            <div style="margin-bottom:16px">
+                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">الاتجاه</label>
+                <select name="direction" id="we_dir" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
+                    <option value="وارد">وارد</option>
+                    <option value="صادر">صادر</option>
+                </select>
+            </div>
+            <button type="submit" style="width:100%;padding:11px;border-radius:10px;background:#25d366;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.88rem">
+                <i class="bi bi-check-lg"></i> حفظ التعديلات
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// ===== CLICK-ROW TO EDIT MODAL =====
+function openWaEdit(tr) {
+    var id = tr.getAttribute('data-id');
+    if (!id) return;
+    var ov = document.getElementById('waEditOverlay');
+    var form = document.getElementById('waEditForm');
+    form.action = '/whatsapp/message/' + id + '/edit/';
+    document.getElementById('we_sender').value = tr.getAttribute('data-sender') || '';
+    document.getElementById('we_text').value = tr.getAttribute('data-text') || '';
+    document.getElementById('we_phone').value = tr.getAttribute('data-phone') || '';
+    document.getElementById('we_amount').value = tr.getAttribute('data-amount') || '';
+    document.getElementById('we_rate').value = tr.getAttribute('data-rate') || '';
+    document.getElementById('we_commission').value = tr.getAttribute('data-commission') || '';
+    document.getElementById('we_currency').value = tr.getAttribute('data-currency') || '';
+    var tt = document.getElementById('we_ttype');
+    var tval = tr.getAttribute('data-ttype') || 'تحويل';
+    for (var i = 0; i < tt.options.length; i++) { if (tt.options[i].value === tval) { tt.selectedIndex = i; break; } }
+    var dir = document.getElementById('we_dir');
+    var dval = tr.getAttribute('data-direction') || 'وارد';
+    for (var i = 0; i < dir.options.length; i++) { if (dir.options[i].value === dval) { dir.selectedIndex = i; break; } }
+    ov.style.display = 'flex';
+}
+function closeWaEdit(e) {
+    if (e && e.target && e.target.id !== 'waEditOverlay') return;
+    document.getElementById('waEditOverlay').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeWaEdit(); });
+document.getElementById('waEditForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    var btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحفظ...';
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> حفظ التعديلات';
+        if (d.ok) {
+            closeWaEdit();
+            var tbody = document.getElementById('messagesTableBody');
+            if (tbody && typeof loadMessages === 'function') loadMessages();
+        } else {
+            alert('فشل الحفظ');
+        }
+    }).catch(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> حفظ التعديلات';
+        alert('خطأ في الاتصال');
+    });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    var tb = document.getElementById('messagesTableBody');
+    if (!tb) return;
+    tb.addEventListener('click', function(e) {
+        if (e.target.closest('a, button, input, select, textarea, form, .act-btn, label')) return;
+        var tr = e.target.closest('tr[data-id]');
+        if (tr) openWaEdit(tr);
+    });
+});
+
 function toggleSelectAll(master) {
     document.querySelectorAll('.rowCheck').forEach(cb => cb.checked = master.checked);
     updateSelectedCount();

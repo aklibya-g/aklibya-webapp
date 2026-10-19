@@ -1,6 +1,9 @@
 {% load humanize %}{% load app_tags %}{% load l10n %}
 {% for msg in messages_list %}
-<tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}">
+<tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
+    data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
+    data-amount="{{ msg.amount|default:'' }}" data-rate="{{ msg.exchange_rate|default:'' }}" data-commission="{{ msg.commission|default:'' }}"
+    data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}" style="cursor:pointer">
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
     <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
     <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
