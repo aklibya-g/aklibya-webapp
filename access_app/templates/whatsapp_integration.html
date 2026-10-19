@@ -3,7 +3,7 @@
 {% block content %}
 <style>
 .wa-table { width:100%; border-collapse:collapse; table-layout:auto; min-width:1280px; border:1px solid #cbd5e1; font-size:.72rem; background:#fff; color:#1e293b; }
-.wa-table thead th { background:#1e293b; color:#f1f5f9; padding:11px 8px; font-size:.73rem; font-weight:700; text-align:center; border:1px solid #475569; white-space:nowrap; }
+.wa-table thead th { background:#1e293b; color:#f1f5f9; padding:11px 8px; font-size:.73rem; font-weight:700; text-align:center; border:1px solid #475569; white-space:nowrap; position:sticky; top:var(--wa-sticky-top,0px); z-index:55; box-shadow:0 1px 0 #475569; }
 .wa-table thead th input[type=checkbox] { accent-color:#6366f1; cursor:pointer; }
 .wa-table tbody td { padding:9px 8px; border:1px solid #e2e8f0; vertical-align:middle; background:#fff; color:#1e293b; transition:background .15s; }
 .wa-table tbody tr:hover td { background:#f8fafc; }
@@ -297,7 +297,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على الصف لفتح التعديل</span>
             </div>
         </div>
-        <div class="table-responsive" style="overflow-x:auto;max-width:100%;padding:0 4px 8px">
+        <div class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
                 <thead>
                     <tr>
@@ -1038,5 +1038,21 @@ document.addEventListener('DOMContentLoaded', function() {
     loadMultiGroups();
     refreshGroupFilter();
 });
+// ===== STICKY TABLE HEADER (below toolbar) =====
+function updateWaStickyTop() {
+    var tb = document.getElementById('waToolbar');
+    if (!tb) return;
+    var h = Math.round(tb.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--wa-sticky-top', h + 'px');
+}
+document.addEventListener('DOMContentLoaded', function() {
+    updateWaStickyTop();
+    var tb = document.getElementById('waToolbar');
+    if (tb && window.ResizeObserver) {
+        new ResizeObserver(updateWaStickyTop).observe(tb);
+    }
+});
+window.addEventListener('resize', updateWaStickyTop);
+setTimeout(updateWaStickyTop, 500);
 </script>
 {% endblock %}
