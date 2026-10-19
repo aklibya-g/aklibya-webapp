@@ -1001,6 +1001,24 @@ function filterTable() {
 var waAlertOn = localStorage.getItem('waAlertOn') !== '0';
 var waKnownIds = null;
 var waAlertCtx = null;
+var waAudioUnlocked = false;
+
+function waUnlockAudio() {
+    try {
+        if (!waAlertCtx) waAlertCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (waAlertCtx.state === 'suspended') {
+            waAlertCtx.resume().then(function() { waAudioUnlocked = true; }).catch(function() {});
+        } else {
+            waAudioUnlocked = true;
+        }
+    } catch (e) { }
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(function(ev) {
+    document.addEventListener(ev, function once() {
+        waUnlockAudio();
+        if (waAudioUnlocked) document.removeEventListener(ev, once);
+    }, { passive: true });
+});
 
 function waUpdateAlertBtn() {
     var b = document.getElementById('waAlertBtn');
@@ -1019,26 +1037,36 @@ function waToggleAlert() {
     waAlertOn = !waAlertOn;
     localStorage.setItem('waAlertOn', waAlertOn ? '1' : '0');
     waUpdateAlertBtn();
-    if (waAlertOn) waBeep();
+    if (waAlertOn) { waUnlockAudio(); waBeep(); }
+}
+function waPlayChime(ctx) {
+    var t = ctx.currentTime + 0.02;
+    var master = ctx.createGain();
+    master.gain.value = 1;
+    master.connect(ctx.destination);
+    [[880, 0], [1174.7, 0.16], [1318.5, 0.32]].forEach(function(pair) {
+        var freq = pair[0], off = pair[1];
+        var osc = ctx.createOscillator();
+        var g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t + off);
+        g.gain.exponentialRampToValueAtTime(0.5, t + off + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.45);
+        osc.connect(g); g.connect(master);
+        osc.start(t + off);
+        osc.stop(t + off + 0.5);
+    });
 }
 function waBeep() {
     try {
         if (!waAlertCtx) waAlertCtx = new (window.AudioContext || window.webkitAudioContext)();
         var ctx = waAlertCtx;
-        if (ctx.state === 'suspended') ctx.resume();
-        var t = ctx.currentTime;
-        [880, 1174.7].forEach(function(freq, i) {
-            var osc = ctx.createOscillator();
-            var g = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            g.gain.setValueAtTime(0.0001, t + i * 0.16);
-            g.gain.exponentialRampToValueAtTime(0.35, t + i * 0.16 + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.16 + 0.35);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(t + i * 0.16);
-            osc.stop(t + i * 0.16 + 0.4);
-        });
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(function() { waPlayChime(ctx); }).catch(function() {});
+        } else {
+            waPlayChime(ctx);
+        }
     } catch (e) { }
 }
 function waToast(sender, text, count) {
