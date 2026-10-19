@@ -40,6 +40,11 @@
 .wa-table .act-edit:hover { background:#e0e7ff; }
 .wa-table .act-delete { color:#dc2626; border-color:#fecaca; background:#fef2f2; }
 .wa-table .act-delete:hover { background:#fee2e2; }
+.wa-inline-input { width:100%; box-sizing:border-box; padding:5px 7px; border:2px solid #2563eb; border-radius:7px; font-size:.74rem; font-family:Consolas,monospace; font-weight:700; text-align:center; outline:none; background:#fff; color:#0f172a; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+select.wa-inline-input { font-family:inherit; }
+.wa-table td.wa-cell-editing { background:#eff6ff !important; padding:2px 4px; }
+.wa-table td.wa-flash-ok { animation:waFlashOk .9s ease; }
+@keyframes waFlashOk { 0% { background:#dcfce7; } 100% { background:transparent; } }
 body.wa-dark-font { --text:#e2e8f0; --text-muted:#94a3b8; --card-bg:#1e293b; --bg:#0f172a; --border:#334155; --input-bg:#1e293b; --input-border:#475569; color-scheme:dark; }
 body.wa-dark-font .wa-table { background:#1a2436; border-color:#334155; color:#e2e8f0; }
 body.wa-dark-font .wa-table thead th { background:#0f172a; color:#cbd5e1; border-color:#334155; }
@@ -294,9 +299,16 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 </form>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
-                <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على الصف لفتح التعديل</span>
+                <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على خلية (مبلغ/سعر/هاتف...) لتعديلها مباشرة</span>
             </div>
         </div>
+        <datalist id="waCurList">
+            <option value="ج م">جنيه مصري</option>
+            <option value="د ل">جنيه ليبي</option>
+            <option value="د.ل">د.ل (تتحول لـ د ل)</option>
+            <option value="ج.م">ج.م (تتحول لـ ج م)</option>
+            <option value="EG">EG</option>
+        </datalist>
         <div class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
                 <thead>
@@ -386,152 +398,190 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
         </div>
     </div>
 </div>
-
-<div id="waEditOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;align-items:center;justify-content:center" onclick="closeWaEdit(event)">
-    <div id="waEditModal" style="background:var(--card-bg,#fff);border-radius:16px;border:1px solid var(--border,#e2e8f0);padding:22px;width:min(620px,94vw);max-height:92vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <h4 style="margin:0;font-weight:800;font-size:1rem"><i class="bi bi-pencil-square" style="color:var(--primary)"></i> تعديل الرسالة</h4>
-            <button type="button" onclick="closeWaEdit()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
-        </div>
-        <div id="weInfoBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid var(--border,#e2e8f0);font-size:.72rem"></div>
-        <form id="waEditForm" method="POST" action="">
-            {% csrf_token %}
-            <input type="hidden" name="sender" id="we_sender">
-            <div style="margin-bottom:12px">
-                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نص الرسالة</label>
-                <textarea name="message_text" id="we_text" rows="4" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem;resize:vertical;font-family:inherit"></textarea>
-            </div>
-            <div style="margin-bottom:12px">
-                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">رقم الهاتف</label>
-                <input type="text" name="phone_number" id="we_phone" dir="ltr" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-            </div>
-            <div style="display:flex;gap:10px;margin-bottom:12px">
-                <div style="flex:1">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">المبلغ</label>
-                    <input type="number" step="0.01" name="amount" id="we_amount" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                </div>
-                <div style="flex:1">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">سعر الصرف</label>
-                    <input type="number" step="0.01" name="exchange_rate" id="we_rate" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                </div>
-            </div>
-            <div style="display:flex;gap:10px;margin-bottom:12px">
-                <div style="flex:1">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العمولة</label>
-                    <input type="number" step="0.01" name="commission" id="we_commission" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                </div>
-                <div style="flex:1">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العملة</label>
-                    <input type="text" name="currency" id="we_currency" list="waCurList" placeholder="ج م / د ل" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                    <datalist id="waCurList">
-                        <option value="ج م">جنيه مصري</option>
-                        <option value="د ل">جنيه ليبي</option>
-                        <option value="د.ل">د.ل (تتحول لـ د ل)</option>
-                        <option value="ج.م">ج.م (تتحول لـ ج م)</option>
-                        <option value="EG">EG</option>
-                    </datalist>
-                </div>
-            </div>
-            <div style="margin-bottom:14px">
-                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نوع التحويل</label>
-                <select name="transfer_type" id="we_ttype" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                    <option value="تحويل">تحويل</option>
-                    <option value="محفظة">محفظة</option>
-                    <option value="فودافون كاش">فودافون كاش</option>
-                    <option value="انستا كاش">انستا كاش</option>
-                </select>
-            </div>
-            <div style="margin-bottom:16px">
-                <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">الاتجاه</label>
-                <select name="direction" id="we_dir" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border,#e2e8f0);font-size:.85rem">
-                    <option value="وارد">وارد</option>
-                    <option value="صادر">صادر</option>
-                </select>
-            </div>
-            <button type="submit" style="width:100%;padding:11px;border-radius:10px;background:#25d366;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.88rem">
-                <i class="bi bi-check-lg"></i> حفظ التعديلات
-            </button>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// ===== CLICK-ROW TO EDIT MODAL =====
-function openWaEdit(tr) {
+// ===== INLINE CELL EDIT (dblclick on cell) =====
+var waCsrf = '{{ csrf_token }}';
+var waInlineEdit = null;
+
+function waGetCsrf() {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : waCsrf;
+}
+
+var WA_FIELD_COLS = { 2: 'phone_number', 4: 'amount', 5: 'exchange_rate', 7: 'currency', 8: 'transfer_type', 9: 'direction' };
+
+function waCellField(td) {
+    var idx = Array.prototype.indexOf.call(td.parentNode.children, td);
+    return WA_FIELD_COLS[idx] || null;
+}
+
+function waStartInlineEdit(td) {
+    if (waInlineEdit) waCommitInlineEdit();
+    var tr = td.closest('tr[data-id]');
+    if (!tr) return;
+    var field = waCellField(td);
+    if (!field) return;
     var id = tr.getAttribute('data-id');
-    if (!id) return;
-    var ov = document.getElementById('waEditOverlay');
-    var form = document.getElementById('waEditForm');
-    form.action = '/whatsapp/message/' + id + '/edit/';
-    document.getElementById('we_sender').value = tr.getAttribute('data-sender') || '';
-    document.getElementById('we_text').value = tr.getAttribute('data-text') || '';
-    document.getElementById('we_phone').value = tr.getAttribute('data-phone') || '';
-    document.getElementById('we_amount').value = tr.getAttribute('data-amount') || '';
-    document.getElementById('we_rate').value = tr.getAttribute('data-rate') || '';
-    document.getElementById('we_commission').value = tr.getAttribute('data-commission') || '';
-    document.getElementById('we_currency').value = tr.getAttribute('data-currency') || '';
-    var tt = document.getElementById('we_ttype');
-    var tval = tr.getAttribute('data-ttype') || 'تحويل';
-    for (var i = 0; i < tt.options.length; i++) { if (tt.options[i].value === tval) { tt.selectedIndex = i; break; } }
-    var dir = document.getElementById('we_dir');
-    var dval = tr.getAttribute('data-direction') || 'وارد';
-    for (var i = 0; i < dir.options.length; i++) { if (dir.options[i].value === dval) { dir.selectedIndex = i; break; } }
-    var bar = document.getElementById('weInfoBar');
-    var st = tr.getAttribute('data-status') || 'فعالة';
-    var stColor = st === 'معدلة' ? '#d97706' : st === 'ملغية' ? '#dc2626' : '#16a34a';
-    var ttime = tr.getAttribute('data-time') || '';
-    var grp = tr.getAttribute('data-group') || '';
-    var sender = tr.getAttribute('data-sender') || '';
-    bar.innerHTML =
-        '<span style="background:#eef2ff;color:#4f46e5;padding:3px 10px;border-radius:6px;font-weight:700">#' + id + '</span>' +
-        '<span style="background:' + (stColor === '#16a34a' ? '#dcfce7' : stColor === '#d97706' ? '#fef3c7' : '#fee2e2') + ';color:' + stColor + ';padding:3px 10px;border-radius:6px;font-weight:700">' + st + '</span>' +
-        (ttime ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:6px;font-weight:600">🕐 ' + ttime + '</span>' : '') +
-        (sender ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:60px;font-weight:600;direction:ltr">👤 ' + sender.split('@')[0] + '</span>' : '') +
-        (grp ? '<span style="background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:6px;font-weight:600;direction:ltr;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + grp + '">👥 ' + grp.split('@')[0] + '</span>' : '');
-    ov.style.display = 'flex';
+    var val = '';
+    if (field === 'phone_number') val = tr.getAttribute('data-phone') || '';
+    else if (field === 'amount') val = tr.getAttribute('data-amount') || '';
+    else if (field === 'exchange_rate') val = tr.getAttribute('data-rate') || '';
+    else if (field === 'currency') val = tr.getAttribute('data-currency') || '';
+    else if (field === 'transfer_type') val = tr.getAttribute('data-ttype') || '';
+    else if (field === 'direction') val = tr.getAttribute('data-direction') || '';
+
+    var el;
+    if (field === 'transfer_type') {
+        el = document.createElement('select');
+        ['تحويل', 'محفظة', 'فودافون كاش', 'انستا كاش'].forEach(function(o) {
+            var op = document.createElement('option');
+            op.value = o; op.textContent = o;
+            if (o === val) op.selected = true;
+            el.appendChild(op);
+        });
+    } else if (field === 'direction') {
+        el = document.createElement('select');
+        ['وارد', 'صادر'].forEach(function(o) {
+            var op = document.createElement('option');
+            op.value = o; op.textContent = o;
+            if (o === val) op.selected = true;
+            el.appendChild(op);
+        });
+    } else if (field === 'currency') {
+        el = document.createElement('input');
+        el.type = 'text';
+        el.setAttribute('list', 'waCurList');
+        el.placeholder = 'ج م / د ل';
+    } else {
+        el = document.createElement('input');
+        el.type = 'text';
+        el.inputMode = 'decimal';
+        el.dir = 'ltr';
+    }
+    el.value = val;
+    el.className = 'wa-inline-input';
+    if (field === 'transfer_type' || field === 'direction') el.style.cursor = 'pointer';
+
+    waInlineEdit = { td: td, tr: tr, id: id, field: field, oldHtml: td.innerHTML };
+    td.innerHTML = '';
+    td.appendChild(el);
+    td.classList.add('wa-cell-editing');
+    el.focus();
+    if (el.select) el.select();
+
+    el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); waCommitInlineEdit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); waCancelInlineEdit(); }
+    });
+    el.addEventListener('blur', function() { waCommitInlineEdit(); });
+    if (el.tagName === 'SELECT') el.addEventListener('change', function() { waCommitInlineEdit(); });
 }
-function closeWaEdit(e) {
-    if (e && e.target && e.target.id !== 'waEditOverlay') return;
-    document.getElementById('waEditOverlay').style.display = 'none';
+
+function waCancelInlineEdit() {
+    if (!waInlineEdit) return;
+    var e = waInlineEdit;
+    waInlineEdit = null;
+    e.td.classList.remove('wa-cell-editing');
+    e.td.innerHTML = e.oldHtml;
 }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeWaEdit(); });
-document.getElementById('waEditForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var form = this;
-    var btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ الحفظ...';
-    fetch(form.action, {
+
+function waCommitInlineEdit() {
+    if (!waInlineEdit) return;
+    var e = waInlineEdit;
+    waInlineEdit = null;
+    var tr = e.tr, field = e.field, td = e.td;
+    var el = td.querySelector('.wa-inline-input, select');
+    if (!el) return;
+    var val = (el.value || '').trim();
+    td.classList.remove('wa-cell-editing');
+
+    var oldVal = tr.getAttribute('data-' + (field === 'phone_number' ? 'phone' : field === 'exchange_rate' ? 'rate' : field === 'transfer_type' ? 'ttype' : field)) || '';
+    if (val === oldVal) { td.innerHTML = e.oldHtml; return; }
+
+    var fd = new FormData();
+    fd.append('sender', tr.getAttribute('data-sender') || '');
+    fd.append('message_text', tr.getAttribute('data-text') || '');
+    fd.append('phone_number', tr.getAttribute('data-phone') || '');
+    fd.append('amount', tr.getAttribute('data-amount') || '');
+    fd.append('exchange_rate', tr.getAttribute('data-rate') || '');
+    fd.append('commission', tr.getAttribute('data-commission') || '');
+    fd.append('currency', tr.getAttribute('data-currency') || '');
+    fd.append('transfer_type', tr.getAttribute('data-ttype') || '');
+    fd.append('direction', tr.getAttribute('data-direction') || '');
+    fd.set(field, val);
+
+    td.innerHTML = '<span style="color:#94a3b8;font-size:.65rem">جاري الحفظ...</span>';
+
+    fetch('/whatsapp/message/' + e.id + '/edit/', {
         method: 'POST',
-        body: new FormData(form),
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': waGetCsrf() }
     }).then(function(r) { return r.json(); }).then(function(d) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> حفظ التعديلات';
         if (d.ok) {
-            closeWaEdit();
-            var tbody = document.getElementById('messagesTableBody');
-            if (tbody && typeof loadMessages === 'function') loadMessages();
+            tr.setAttribute('data-' + (field === 'phone_number' ? 'phone' : field === 'exchange_rate' ? 'rate' : field === 'transfer_type' ? 'ttype' : field), val);
+            tr.setAttribute('data-status', 'معدلة');
+            td.innerHTML = waRenderCell(field, val);
+            td.classList.add('wa-flash-ok');
+            setTimeout(function() { td.classList.remove('wa-flash-ok'); }, 900);
+            var stCell = tr.children[10];
+            if (stCell) stCell.innerHTML = '<span class="badge badge-edited">معدلة</span>';
+            var convCell = tr.children[6];
+            if (convCell) {
+                var a = parseFloat(tr.getAttribute('data-amount')), r = parseFloat(tr.getAttribute('data-rate'));
+                convCell.textContent = (a && r) ? (a / r).toFixed(2) : '-';
+            }
+            var searchAttr = [tr.getAttribute('data-sender'), tr.getAttribute('data-text'), tr.getAttribute('data-phone'), tr.getAttribute('data-amount'), tr.getAttribute('data-currency')].join(' ');
+            tr.setAttribute('data-search', searchAttr);
         } else {
+            td.innerHTML = e.oldHtml;
             alert('فشل الحفظ');
         }
     }).catch(function() {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> حفظ التعديلات';
+        td.innerHTML = e.oldHtml;
         alert('خطأ في الاتصال');
     });
-});
+}
+
+function waRenderCell(field, val) {
+    if (!val) return '-';
+    if (field === 'phone_number' || field === 'amount' || field === 'exchange_rate') {
+        return escapeHtml(val);
+    }
+    if (field === 'currency') {
+        if (val === 'EG') return '<span class="badge badge-cur-eg">EG</span>';
+        return '<span class="badge badge-cur">' + escapeHtml(val) + '</span>';
+    }
+    if (field === 'transfer_type') {
+        var cls = val === 'فودافون كاش' ? 'badge-type-vcash' : val === 'انستا كاش' ? 'badge-type-acash' : val === 'محفظة' ? 'badge-type-wallet' : 'badge-type';
+        return '<span class="badge ' + cls + '">' + escapeHtml(val) + '</span>';
+    }
+    if (field === 'direction') {
+        return val === 'صادر' ? '<span class="badge badge-out">صادر</span>' : '<span class="badge badge-in">وارد</span>';
+    }
+    return escapeHtml(val);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var tb = document.getElementById('messagesTableBody');
     if (!tb) return;
     tb.addEventListener('dblclick', function(e) {
-        if (e.target.closest('a, button, input, select, textarea, form, .act-btn, label')) return;
-        var tr = e.target.closest('tr[data-id]');
-        if (tr) openWaEdit(tr);
+        if (e.target.closest('a, button, input, select, textarea, form, .act-btn, label, .wa-inline-input')) return;
+        var td = e.target.closest('td');
+        if (!td) return;
+        var tr = td.closest('tr[data-id]');
+        if (!tr) return;
+        if (!waCellField(td)) return;
+        waStartInlineEdit(td);
     });
 });
+document.addEventListener('click', function(e) {
+    if (waInlineEdit && !e.target.closest('.wa-cell-editing')) waCommitInlineEdit();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') waCancelInlineEdit(); });
+
 
 // ===== AI ANALYZE MODAL =====
 var aiData = [];
@@ -851,6 +901,7 @@ function filterTable() {
 }
 
 function loadMessages() {
+    if (typeof waInlineEdit !== 'undefined' && waInlineEdit) return;
     const checkedIds = new Set(Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value));
     const scrollY = window.scrollY;
     fetch("{% url 'whatsapp_messages_api' %}")
