@@ -88,21 +88,6 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
 /* ===== WA TABLE (existing styles below) ===== */
 </style>
 <div style="max-width:1600px;margin:0 auto">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
-        <h4 style="margin:0;font-weight:800"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
-        <div style="display:flex;gap:10px;align-items:center">
-            <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">
-                <button onclick="fontZoom(1)" style="width:28px;height:28px;border-radius:7px;border:none;background:#f0fdf4;color:#16a34a;font-weight:800;font-size:.8rem;cursor:pointer" title="تكبير الخط">A+</button>
-                <button onclick="fontZoom(-1)" style="width:28px;height:28px;border-radius:7px;border:none;background:#fef2f2;color:#dc2626;font-weight:800;font-size:.8rem;cursor:pointer" title="تصغير الخط">A-</button>
-                <button id="fontDarkBtn" onclick="fontDark()" style="width:28px;height:28px;border-radius:7px;border:none;background:#f3f4f6;color:#374151;font-weight:800;font-size:.85rem;cursor:pointer" title="تديكين الخط">◐</button>
-            </div>
-            <button id="toggleBotBox" onclick="toggleBotBox()" title="إظهار/إخفاء لوحة الاتصال" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
-                <i class="bi bi-eye" id="botBoxEye"></i>
-            </button>
-            <a href="{% url 'home' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
-        </div>
-    </div>
-
     <div id="botBox" style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);padding:0;margin-bottom:20px;display:none;overflow:hidden">
 
         <!-- ═══════ Section 1: Connection ═══════ -->
@@ -276,11 +261,19 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border)">
         <div id="waToolbar" style="position:sticky;top:0;z-index:60;background:var(--card-bg);border-radius:16px 16px 0 0;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-            <div style="padding:13px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-                <h3 style="margin:0;font-size:.95rem;font-weight:800;color:var(--text)">
-                    جدول المعاملات المالية
-                    <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">(عرض بحدود شبكية كاملة ورسائل منسقة)</span>
-                </h3>
+            <div style="padding:8px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px">
+                <h4 style="margin:0;font-weight:800;font-size:.95rem;white-space:nowrap"><i class="bi bi-whatsapp" style="color:#25d366"></i> ربط الواتساب</h4>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">
+                        <button onclick="fontZoom(1)" style="width:26px;height:26px;border-radius:7px;border:none;background:#f0fdf4;color:#16a34a;font-weight:800;font-size:.8rem;cursor:pointer" title="تكبير الخط">A+</button>
+                        <button onclick="fontZoom(-1)" style="width:26px;height:26px;border-radius:7px;border:none;background:#fef2f2;color:#dc2626;font-weight:800;font-size:.8rem;cursor:pointer" title="تصغير الخط">A-</button>
+                        <button id="fontDarkBtn" onclick="fontDark()" style="width:26px;height:26px;border-radius:7px;border:none;background:#f3f4f6;color:#374151;font-weight:800;font-size:.85rem;cursor:pointer" title="تديكين الخط">◐</button>
+                    </div>
+                    <button id="toggleBotBox" onclick="toggleBotBox()" title="إظهار/إخفاء لوحة الاتصال" style="width:32px;height:32px;border-radius:10px;border:1px solid var(--border);background:var(--card-bg);color:var(--text-muted);cursor:pointer;font-size:1.05rem;display:flex;align-items:center;justify-content:center">
+                        <i class="bi bi-eye" id="botBoxEye"></i>
+                    </button>
+                    <a href="{% url 'home' %}" style="font-size:.82rem;font-weight:600;color:var(--text-muted);text-decoration:none;white-space:nowrap"><i class="bi bi-arrow-right"></i> رجوع</a>
+                </div>
             </div>
             <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
@@ -326,7 +319,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
-                <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:5px 12px;border-radius:8px;background:#eff6ff;color:#1d4ed8;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
+                <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:5px 12px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على خلية (مبلغ/سعر/هاتف...) لتعديلها مباشرة</span>
             </div>
         </div>
