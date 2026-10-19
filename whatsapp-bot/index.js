@@ -564,7 +564,7 @@ async function startBot() {
         }
     });
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
         if (qr) {
             qrcode.generate(qr, { small: true });
@@ -573,6 +573,18 @@ async function startBot() {
         if (connection === 'open') {
             console.log('✅ تم الاتصال بالواتساب بنجاح!');
             axios.post(DJANGO + '/api/whatsapp/qr/', { qr: null, status: 'connected' }).catch(() => {});
+            try {
+                const chats = await sock.groupFetchAllParticipating();
+                const groups = Object.values(chats || {}).map(g => ({
+                    id: normalizeGroupJid(g.id),
+                    name: g.subject || '',
+                    members: g.participants ? g.participants.length : 0,
+                }));
+                axios.post(DJANGO + '/api/whatsapp/groups/', { groups }).catch(() => {});
+                console.log('📋 تم إرسال ' + groups.length + ' غرفة للسيرفر');
+            } catch (e) {
+                console.log('❌ فشل جلب قائمة الغرف: ' + (e && e.message));
+            }
         }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;

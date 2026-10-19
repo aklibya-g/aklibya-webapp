@@ -3377,6 +3377,42 @@ def whatsapp_report_group(request):
     return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
 
 
+_GROUPS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "groups.json")
+
+
+@csrf_exempt
+def whatsapp_groups(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            groups = data.get("groups") or []
+            clean = []
+            for g in groups:
+                gid = _normalize_group_jid(str(g.get("id", "")))
+                if gid:
+                    clean.append({
+                        "id": gid,
+                        "name": str(g.get("name", ""))[:120],
+                        "members": int(g.get("members") or 0),
+                    })
+            with open(_GROUPS_FILE, "w", encoding="utf-8") as f:
+                json.dump({"groups": clean, "updated_at": int(timezone.now().timestamp())}, f, ensure_ascii=False)
+            return JsonResponse({"ok": True, "count": len(clean)})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+    groups = []
+    updated_at = 0
+    if os.path.exists(_GROUPS_FILE):
+        try:
+            with open(_GROUPS_FILE, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            groups = d.get("groups") or []
+            updated_at = int(d.get("updated_at") or 0)
+        except Exception:
+            pass
+    return JsonResponse({"ok": True, "groups": groups, "updated_at": updated_at})
+
+
 @csrf_exempt
 def whatsapp_anchor(request):
     since = 0
