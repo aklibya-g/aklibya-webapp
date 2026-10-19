@@ -302,13 +302,6 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على خلية (مبلغ/سعر/هاتف...) لتعديلها مباشرة</span>
             </div>
         </div>
-        <datalist id="waCurList">
-            <option value="ج م">جنيه مصري</option>
-            <option value="د ل">جنيه ليبي</option>
-            <option value="د.ل">د.ل (تتحول لـ د ل)</option>
-            <option value="ج.م">ج.م (تتحول لـ ج م)</option>
-            <option value="EG">EG</option>
-        </datalist>
         <div class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
                 <thead>
@@ -451,10 +444,15 @@ function waStartInlineEdit(td) {
             el.appendChild(op);
         });
     } else if (field === 'currency') {
-        el = document.createElement('input');
-        el.type = 'text';
-        el.setAttribute('list', 'waCurList');
-        el.placeholder = 'ج م / د ل';
+        el = document.createElement('select');
+        var curOpts = ['ج م', 'د ل'];
+        if (val && curOpts.indexOf(val) === -1) curOpts.unshift(val);
+        curOpts.forEach(function(o) {
+            var op = document.createElement('option');
+            op.value = o; op.textContent = o;
+            if (o === val) op.selected = true;
+            el.appendChild(op);
+        });
     } else {
         el = document.createElement('input');
         el.type = 'text';
@@ -463,7 +461,7 @@ function waStartInlineEdit(td) {
     }
     el.value = val;
     el.className = 'wa-inline-input';
-    if (field === 'transfer_type' || field === 'direction') el.style.cursor = 'pointer';
+    if (field === 'transfer_type' || field === 'direction' || field === 'currency') el.style.cursor = 'pointer';
 
     waInlineEdit = { td: td, tr: tr, id: id, field: field, oldHtml: td.innerHTML };
     td.innerHTML = '';
