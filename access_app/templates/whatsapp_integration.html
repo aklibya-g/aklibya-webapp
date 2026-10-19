@@ -352,7 +352,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     {% for msg in messages_list %}
                     <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
                         data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
-                        data-amount="{{ msg.amount|default:'' }}" data-rate="{{ msg.exchange_rate|default:'' }}" data-commission="{{ msg.commission|default:'' }}"
+                        data-amount="{{ msg.amount|default:''|unlocalize }}" data-rate="{{ msg.exchange_rate|default:''|unlocalize }}" data-commission="{{ msg.commission|default:''|unlocalize }}"
                         data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
                         data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
                         data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
