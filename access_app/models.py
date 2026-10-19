@@ -393,6 +393,9 @@ class SystemSetting(models.Model):
     monitored_group_jids = models.TextField(default="", blank=True, verbose_name="معرفات المجموعات المراقبة (مفصولة بفاصلة)")
     monitor_all_groups = models.BooleanField(default=False, verbose_name="استقبال رسائل كل المجموعات")
     sync_full_history = models.BooleanField(default=False, verbose_name="مزامنة التاريخ الكامل")
+    wa_current_rate = models.FloatField(null=True, blank=True, verbose_name="سعر الصرف الحالي")
+    wa_rate_currency = models.CharField(max_length=10, default="ج م", blank=True, verbose_name="عملة السعر الحالي")
+    wa_rate_updated = models.DateTimeField(null=True, blank=True, verbose_name="آخر تحديث للسعر")
 
     class Meta:
         verbose_name = "إعدادات النظام"

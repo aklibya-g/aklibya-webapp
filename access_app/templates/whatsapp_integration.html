@@ -317,6 +317,11 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     <div id="waMonitoredChips" style="display:flex;gap:5px;flex-wrap:nowrap;align-items:center"></div>
                 </div>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
+                {% if wa_current_rate %}
+                <span id="waRateBadge" title="آخر تحديث: {{ wa_rate_updated|date:'Y-m-d H:i' }} — الرسائل الجديدة بدون سعر تأخذ هذا السعر تلقائياً" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-weight:800;font-size:.75rem;border:1px solid #f59e0b;white-space:nowrap;cursor:default">
+                    <i class="bi bi-currency-exchange"></i> سعر الصرف: {{ wa_current_rate|floatformat:2 }} {{ wa_rate_currency }}
+                </span>
+                {% endif %}
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:5px 12px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>

@@ -3284,8 +3284,11 @@ def whatsapp_integration(request):
                 return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
             fixed_count = 0
+            st_rate = SystemSetting.get()
             for msg in all_msgs:
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
+                if not rate and amount and currency and st_rate.wa_current_rate and st_rate.wa_rate_currency == currency:
+                    rate = st_rate.wa_current_rate
                 old_values = {
                     "amount": ("" if msg.amount is None else str(msg.amount)),
                     "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
@@ -3452,6 +3455,9 @@ def whatsapp_integration(request):
         "monitored_group_jids": setting.monitored_group_jids,
         "monitor_all_groups": setting.monitor_all_groups,
         "sync_full_history": setting.sync_full_history,
+        "wa_current_rate": setting.wa_current_rate,
+        "wa_rate_currency": setting.wa_rate_currency,
+        "wa_rate_updated": setting.wa_rate_updated,
     })
 
 
@@ -3677,6 +3683,7 @@ def whatsapp_webhook(request):
                 return JsonResponse({"status": "success", "saved": False, "duplicate": True})
             amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
             from_image = _as_bool(data.get("from_image"), default=False)
+            img_rate = img_currency = img_amount = img_phone = img_ttype = None
             if from_image:
                 img_rate = data.get("image_rate")
                 img_currency = data.get("image_currency")
@@ -3703,6 +3710,21 @@ def whatsapp_webhook(request):
                         phone = ph
                 if img_ttype and not ttype:
                     ttype = str(img_ttype).strip()
+            st = SystemSetting.get()
+            is_rate_poster = bool(from_image and img_rate and not img_amount and not img_phone)
+            if is_rate_poster:
+                try:
+                    st.wa_current_rate = float(img_rate)
+                    st.wa_rate_currency = (str(img_currency).strip() if img_currency in ("ج م", "د ل") else (currency or "ج م"))
+                    st.wa_rate_updated = timezone.now()
+                    st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                except (ValueError, TypeError):
+                    pass
+                amount = None
+                phone = ''
+                rate = float(img_rate) if img_rate else rate
+            elif not rate and amount and currency and st.wa_current_rate and st.wa_rate_currency == currency:
+                rate = st.wa_current_rate
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
