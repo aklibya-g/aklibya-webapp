@@ -1,41 +1,65 @@
 {% extends "base.html" %}
-{% load humanize %}{% load app_tags %}
+{% load humanize %}{% load app_tags %}{% load l10n %}
 {% block content %}
 <style>
-.wa-table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); }
-.wa-table thead th { background:linear-gradient(135deg,#1e293b,#334155); color:#e2e8f0; padding:10px 6px; font-size:.7rem; font-weight:800; text-align:center; letter-spacing:.3px; border-bottom:3px solid #2563eb; position:sticky; top:47px; z-index:20; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-.wa-table thead th:first-child { border-top-right-radius:12px; }
-.wa-table thead th:last-child { border-top-left-radius:12px; }
-.wa-table tbody td { padding:7px 6px; font-size:.7rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; transition:background .15s; }
-.wa-table tbody tr:nth-child(even) { background:#f8fafc; }
-.wa-table tbody tr:nth-child(odd) { background:#fff; }
-.wa-table tbody tr:hover { background:#eef2ff; box-shadow:inset 0 0 0 1px #c7d2fe; }
-.wa-table tbody tr.selected-row { background:#dbeafe !important; }
-.wa-table .num-cell { font-family:'Courier New',monospace; font-weight:700; color:#0f172a; }
-.wa-table .rate-cell { color:#7c3aed; font-weight:800; font-family:'Courier New',monospace; }
-.wa-table .conv-cell { color:#059669; font-weight:800; font-family:'Courier New',monospace; }
-.wa-table .badge { display:inline-block; padding:2px 7px; border-radius:20px; font-size:.6rem; font-weight:800; letter-spacing:.2px; }
-.wa-table .badge-in { background:linear-gradient(135deg,#dcfce7,#bbf7d0); color:#166534; border:1px solid #86efac; }
-.wa-table .badge-out { background:linear-gradient(135deg,#dbeafe,#bfdbfe); color:#1e40af; border:1px solid #93c5fd; }
-.wa-table .badge-active { background:linear-gradient(135deg,#dcfce7,#bbf7d0); color:#166534; border:1px solid #86efac; }
-.wa-table .badge-edited { background:linear-gradient(135deg,#fef9c3,#fef08a); color:#854d0e; border:1px solid #fde047; }
-.wa-table .badge-cancelled { background:linear-gradient(135deg,#fee2e2,#fecaca); color:#991b1b; border:1px solid #fca5a5; }
-.wa-table .badge-type { background:linear-gradient(135deg,#f0fdf4,#dcfce7); color:#15803d; border:1px solid #86efac; }
-.wa-table .act-btn { width:22px; height:22px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:.62rem; border:none; cursor:pointer; transition:all .15s; text-decoration:none; }
-.wa-table .act-btn:hover { transform:scale(1.2); box-shadow:0 2px 6px rgba(0,0,0,.15); }
-.wa-table .act-reprocess { background:#fef9c3; color:#ca8a04; }
-.wa-table .act-edit { background:#dbeafe; color:#2563eb; }
-.wa-table .act-delete { background:#fef2f2; color:#dc2626; }
-.wa-table tbody tr td:first-child { border-right:3px solid transparent; }
-.wa-table tbody tr.selected-row td:first-child { border-right-color:#2563eb; }
+.wa-table { width:100%; border-collapse:collapse; table-layout:auto; min-width:1280px; border:1px solid #cbd5e1; font-size:.72rem; background:#fff; color:#1e293b; }
+.wa-table thead th { background:#1e293b; color:#f1f5f9; padding:11px 8px; font-size:.73rem; font-weight:700; text-align:center; border:1px solid #475569; position:sticky; top:47px; z-index:20; white-space:nowrap; }
+.wa-table thead th input[type=checkbox] { accent-color:#6366f1; cursor:pointer; }
+.wa-table tbody td { padding:9px 8px; border:1px solid #e2e8f0; vertical-align:middle; background:#fff; color:#1e293b; transition:background .15s; }
+.wa-table tbody tr:hover td { background:#f8fafc; }
+.wa-table tbody tr.selected-row td { background:#dbeafe; }
+.wa-table .num-cell { font-family:'Consolas',monospace; font-weight:700; color:#0f172a; }
+.wa-table .rate-cell { font-family:'Consolas',monospace; color:#475569; }
+.wa-table .conv-cell { font-family:'Consolas',monospace; font-weight:700; color:#334155; }
+.wa-table .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:.65rem; font-weight:600; white-space:nowrap; letter-spacing:.2px; }
+.wa-table .badge .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-left:5px; vertical-align:middle; }
+.badge-in { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+.badge-out { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.badge-active { background:#ecfdf5; color:#047857; border:1px solid #6ee7b7; }
+.badge-edited { background:#fffbeb; color:#b45309; border:1px solid #fcd34d; }
+.badge-cancelled { background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; }
+.badge-type { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
+.badge-type-vcash { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
+.badge-type-acash { background:#fdf2f8; color:#be185d; border:1px solid #fbcfe8; }
+.badge-type-wallet { background:#f0fdfa; color:#0f766e; border:1px solid #99f6e4; }
+.badge-cur { background:#fffbeb; color:#92400e; border:1px solid #fcd34d; }
+.badge-cur-eg { background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; }
+.wa-msg-box { max-height:96px; overflow-y:auto; text-align:right; padding:1px 2px; }
+.wa-msg-box::-webkit-scrollbar { width:4px; }
+.wa-msg-box::-webkit-scrollbar-track { background:#f1f5f9; border-radius:4px; }
+.wa-msg-box::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+.wa-mb-amount { font-weight:700; color:#312e81; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:4px; }
+.wa-mb-type { display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; margin-bottom:4px; }
+.wa-mb-type .dot { width:7px; height:7px; border-radius:50%; background:#8b5cf6; flex-shrink:0; }
+.wa-mb-text { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:4px 7px; color:#475569; font-size:.68rem; line-height:1.65; white-space:pre-line; word-break:break-word; }
+.wa-count-badge { font-size:.72rem; font-weight:600; padding:5px 13px; border-radius:6px; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; white-space:nowrap; }
+.wa-table .wt-time { font-size:.62rem; color:#94a3b8; display:block; font-weight:500; }
+.wa-table .act-btn { width:24px; height:24px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; border:1px solid transparent; cursor:pointer; transition:all .15s; text-decoration:none; background:transparent; padding:0; }
+.wa-table .act-btn svg { width:15px; height:15px; }
+.wa-table .act-btn:hover { transform:scale(1.15); }
+.wa-table .act-reprocess { color:#ca8a04; border-color:#fde68a; background:#fffbeb; }
+.wa-table .act-reprocess:hover { background:#fef3c7; }
+.wa-table .act-edit { color:#4f46e5; border-color:#c7d2fe; background:#eef2ff; }
+.wa-table .act-edit:hover { background:#e0e7ff; }
+.wa-table .act-delete { color:#dc2626; border-color:#fecaca; background:#fef2f2; }
+.wa-table .act-delete:hover { background:#fee2e2; }
 body.wa-dark-font { --text:#e2e8f0; --text-muted:#94a3b8; --card-bg:#1e293b; --bg:#0f172a; --border:#334155; --input-bg:#1e293b; --input-border:#475569; color-scheme:dark; }
-body.wa-dark-font .wa-table thead th { background:linear-gradient(135deg,#0f172a,#1e293b); color:#cbd5e1; border-bottom-color:#60a5fa; }
-body.wa-dark-font .wa-table tbody td { color:#e2e8f0; border-bottom-color:#283548; }
-body.wa-dark-font .wa-table tbody tr:nth-child(even) { background:#16213a; }
-body.wa-dark-font .wa-table tbody tr:nth-child(odd) { background:#1a2436; }
-body.wa-dark-font .wa-table tbody tr:hover { background:#243356; box-shadow:inset 0 0 0 1px #4f6fd8; }
+body.wa-dark-font .wa-table { background:#1a2436; border-color:#334155; color:#e2e8f0; }
+body.wa-dark-font .wa-table thead th { background:#0f172a; color:#cbd5e1; border-color:#334155; }
+body.wa-dark-font .wa-table tbody td { background:#1a2436; color:#e2e8f0; border-color:#334155; }
+body.wa-dark-font .wa-table tbody tr:hover td { background:#243356; }
+body.wa-dark-font .wa-table tbody tr.selected-row td { background:#1e3a5f; }
+body.wa-dark-font .wa-mb-amount { color:#c7d2fe; border-bottom-color:#334155; }
+body.wa-dark-font .wa-mb-type { color:#cbd5e1; }
+body.wa-dark-font .wa-mb-text { background:#0f172a; border-color:#334155; color:#cbd5e1; }
+body.wa-dark-font .wa-msg-box::-webkit-scrollbar-track { background:#0f172a; }
+body.wa-dark-font .wa-msg-box::-webkit-scrollbar-thumb { background:#475569; }
+body.wa-dark-font .wa-count-badge { background:#1e293b; border-color:#475569; color:#a5b4fc; }
 body.wa-dark-font .wa-table .num-cell, body.wa-dark-font .wa-table .rate-cell, body.wa-dark-font .wa-table .conv-cell { color:#fbbf24; }
-body.wa-dark-font .wa-table tbody td[style*="text-muted"] { color:#94a3b8 !important; }
+body.wa-dark-font .wa-table .wt-time { color:#94a3b8; }
+body.wa-dark-font .badge-cur { background:#422006; color:#fcd34d; border-color:#92400e; }
+body.wa-dark-font .badge-cur-eg { background:#1e293b; color:#cbd5e1; border-color:#475569; }
+body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 
 /* ===== PROFESSIONAL DATA GRID ===== */
 .grid-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:14px; overflow:hidden; box-shadow:0 4px 24px rgba(15,23,42,.10), 0 1px 3px rgba(15,23,42,.06); background:#fff; }
@@ -184,6 +208,13 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);overflow:hidden">
+        <div style="padding:13px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <h3 style="margin:0;font-size:.95rem;font-weight:800;color:var(--text)">
+                جدول المعاملات المالية
+                <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">(عرض بحدود شبكية كاملة ورسائل منسقة)</span>
+            </h3>
+            <span class="wa-count-badge" id="waCount">إجمالي المعاملات: {{ messages_list|length }}</span>
+        </div>
         <div style="padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
                 <span style="font-weight:700;font-size:.85rem;white-space:nowrap"><i class="bi bi-chat-dots"></i> الرسائل</span>
@@ -207,7 +238,6 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
                 </select>
             </div>
         </div>
-{% load humanize %}
         <div style="display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap">
             <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
                 <i class="bi bi-trash"></i> حذف المحدد
@@ -225,54 +255,61 @@ body.wa-dark-font .colchk { background:#1e293b; border-color:#475569; color:#a5b
             <table class="wa-table">
                 <thead>
                     <tr>
-                        <th style="width:26px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
-                        <th style="width:12%">المرسل</th>
-                        <th style="width:9%">التليفون</th>
-                        <th style="width:20%">الرسالة</th>
-                        <th style="width:8%">المبلغ</th>
-                        <th style="width:6%">السعر</th>
-                        <th style="width:9%">بعد التحويل</th>
-                        <th style="width:5%">العملة</th>
-                        <th style="width:10%">النوع</th>
-                        <th style="width:5%">الاتجاه</th>
-                        <th style="width:5%">الحالة</th>
-                        <th style="width:6%">التاريخ</th>
-                        <th style="width:6%">الوقت</th>
-                        <th style="width:6%">إجراءات</th>
+                        <th style="width:34px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+                        <th>المرسل</th>
+                        <th>التليفون</th>
+                        <th style="min-width:260px">الرسالة كاملة</th>
+                        <th>المبلغ</th>
+                        <th>السعر</th>
+                        <th>بعد التحويل</th>
+                        <th>العملة</th>
+                        <th>النوع</th>
+                        <th>الاتجاه</th>
+                        <th>الحالة</th>
+                        <th>التاريخ والوقت</th>
+                        <th>إجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="messagesTableBody">
                     {% for msg in messages_list %}
                     <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
-                        <td style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
-                        <td style="text-align:center;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-                        <td style="white-space:pre-line;word-break:break-word;line-height:1.5">{{ msg.message_text }}</td>
-                        <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
-                        <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
-                        <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
-                        <td style="text-align:center">{% if msg.currency %}<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">{{ msg.currency }}</span>{% else %}-{% endif %}</td>
-                        <td style="text-align:center;white-space:normal;word-break:break-word">{% if msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
+                        <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
+                        <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
+                        <td>
+                            <div class="wa-msg-box">
+                                {% if msg.amount %}<div class="wa-mb-amount">المبلغ: {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency }}{% endif %}</div>{% endif %}
+                                {% if msg.transfer_type %}<div class="wa-mb-type"><span class="dot"></span>{{ msg.transfer_type }}</div>{% endif %}
+                                <div class="wa-mb-text">{{ msg.message_text }}</div>
+                            </div>
+                        </td>
+                        <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|western }}{% else %}-{% endif %}</td>
+                        <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
+                        <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
+                        <td style="text-align:center">{% if msg.currency %}{% if msg.currency == 'EG' %}<span class="badge badge-cur-eg">EG</span>{% else %}<span class="badge badge-cur">{{ msg.currency }}</span>{% endif %}{% else %}-{% endif %}</td>
+                        <td style="text-align:center">{% if msg.transfer_type == 'فودافون كاش' %}<span class="badge badge-type-vcash">فودافون كاش</span>{% elif msg.transfer_type == 'انستا كاش' %}<span class="badge badge-type-acash">انستا كاش</span>{% elif msg.transfer_type == 'محفظة' %}<span class="badge badge-type-wallet">محفظة</span>{% elif msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
                         <td style="text-align:center">{% if msg.direction == 'صادر' %}<span class="badge badge-out">صادر</span>{% else %}<span class="badge badge-in">وارد</span>{% endif %}</td>
-                        <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge badge-edited">معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active">فعالة</span>{% endif %}</td>
-                        <td style="color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"y-m-d" }}</td>
-                        <td style="color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"h:i A" }}</td>
+                        <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge badge-edited">معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active"><span class="dot"></span>فعالة</span>{% endif %}</td>
+                        <td style="text-align:center;white-space:nowrap">
+                            <div style="font-family:Consolas,monospace;color:#475569;font-size:.7rem">{{ msg.timestamp|date:"Y-m-d" }}</div>
+                            <span class="wt-time">{{ msg.timestamp|date:"h:i A" }}</span>
+                        </td>
                         <td style="text-align:center">
-                            <div style="display:flex;gap:3px;justify-content:center">
+                            <div style="display:flex;gap:4px;justify-content:center">
                                 <form method="POST" action="{% url 'whatsapp_integration' %}" style="display:inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="reprocess">
                                     <input type="hidden" name="msg_id" value="{{ msg.id }}">
-                                    <button type="submit" class="act-btn act-reprocess" title="إعادة معالجة"><i class="bi bi-arrow-repeat"></i></button>
+                                    <button type="submit" class="act-btn act-reprocess" title="إعادة معالجة"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
                                 </form>
-                                <a href="{% url 'whatsapp_message_edit' msg.id %}" class="act-btn act-edit" title="تعديل"><i class="bi bi-pencil"></i></a>
-                                <a href="{% url 'whatsapp_message_delete' msg.id %}" class="act-btn act-delete" title="حذف" onclick="return confirm('هل تريد حذف هذه الرسالة؟')"><i class="bi bi-trash"></i></a>
+                                <a href="{% url 'whatsapp_message_edit' msg.id %}" class="act-btn act-edit" title="تعديل"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>
+                                <a href="{% url 'whatsapp_message_delete' msg.id %}" class="act-btn act-delete" title="حذف" onclick="return confirm('هل تريد حذف هذه الرسالة؟')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></a>
                             </div>
                         </td>
                     </tr>
                      {% empty %}
                     <tr>
-                        <td colspan="14" style="padding:40px;text-align:center;color:var(--text-muted)">
+                        <td colspan="13" style="padding:44px;text-align:center;color:var(--text-muted);background:#fff">
                             <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
                             لا توجد رسائل واردة
                         </td>
@@ -415,8 +452,10 @@ function buildDataGrid() {
         const type = cells[8] ? cells[8].textContent.trim() : '-';
         const dir = cells[9] ? cells[9].innerHTML : '-';
         const st = cells[10] ? cells[10].innerHTML : '-';
-        const date = cells[11] ? cells[11].textContent.trim() : '-';
-        const time = cells[12] ? cells[12].textContent.trim() : '-';
+        const dateEl = cells[11] ? cells[11].querySelector('div') : null;
+        const timeEl = cells[11] ? cells[11].querySelector('.wt-time') : null;
+        const date = dateEl ? dateEl.textContent.trim() : '-';
+        const time = timeEl ? timeEl.textContent.trim() : '-';
         const msg = cells[3] ? cells[3].textContent.trim() : '-';
         html += '<tr>'
             + '<td class="g-col g-idx" data-col="0">' + i + '</td>'
@@ -604,6 +643,8 @@ function loadMessages() {
             });
             const sa = document.getElementById('selectAll');
             if (sa) sa.checked = false;
+            const wc = document.getElementById('waCount');
+            if (wc) wc.textContent = 'إجمالي المعاملات: ' + document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
             if (filtersApplied) applyFilters();
             if (gridVisible) buildDataGrid();
             updateSelectedCount();

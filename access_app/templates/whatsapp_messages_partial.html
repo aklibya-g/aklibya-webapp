@@ -1,35 +1,43 @@
-{% load humanize %}{% load app_tags %}
+{% load humanize %}{% load app_tags %}{% load l10n %}
 {% for msg in messages_list %}
 <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}">
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
-    <td style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
-    <td style="text-align:center;white-space:nowrap" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
-    <td style="white-space:pre-line;word-break:break-word;line-height:1.5">{{ msg.message_text }}</td>
-    <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|floatformat:0|intcomma }}{% else %}-{% endif %}</td>
-    <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
-    <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|floatformat:2 }}{% else %}-{% endif %}</td>
-    <td style="text-align:center">{% if msg.currency %}<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">{{ msg.currency }}</span>{% else %}-{% endif %}</td>
-    <td style="text-align:center;white-space:normal;word-break:break-word">{% if msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
+    <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
+    <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
+    <td>
+        <div class="wa-msg-box">
+            {% if msg.amount %}<div class="wa-mb-amount">المبلغ: {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency }}{% endif %}</div>{% endif %}
+            {% if msg.transfer_type %}<div class="wa-mb-type"><span class="dot"></span>{{ msg.transfer_type }}</div>{% endif %}
+            <div class="wa-mb-text">{{ msg.message_text }}</div>
+        </div>
+    </td>
+    <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|western }}{% else %}-{% endif %}</td>
+    <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
+    <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
+    <td style="text-align:center">{% if msg.currency %}{% if msg.currency == 'EG' %}<span class="badge badge-cur-eg">EG</span>{% else %}<span class="badge badge-cur">{{ msg.currency }}</span>{% endif %}{% else %}-{% endif %}</td>
+    <td style="text-align:center">{% if msg.transfer_type == 'فودافون كاش' %}<span class="badge badge-type-vcash">فودافون كاش</span>{% elif msg.transfer_type == 'انستا كاش' %}<span class="badge badge-type-acash">انستا كاش</span>{% elif msg.transfer_type == 'محفظة' %}<span class="badge badge-type-wallet">محفظة</span>{% elif msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
     <td style="text-align:center">{% if msg.direction == 'صادر' %}<span class="badge badge-out">صادر</span>{% else %}<span class="badge badge-in">وارد</span>{% endif %}</td>
-    <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge badge-edited">معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active">فعالة</span>{% endif %}</td>
-    <td style="color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"y-m-d" }}</td>
-    <td style="color:var(--text-muted);text-align:center;white-space:nowrap">{{ msg.timestamp|date:"h:i A" }}</td>
+    <td style="text-align:center">{% if msg.status == 'معدلة' %}<span class="badge badge-edited">معدلة</span>{% elif msg.status == 'ملغية' %}<span class="badge badge-cancelled">ملغية</span>{% else %}<span class="badge badge-active"><span class="dot"></span>فعالة</span>{% endif %}</td>
+    <td style="text-align:center;white-space:nowrap">
+        <div style="font-family:Consolas,monospace;color:#475569;font-size:.7rem">{{ msg.timestamp|date:"Y-m-d" }}</div>
+        <span class="wt-time">{{ msg.timestamp|date:"h:i A" }}</span>
+    </td>
     <td style="text-align:center">
-        <div style="display:flex;gap:3px;justify-content:center">
+        <div style="display:flex;gap:4px;justify-content:center">
             <form method="POST" action="{% url 'whatsapp_integration' %}" style="display:inline">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="reprocess">
                 <input type="hidden" name="msg_id" value="{{ msg.id }}">
-                <button type="submit" class="act-btn act-reprocess" title="إعادة معالجة"><i class="bi bi-arrow-repeat"></i></button>
+                <button type="submit" class="act-btn act-reprocess" title="إعادة معالجة"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
             </form>
-            <a href="{% url 'whatsapp_message_edit' msg.id %}" class="act-btn act-edit" title="تعديل"><i class="bi bi-pencil"></i></a>
-            <a href="{% url 'whatsapp_message_delete' msg.id %}" class="act-btn act-delete" title="حذف" onclick="return confirm('هل تريد حذف هذه الرسالة؟')"><i class="bi bi-trash"></i></a>
+            <a href="{% url 'whatsapp_message_edit' msg.id %}" class="act-btn act-edit" title="تعديل"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></a>
+            <a href="{% url 'whatsapp_message_delete' msg.id %}" class="act-btn act-delete" title="حذف" onclick="return confirm('هل تريد حذف هذه الرسالة؟')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></a>
         </div>
     </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="14" style="padding:40px;text-align:center;color:var(--text-muted)">
+    <td colspan="13" style="padding:44px;text-align:center;color:var(--text-muted);background:#fff">
         <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>
         لا توجد رسائل واردة
     </td>

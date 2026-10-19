@@ -33,3 +33,11 @@ def div_filter(value, arg):
         return float(value) / float(arg)
     except (ValueError, TypeError, ZeroDivisionError):
         return None
+
+
+@register.filter(name="western")
+def western_filter(value, decimals=0):
+    try:
+        return f"{float(value):,.{int(decimals)}f}"
+    except (ValueError, TypeError):
+        return "-"

@@ -18,6 +18,8 @@ let lastSeenKey = null;
 let pulling = false;
 const queuedRequests = [];
 let syncWatcherStarted = false;
+let configWatcherStarted = false;
+let configReady = false;
 let pendingHistoryResolve = null;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -34,11 +36,29 @@ function toSec(ts) {
 }
 
 async function fetchGroupJid() {
+    for (let i = 0; i < 8; i++) {
+        try {
+            const res = await axios.get(DJANGO + '/api/whatsapp/config/', { timeout: 5000 });
+            monitoredGroupJid = res.data.group_jid || '';
+            syncFullHistory = !!res.data.sync_full_history;
+            configReady = true;
+            console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل') + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
+            return true;
+        } catch (e) {
+            console.log('⚠️ تعذر جلب الإعدادات من السيرفر (محاولة ' + (i + 1) + '/8)');
+            await sleep(2000);
+        }
+    }
+    console.log('⚠️ لم يتم جلب الإعدادات - ستتم تجاهل الرسائل حتى نجاح الجلب');
+    return false;
+}
+
+function wipeAuth() {
     try {
-        const res = await axios.get(DJANGO + '/api/whatsapp/config/');
-        monitoredGroupJid = res.data.group_jid || '';
-        syncFullHistory = !!res.data.sync_full_history;
-        console.log('📋 المجموعة المراقبة: ' + (monitoredGroupJid || 'الكل') + ' | مزامنة كاملة: ' + (syncFullHistory ? 'مفعلة' : 'معطلة'));
+        if (!fs.existsSync('auth_session')) return;
+        for (const f of fs.readdirSync('auth_session')) {
+            fs.rmSync('auth_session/' + f, { force: true });
+        }
     } catch (e) { }
 }
 
@@ -94,6 +114,7 @@ function noteKey(msg) {
 
 async function sendToDjango(msg, opts) {
     opts = opts || {};
+    if (!configReady) return 'skip';
     const jid = msg.key.remoteJid;
     if (!monitoredGroupJid && jid && jid.endsWith('@g.us')) {
         await reportGroup(jid);
@@ -430,7 +451,10 @@ function watchSyncRequest() {
 
 async function startBot() {
     await fetchGroupJid();
-    setInterval(fetchGroupJid, 10000);
+    if (!configWatcherStarted) {
+        configWatcherStarted = true;
+        setInterval(fetchGroupJid, 10000);
+    }
 
     const { state, saveCreds } = await useMultiFileAuthState('auth_session');
     const { version } = await fetchLatestBaileysVersion();
@@ -484,8 +508,11 @@ async function startBot() {
         }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
-            if (statusCode === DisconnectReason.loggedOut) {
-                console.log('❌ تم تسجيل الخروج');
+            if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+                console.log('❌ تم تسجيل الخروج (device_removed) - مسح الجلسة القديمة وعرض رمز QR جديد');
+                wipeAuth();
+                axios.post(DJANGO + '/api/whatsapp/qr/', { qr: null, status: 'waiting' }).catch(() => {});
+                setTimeout(startBot, 2000);
                 return;
             }
             if (statusCode === 409) {
