@@ -23,6 +23,22 @@
 .wa-changed-cell::after { content:'✏'; font-size:.55rem; color:#dc2626; vertical-align:super; margin-inline-start:2px; }
 #waLogOverlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:220; align-items:center; justify-content:center; }
 #waLogModal { background:var(--card-bg,#fff); border-radius:16px; border:1px solid var(--border,#e2e8f0); padding:22px; width:min(560px,94vw); max-height:85vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+#waPrintReport { display:none; }
+@media print {
+    body * { visibility:hidden !important; }
+    #waPrintReport, #waPrintReport * { visibility:visible !important; }
+    #waPrintReport { display:block !important; position:absolute; top:0; right:0; left:0; padding:0; font-family:Cairo,Tahoma,sans-serif; color:#111; }
+    #waPrintReport .pr-title { text-align:center; font-size:1.15rem; font-weight:800; margin:0 0 2px; }
+    #waPrintReport .pr-sub { text-align:center; font-size:.75rem; color:#555; margin:0 0 14px; }
+    #waPrintReport table { width:100%; border-collapse:collapse; font-size:.72rem; margin-bottom:14px; }
+    #waPrintReport th { background:#1e293b !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:6px 5px; border:1px solid #334155; text-align:center; font-weight:700; }
+    #waPrintReport td { padding:5px; border:1px solid #cbd5e1; text-align:center; }
+    #waPrintReport .pr-sum { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    #waPrintReport .pr-box { flex:1; min-width:110px; border:1.5px solid #334155; border-radius:6px; padding:8px 10px; text-align:center; }
+    #waPrintReport .pr-box .lbl { font-size:.68rem; color:#555; font-weight:600; }
+    #waPrintReport .pr-box .val { font-size:.95rem; font-weight:800; margin-top:2px; }
+    #waPrintReport .pr-ft { display:flex; justify-content:space-between; font-size:.7rem; color:#555; border-top:1.5px solid #334155; padding-top:6px; }
+}
 .badge-cancelled { background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; }
 .badge-type { background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; }
 .badge-type-vcash { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
@@ -310,6 +326,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
+                <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:5px 12px;border-radius:8px;background:#eff6ff;color:#1d4ed8;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;white-space:nowrap"><i class="bi bi-mouse2"></i> دبل كليك على خلية (مبلغ/سعر/هاتف...) لتعديلها مباشرة</span>
             </div>
         </div>
@@ -413,6 +430,8 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
         <div id="waLogBody"></div>
     </div>
 </div>
+
+<div id="waPrintReport"></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -1134,6 +1153,81 @@ function loadMessages() {
         .catch(() => {});
 }
 setInterval(loadMessages, 5000);
+
+// ===== PRINT REPORT (totals per currency + avg rate) =====
+function waPrintReport() {
+    var rows = Array.from(document.querySelectorAll('#messagesTableBody tr[data-direction]')).filter(function(tr) { return tr.style.display !== 'none'; });
+    if (!rows.length) { alert('لا توجد بيانات للطباعة (طبّق الفلتر أولاً)'); return; }
+    var curTotals = {};
+    var convTotal = 0, convCount = 0;
+    var rateSum = 0, rateCount = 0;
+    var byDir = { 'وارد': 0, 'صادر': 0 };
+    var byDirAmount = { 'وارد': 0, 'صادر': 0 };
+    var bodyHtml = '';
+    rows.forEach(function(tr, i) {
+        var amount = parseFloat(tr.getAttribute('data-amount'));
+        var rate = parseFloat(tr.getAttribute('data-rate'));
+        var cur = tr.getAttribute('data-currency') || 'غير محددة';
+        var dir = tr.getAttribute('data-direction') || '';
+        var phone = tr.getAttribute('data-phone') || '-';
+        var ttype = tr.getAttribute('data-ttype') || '-';
+        var ttime = tr.getAttribute('data-time') || '';
+        var conv = (amount && rate) ? amount / rate : null;
+        if (!isNaN(amount) && amount) {
+            curTotals[cur] = (curTotals[cur] || 0) + amount;
+            if (dir) byDirAmount[dir] = (byDirAmount[dir] || 0) + amount;
+        }
+        if (dir) byDir[dir] = (byDir[dir] || 0) + 1;
+        if (conv) { convTotal += conv; convCount++; }
+        if (rate && !isNaN(rate)) { rateSum += rate; rateCount++; }
+        bodyHtml += '<tr>'
+            + '<td>' + (i + 1) + '</td>'
+            + '<td style="white-space:nowrap">' + escapeHtml(ttime) + '</td>'
+            + '<td dir="ltr" style="font-family:Consolas,monospace">' + escapeHtml(phone) + '</td>'
+            + '<td dir="ltr" style="font-family:Consolas,monospace;font-weight:700">' + (amount ? amount.toLocaleString('en-US', {maximumFractionDigits:2}) : '-') + '</td>'
+            + '<td dir="ltr" style="font-family:Consolas,monospace">' + (rate ? rate.toLocaleString('en-US', {maximumFractionDigits:2}) : '-') + '</td>'
+            + '<td dir="ltr" style="font-family:Consolas,monospace;font-weight:700">' + (conv ? conv.toLocaleString('en-US', {maximumFractionDigits:2}) : '-') + '</td>'
+            + '<td>' + escapeHtml(cur) + '</td>'
+            + '<td>' + escapeHtml(ttype) + '</td>'
+            + '<td>' + escapeHtml(dir) + '</td>'
+            + '</tr>';
+    });
+    var avgRate = rateCount ? (rateSum / rateCount) : 0;
+    var curRows = Object.keys(curTotals).map(function(k) {
+        return '<tr><td style="font-weight:700;text-align:right">' + escapeHtml(k) + '</td>'
+            + '<td dir="ltr" style="font-family:Consolas,monospace;font-weight:800">' + curTotals[k].toLocaleString('en-US', {maximumFractionDigits:2}) + '</td></tr>';
+    }).join('');
+    var now = new Date();
+    var dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    var filterBits = [];
+    if (activeFilter) filterBits.push('الحالة/النوع: ' + activeFilter);
+    var dirSel = document.getElementById('directionFilter').value;
+    if (dirSel) filterBits.push('الاتجاه: ' + dirSel);
+    var grpSel = document.getElementById('groupFilter');
+    if (grpSel.value) filterBits.push('الغرفة: ' + (waGroupNames[grpSel.value] || grpSel.value));
+    var df = document.getElementById('dateFrom').value, dt = document.getElementById('dateTo').value;
+    if (df || dt) filterBits.push('الفترة: ' + (df || '...') + ' إلى ' + (dt || '...'));
+    var sq = document.getElementById('searchInput').value;
+    if (sq) filterBits.push('بحث: ' + sq);
+    var html = ''
+        + '<div class="pr-title">تقرير معاملات الواتساب</div>'
+        + '<div class="pr-sub">تاريخ الطباعة: ' + dateStr + ' — عدد المعاملات: ' + rows.length
+        + (filterBits.length ? ' — الفلتر: ' + escapeHtml(filterBits.join(' | ')) : ' — بدون فلتر') + '</div>'
+        + '<div class="pr-sum">'
+        + '<div class="pr-box"><div class="lbl">إجمالي بعد التحويل</div><div class="val" dir="ltr">' + convTotal.toLocaleString('en-US', {maximumFractionDigits:2}) + '</div></div>'
+        + '<div class="pr-box"><div class="lbl">متوسط سعر الصرف</div><div class="val" dir="ltr">' + avgRate.toLocaleString('en-US', {maximumFractionDigits:2}) + '</div></div>'
+        + '<div class="pr-box"><div class="lbl">وارد</div><div class="val">' + byDir['وارد'] + ' (' + (byDirAmount['وارد'] || 0).toLocaleString('en-US', {maximumFractionDigits:0}) + ')</div></div>'
+        + '<div class="pr-box"><div class="lbl">صادر</div><div class="val">' + byDir['صادر'] + ' (' + (byDirAmount['صادر'] || 0).toLocaleString('en-US', {maximumFractionDigits:0}) + ')</div></div>'
+        + '</div>'
+        + '<div style="font-size:.78rem;font-weight:800;margin:0 0 6px">الإجماليات حسب العملة</div>'
+        + '<table><thead><tr><th style="width:40%">العملة</th><th>إجمالي المبلغ</th></tr></thead><tbody>' + curRows + '</tbody></table>'
+        + '<div style="font-size:.78rem;font-weight:800;margin:0 0 6px">تفاصيل المعاملات</div>'
+        + '<table><thead><tr><th>#</th><th>التاريخ والوقت</th><th>التليفون</th><th>المبلغ</th><th>السعر</th><th>بعد التحويل</th><th>العملة</th><th>النوع</th><th>الاتجاه</th></tr></thead><tbody>' + bodyHtml + '</tbody></table>'
+        + '<div class="pr-ft"><span>عدد أسعار الصرف المحسوبة: ' + rateCount + '</span><span>إجمالي بعد التحويل: ' + convTotal.toLocaleString('en-US', {maximumFractionDigits:2}) + '</span><span>متوسط سعر الصرف: ' + avgRate.toLocaleString('en-US', {maximumFractionDigits:2}) + '</span></div>';
+    var rep = document.getElementById('waPrintReport');
+    rep.innerHTML = html;
+    window.print();
+}
 document.addEventListener('DOMContentLoaded', waUpdateAlertBtn);
 setTimeout(waUpdateAlertBtn, 300);
 
