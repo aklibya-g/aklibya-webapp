@@ -3676,6 +3676,33 @@ def whatsapp_webhook(request):
             if not allow_dup and _wa_is_duplicate(wamsg_id, sender, jid, text):
                 return JsonResponse({"status": "success", "saved": False, "duplicate": True})
             amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
+            from_image = _as_bool(data.get("from_image"), default=False)
+            if from_image:
+                img_rate = data.get("image_rate")
+                img_currency = data.get("image_currency")
+                img_amount = data.get("image_amount")
+                img_phone = data.get("image_phone")
+                img_ttype = data.get("image_ttype")
+                if img_rate and not rate:
+                    try:
+                        rate = float(img_rate)
+                    except (ValueError, TypeError):
+                        pass
+                if img_currency and not currency:
+                    cur = str(img_currency).strip()
+                    if cur in ("ج م", "د ل"):
+                        currency = cur
+                if img_amount and not amount:
+                    try:
+                        amount = float(img_amount)
+                    except (ValueError, TypeError):
+                        pass
+                if img_phone and not phone:
+                    ph = re.sub(r'\D', '', str(img_phone))
+                    if len(ph) in (9, 10, 11):
+                        phone = ph
+                if img_ttype and not ttype:
+                    ttype = str(img_ttype).strip()
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,

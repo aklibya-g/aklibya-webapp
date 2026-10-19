@@ -1,4 +1,4 @@
-const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage, getContentType } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 const fs = require('fs');
@@ -171,6 +171,47 @@ function noteKey(msg) {
     }
 }
 
+const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+
+async function analyzeImageWithGemini(msg) {
+    if (!GEMINI_KEY || !sock) return null;
+    try {
+        const m = normalizeContent(msg.message);
+        const imgNode = m && (m.imageMessage || m.stickerMessage);
+        if (!imgNode) return null;
+        const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
+            logger: undefined,
+            reuploadRequest: sock.updateMediaMessage,
+        });
+        if (!buffer || !buffer.length) return null;
+        const b64 = buffer.toString('base64');
+        const mime = imgNode.mimetype || 'image/jpeg';
+        const prompt = 'هذه صورة من غرفة واتساب لشركة تحويلات مالية. اقرأ كل الأرقام والنصوص المالية الظاهرة فيها. أعد JSON فقط بدون أي نص آخر بالشكل: {"rate": number|null, "currency": "د ل"|"ج م"|null, "amount": number|null, "phone": string|null, "transfer_type": "تحويل"|"محفظة"|"فودافون كاش"|"انستا كاش"|null, "summary": "ملخص عربي قصير لمحتوى الصورة"}. rate هو سعر التحويل الظاهر في الصورة (مثال: 5.30 أو 13.25). currency استنتجها من سياق الصورة (مصر=ج م، ليبيا/تونس/الجزائر=د ل). إذا الصورة إعلان سعر فقط بدون معاملة فاترك amount و phone و transfer_type = null.';
+        const res = await axios.post(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + GEMINI_KEY,
+            {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: mime, data: b64 } }
+                    ]
+                }],
+                generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+            },
+            { timeout: 30000 }
+        );
+        const txt = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const jsonMatch = txt.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return null;
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('👁️ صورة محللة: rate=' + parsed.rate + ' cur=' + parsed.currency + ' — ' + (parsed.summary || '').substring(0, 60));
+        return parsed;
+    } catch (e) {
+        console.log('⚠️ فشل تحليل الصورة: ' + (e && e.message));
+        return null;
+    }
+}
+
 async function sendToDjango(msg, opts) {
     opts = opts || {};
     if (!configReady) return 'skip';
@@ -188,19 +229,44 @@ async function sendToDjango(msg, opts) {
         console.log('🫧 رسالة شات ذاتية مقبولة: ' + jid);
     }
     const text = extractText(msg.message);
-    if (!text) return 'skip';
+    const mContent = normalizeContent(msg.message);
+    const isImage = !!(mContent && mContent.imageMessage);
+    if (!text && !isImage) return 'skip';
     const sender = msg.key.participant || msg.key.remoteJid;
     noteKey(msg);
+    let imageAnalysis = null;
+    if (isImage) {
+        imageAnalysis = await analyzeImageWithGemini(msg);
+    }
+    let finalText = text || '';
+    if (!finalText && imageAnalysis && imageAnalysis.summary) {
+        finalText = '[صورة] ' + imageAnalysis.summary;
+    }
+    if (!finalText) {
+        if (isImage) {
+            console.log('🖼️ صورة بدون تحليل ولم تُحفظ');
+        }
+        return 'skip';
+    }
     try {
-        const res = await axios.post(DJANGO + '/api/whatsapp/webhook/', {
+        const payload = {
             jid: msg.key.remoteJid,
             sender: sender,
-            message: text,
+            message: finalText,
             timestamp: toSec(msg.messageTimestamp) || undefined,
             direction: msg.key.fromMe ? 'صادر' : 'وارد',
             msg_id: msg.key.id || '',
             allow_dup: opts.allowDup !== false
-        });
+        };
+        if (imageAnalysis) {
+            payload.image_rate = imageAnalysis.rate;
+            payload.image_currency = imageAnalysis.currency;
+            payload.image_amount = imageAnalysis.amount;
+            payload.image_phone = imageAnalysis.phone;
+            payload.image_ttype = imageAnalysis.transfer_type;
+            payload.from_image = true;
+        }
+        const res = await axios.post(DJANGO + '/api/whatsapp/webhook/', payload);
         const data = res.data || {};
         if (data.duplicate) return 'dup';
         if (data.saved) {
