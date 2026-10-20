@@ -154,34 +154,6 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 💡 <b>مزامنة التاريخ الكامل</b>: عند تفعيلها يجب حذف الجلسة وإعادة ربط الواتساب، ثم واتساب يرسل كل المحادثات القديمة تلقائياً.
             </p>
         </div>
-
-        <!-- ═══════ Section 3: Data Tools ═══════ -->
-        <div style="padding:18px 22px">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                <div style="width:32px;height:32px;border-radius:8px;background:#faf5ff;display:flex;align-items:center;justify-content:center;font-size:.95rem">📥</div>
-                <span style="font-weight:800;font-size:.88rem">أدوات البيانات</span>
-            </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-                <form method="POST" style="display:inline">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="reprocess">
-                    <button type="submit" style="padding:9px 18px;border-radius:10px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:6px" title="إعادة تحليل كل الرسائل المحفوظة واستخراج المبالغ والأسعار والعملات">
-                        <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
-                    </button>
-                </form>
-                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="sync_messages">
-                    <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);cursor:pointer;user-select:none" title="اسمح بدخول رسائل مكررة (لإعادة تعبئة فجوات)">
-                        <input type="checkbox" name="allow_dup" value="1" style="width:14px;height:14px;cursor:pointer;accent-color:#16a34a"> تكرار
-                    </label>
-                    <button type="submit" style="padding:9px 18px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:6px" title="سحب كل الرسائل السابقة من واتساب بتواريخها الأصلي (يحتاج البوت يعمل)">
-                        <i class="bi bi-cloud-download"></i> سحب الكل
-                    </button>
-                </form>
-            </div>
-        </div>
     </div>
 
     <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border)">
@@ -191,6 +163,25 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <div id="waMonitoredBar" style="display:none;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;flex:1;min-width:0">
                     <span id="waMonitoredLabel" style="font-weight:800;font-size:.7rem;color:#047857;white-space:nowrap"><i class="bi bi-collection-play"></i> المتابَعة:</span>
                     <div id="waMonitoredChips" style="display:flex;gap:5px;flex-wrap:nowrap;align-items:center"></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reprocess">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="إعادة تحليل كل الرسائل المحفوظة واستخراج المبالغ والأسعار والعملات">
+                        <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
+                    </button>
+                </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="sync_messages">
+                    <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);cursor:pointer;user-select:none;white-space:nowrap" title="اسمح بدخول رسائل مكررة (لإعادة تعبئة فجوات)">
+                        <input type="checkbox" name="allow_dup" value="1" style="width:14px;height:14px;cursor:pointer;accent-color:#16a34a"> تكرار
+                    </label>
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="سحب كل الرسائل السابقة من واتساب بتواريخها الأصلي (يحتاج البوت يعمل)">
+                        <i class="bi bi-cloud-download"></i> سحب الكل
+                    </button>
+                </form>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
                     <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">
