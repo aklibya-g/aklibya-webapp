@@ -26,6 +26,19 @@ let pendingHistoryResolve = null;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+// منع موت العملية بأخطاء اتصال غير متوقعة (مثل Connection Closed أثناء sendRetryRequest)
+process.on('uncaughtException', (err) => {
+    console.error('⚠️ uncaughtException:', err && err.message);
+    if (sock) {
+        try { sock.end(undefined); } catch (e) {}
+        sock = null;
+    }
+    setTimeout(() => { try { startBot(); } catch (e) { console.error('restart failed:', e && e.message); } }, 3000);
+});
+process.on('unhandledRejection', (reason) => {
+    console.error('⚠️ unhandledRejection:', reason && reason.message ? reason.message : reason);
+});
+
 function toSec(ts) {
     if (ts === null || ts === undefined) return 0;
     let v = ts;
