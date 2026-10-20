@@ -3621,7 +3621,7 @@ def whatsapp_integration(request):
             WhatsAppMessage.objects.all().delete()
             messages.success(request, f"تم حذف جميع الرسائل ({count})")
             return redirect("whatsapp_integration")
-        elif action == "delete_outside_range":
+        elif action == "delete_inside_range":
             date_from = (request.POST.get("date_from") or "").strip()
             date_to = (request.POST.get("date_to") or "").strip()
             if not date_from or not date_to:
@@ -3636,13 +3636,13 @@ def whatsapp_integration(request):
             if date_to < date_from:
                 messages.error(request, "تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
                 return redirect("whatsapp_integration")
-            qs_out = WhatsAppMessage.objects.filter(timestamp__date__lt=date_from) | WhatsAppMessage.objects.filter(timestamp__date__gt=date_to)
-            deleted_count = qs_out.count()
-            qs_out.delete()
+            qs_in = WhatsAppMessage.objects.filter(timestamp__date__gte=date_from, timestamp__date__lte=date_to)
+            deleted_count = qs_in.count()
+            qs_in.delete()
             messages.success(
                 request,
-                f"تم حذف {deleted_count} رسالة خارج المدى {date_from} → {date_to} — "
-                "بقيت الرسائل ضمن المدى فقط"
+                f"تم حذف {deleted_count} رسالة بين {date_from} و {date_to} — "
+                "بقيت الرسائل خارج هذا المدى"
             )
             return redirect("whatsapp_integration")
     setting = SystemSetting.get()

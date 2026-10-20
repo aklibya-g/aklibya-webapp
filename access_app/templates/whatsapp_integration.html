@@ -276,8 +276,8 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
                     <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                     <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
-                    <button onclick="deleteOutsideRange()" title="احذف كل الرسائل خارج المدى المحدد في التاريخين — يبقي فقط ما بينهما (للاختيار بعد سحب الكل)" style="padding:5px 10px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.72rem;flex-shrink:0;white-space:nowrap">
-                        <i class="bi bi-scissors"></i> حذف خارج المدى
+                    <button onclick="deleteInsideRange()" title="احذف كل الرسائل بين التاريخين المحددين — يحذف ما ضمن المدى ويُبقي ما خارجه" style="padding:5px 10px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.72rem;flex-shrink:0;white-space:nowrap">
+                        <i class="bi bi-scissors"></i> حذف بين التاريخين
                     </button>
                     <select id="directionFilter" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                         <option value="">كل الاتجاهات</option>
@@ -852,7 +852,7 @@ function confirmDeleteAll() {
     const v = prompt('⚠️ سيتم حذف جميع الرسائل (' + total + ') نهائياً!\nاكتب "حذف الكل" للتأكيد:', '');
     return v === 'حذف الكل';
 }
-function deleteOutsideRange() {
+function deleteInsideRange() {
     const dfrom = document.getElementById('dateFrom').value;
     const dto = document.getElementById('dateTo').value;
     if (!dfrom || !dto) { alert('حدد تاريخ البداية والنهاية أولاً في خانات التاريخ'); return; }
@@ -862,14 +862,13 @@ function deleteOutsideRange() {
         const d = row.dataset.date || '';
         if (d >= dfrom && d <= dto) inside++;
     });
-    const outside = total - inside;
-    if (outside <= 0) { alert('لا توجد رسائل خارج هذا المدى — كل الرسائل ضمنه.'); return; }
-    const v = prompt('⚠️ سيتم حذف ' + outside + ' رسالة خارج المدى ' + dfrom + ' → ' + dto + ' (يبقى ' + inside + ' فقط) نهائياً!\nاكتب "حذف" للتأكيد:', '');
+    if (inside <= 0) { alert('لا توجد رسائل بين هذين التاريخين.'); return; }
+    const v = prompt('⚠️ سيتم حذف ' + inside + ' رسالة بين ' + dfrom + ' و ' + dto + ' نهائياً!\nاكتب "حذف" للتأكيد:', '');
     if (v !== 'حذف') return;
     const f = document.createElement('form');
     f.method = 'POST';
     f.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">'
-        + '<input type="hidden" name="action" value="delete_outside_range">'
+        + '<input type="hidden" name="action" value="delete_inside_range">'
         + '<input type="hidden" name="date_from" value="' + dfrom + '">'
         + '<input type="hidden" name="date_to" value="' + dto + '">';
     document.body.appendChild(f);
