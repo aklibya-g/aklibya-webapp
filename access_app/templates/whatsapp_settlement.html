@@ -31,6 +31,7 @@ table.stmt td.bal { font-family:Consolas,monospace; font-weight:700; }
 table.stmt td.bal.neg { color:#b91c1c; }
 table.stmt td.bal.pos { color:#15803d; }
 table.stmt td.amount { font-family:Consolas,monospace; font-weight:700; }
+table.stmt td.rate { font-family:Consolas,monospace; font-weight:700; color:#7c3aed; background:#f5f3ff; white-space:nowrap; }
 table.stmt td.notes { text-align:right; font-size:.78rem; color:#333; max-width:220px; }
 table.stmt td.ref { font-family:Consolas,monospace; font-size:.78rem; }
 table.stmt tbody tr:hover td { filter:brightness(.97); }
@@ -83,6 +84,7 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
         <thead>
             <tr>
                 <th>المبلغ العملي</th>
+                <th>السعر</th>
                 <th>نوع العملية</th>
                 <th>التأريخ</th>
                 <th class="h-credit">دائن</th>
@@ -96,6 +98,7 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
             {% for r in rows %}
             <tr>
                 <td class="amount">{{ r.msg.amount|western:2 }} {{ r.msg.currency|default:"" }}</td>
+                <td class="rate">{% if r.msg.exchange_rate %}{{ r.msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
                 <td>{{ r.kind }}</td>
                 <td class="date">{{ r.msg.timestamp|date:"Y-m-d" }}</td>
                 <td class="credit">{% if r.credit %}{{ r.credit|western:3 }}{% else %}0.000{% endif %}</td>
@@ -105,7 +108,7 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
                 <td class="ref">{{ r.ref }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="8" style="color:#888;padding:24px">لا توجد حركات</td></tr>
+            <tr><td colspan="9" style="color:#888;padding:24px">لا توجد حركات</td></tr>
             {% endfor %}
         </tbody>
     </table>
