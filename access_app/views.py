@@ -3296,7 +3296,8 @@ def whatsapp_settlement(request):
             credit = lyd
             credit_total += lyd
 
-        running += credit - debit
+        # رصيد حساب الزاجل لدينا: وارد (أحيل إلينا) يزيد رصيده دائن · صادر (أرسلناه له) ينقصه إلى مدين
+        running += debit - credit
         rows.append({
             "msg": msg,
             "ref": "%s-%s" % (WA_STATEMENT_NO, 67600 + idx),

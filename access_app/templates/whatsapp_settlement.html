@@ -123,7 +123,7 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
 
     <div class="stmt-foot">
         <div class="ft-note">
-            إجمالي الصادر (دائن): {{ credit_total|western:3 }} د.ل &nbsp;—&nbsp; إجمالي الوارد (مدين): {{ debit_total|western:3 }} د.ل
+            الحساب {{ balance_kind }} بقيمة: {{ balance_words }} — لا غير.
         </div>
         <div class="ft-total">
             <div class="lbl">{{ balance_label }}</div>
