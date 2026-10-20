@@ -89,7 +89,7 @@ def _wa_rate_timeline():
 
 
 def _wa_rate_at(ts, timeline=None):
-    """آخر سعر معلن قبل/عند لحظة ts — أو None إن لم يُعلن سعر قبلها."""
+    """آخر سعر معلن قبل/عند لحظة ts — وإن كانت قبل أول إعلان في يومها فتأخذ أول إعلان ذلك اليوم."""
     if ts is None:
         return None
     if timeline is None:
@@ -100,7 +100,13 @@ def _wa_rate_at(ts, timeline=None):
             best = rate
         else:
             break
-    return best
+    if best is not None:
+        return best
+    day = ts.date() if hasattr(ts, "date") else ts
+    for ets, rate in timeline:
+        if ets.date() == day:
+            return rate
+    return None
 
 
 def _write_sync_request(payload):
