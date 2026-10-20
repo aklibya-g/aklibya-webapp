@@ -108,10 +108,11 @@ body.wa-dark-font .badge-cur-eg { background:#1e293b; color:#cbd5e1; border-colo
 body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 
 /* ===== SCROLL BUTTONS (hidden until hover) ===== */
-#waScrollBtns { position:fixed; left:16px; bottom:18px; display:flex; flex-direction:column; gap:8px; z-index:80; }
-.wa-scroll-btn { width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; color:#fff; font-size:1.05rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .25s, transform .2s; box-shadow:0 4px 14px rgba(0,0,0,.3); }
-.wa-scroll-btn:hover { opacity:1; transform:scale(1.12); }
-.wa-scroll-btn.s-top { background:#16a34a; }
+#waScrollBtns { position:fixed; left:8px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:9px; z-index:80; }
+.wa-scroll-btn { width:42px; height:42px; border-radius:50%; border:2px solid rgba(255,255,255,.65); cursor:pointer; color:#fff; font-size:1.1rem; display:flex; align-items:center; justify-content:center; opacity:0; transform:scale(.8); transition:opacity .22s, transform .22s; box-shadow:0 5px 16px rgba(0,0,0,.32); }
+.wa-scroll-btn:hover { opacity:1 !important; transform:scale(1.14); }
+#waScrollBtns.show .wa-scroll-btn { opacity:1; transform:scale(1); }
+.wa-scroll-btn.s-top { background:#ea580c; }
 .wa-scroll-btn.s-bot { background:#2563eb; }
 
 /* ===== WA TABLE (existing styles below) ===== */
@@ -1445,6 +1446,16 @@ setTimeout(updateWaStickyTop, 500);
 // إخفاء القائمة الجانبية في صفحة ربط الواتساب — تعود عند الضغط على «رجوع»
 document.body.classList.add('sidebar-hidden');
 try { localStorage.setItem('sidebarHidden', '0'); } catch (e) {}
+
+// ===== أزرار التمرير لأعلى/أسفل: تظهر عند تقريب المؤشر للجانب الأيسر =====
+(function () {
+    var box = document.getElementById('waScrollBtns');
+    if (!box) return;
+    document.addEventListener('mousemove', function (e) {
+        if (e.clientX < 90) box.classList.add('show');
+        else box.classList.remove('show');
+    });
+})();
 
 // ===== ضغط الجدول ليتّسع كاملًا عند فتح القائمة الجانبية =====
 var waFitTimers = [];
