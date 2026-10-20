@@ -1,6 +1,7 @@
 import json
 import os
 import csv
+import re
 import subprocess
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -4089,12 +4090,35 @@ def whatsapp_webhook(request):
     return JsonResponse({"status": "error"}, status=405)
 
 
+_WA_SUMMARY_RE = re.compile(
+    r'المطلوب|الإجمالي|الاجمالي|اجمالي|المجموع|كشف\s*حساب|كشف\s*الحساب|الرصيد\s*الكلي|الرصيد\s*الحالي|صافي\s*الرصيد|المنقول|المحول|المرحول|المتبقي|الباقي\s*عليه',
+    re.IGNORECASE,
+)
+_WA_TRANSFER_ACTION_RE = re.compile(
+    r'فودافون|فودافـون|انستا|استلا|حوالة|حواله|تسليم|استلام|شحن|كاش|محفظة|زاجل|الزاجل|وصلت|سلمت|أرسلت|ارسلت|استلمت|تحويل',
+    re.IGNORECASE,
+)
+
+
+def _wa_is_summary_line(text):
+    """سطور كشف حساب/أرصدة معلنة (مثل: المطلوب من الشركة مبلغ...) — ليست حوالة ولا تُدخل في الكشف."""
+    if not text:
+        return False
+    if not _WA_SUMMARY_RE.search(text):
+        return False
+    t = re.sub(r'@\d{6,}', ' ', text)
+    if re.search(r'(?<!\d)(01\d{9}|09\d{9}|0\d{9})(?!\d)', t):
+        return False
+    return not _WA_TRANSFER_ACTION_RE.search(text)
+
+
 def _parse_wa_message(text):
-    import re
     if not text:
         return None, None, None, None, "", "تحويل"
     # strip tashkeel (diacritics), tatweel, markdown decorations
     t = re.sub(r'[ً-ْٰـ]', '', text)
+    if _wa_is_summary_line(t):
+        return None, None, None, None, "", "تحويل"
     t = t.replace('،', '.')
     t = re.sub(r'[*_☆★#`~^=|]', ' ', t)
     t = re.sub(r'\s+', ' ', t)
