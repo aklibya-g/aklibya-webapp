@@ -3689,8 +3689,14 @@ def whatsapp_integration(request):
                 if msg.edited_by and msg.edited_by not in ("reprocess", "timeline"):
                     continue
                 checked += 1
-                cur = (msg.currency or "").strip()
-                _, parsed_rate, _, parsed_currency, _, _ = _parse_wa_message_learned(msg.message_text)
+                old_currency = (msg.currency or "").strip()
+                _, parsed_rate, parsed_commission, parsed_currency, _, _ = _parse_wa_message_learned(msg.message_text)
+                cur = old_currency
+                cur_changed = False
+                if not cur and parsed_currency:
+                    msg.currency = parsed_currency
+                    cur = parsed_currency
+                    cur_changed = True
                 if parsed_rate:
                     new_rate = parsed_rate
                 elif cur == "د ل":
@@ -3698,7 +3704,7 @@ def whatsapp_integration(request):
                 else:
                     new_rate = _wa_rate_at(msg.timestamp, rate_timeline)
                 old_rate = msg.exchange_rate
-                if (new_rate or 0) == (old_rate or 0):
+                if (new_rate or 0) == (old_rate or 0) and not cur_changed:
                     continue
                 updated += 1
                 msg.exchange_rate = new_rate
@@ -3707,17 +3713,25 @@ def whatsapp_integration(request):
                     prev_log = json.loads(msg.edit_log) if msg.edit_log else []
                 except Exception:
                     prev_log = []
-                prev_log.append({
-                    "source": "rate_timeline",
-                    "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "changes": [{
+                changes = []
+                if cur_changed:
+                    changes.append({"field": "currency", "label": "العملة", "old": old_currency or "—", "new": cur})
+                if (new_rate or 0) != (old_rate or 0):
+                    changes.append({
                         "field": "exchange_rate", "label": "السعر",
                         "old": ("—" if old_rate is None else str(old_rate)),
                         "new": ("—" if new_rate is None else str(new_rate)),
-                    }],
+                    })
+                prev_log.append({
+                    "source": "rate_timeline",
+                    "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "changes": changes,
                 })
                 msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
-                msg.save(update_fields=["exchange_rate", "edited_by", "edit_log"])
+                fields = ["exchange_rate", "edited_by", "edit_log"]
+                if cur_changed:
+                    fields.append("currency")
+                msg.save(update_fields=fields)
             if rate_timeline:
                 last_ts, last_rate = rate_timeline[-1]
                 st_rate.wa_current_rate = last_rate
@@ -4156,6 +4170,18 @@ def _parse_wa_message(text):
         phone_number = max(phone_matches, key=len)
         if len(phone_number) == 9:
             phone_number = '0' + phone_number
+
+    # استنتاج العملة من دلائل القرينة حين لا تُذكر صراحة:
+    # رقم مصري (01x) يثبت الحوالة لمصر · رقم ليبي (09x) يثبت الحوالة لليبيا · كلمات مصرية (فودافون/انستا) أو ليبية
+    if not currency:
+        if phone_number.startswith("01"):
+            currency = "ج م"
+        elif phone_number.startswith("09"):
+            currency = "د ل"
+        elif re.search(r'فودافون|فودافـون|انستا|instapay|امان', t, re.IGNORECASE):
+            currency = "ج م"
+        elif re.search(r'ليبيانا|البريد\s*الليبي|محفظة\s*ليبية|ليبي\s*كاش', t, re.IGNORECASE):
+            currency = "د ل"
 
     cleaned = re.sub(r'(?<!\d)(01\d{9}|09\d{9}|0\d{9})(?!\d)', ' ', t_nomention)
     cleaned = re.sub(r'@\d{6,}', ' ', cleaned)
