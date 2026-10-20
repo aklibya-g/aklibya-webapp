@@ -289,7 +289,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         <td>
                             <div class="wa-card" title="{{ msg.message_text }}">
                                 {% if msg.transfer_type or msg.phone_number %}<div class="wa-card-line">{% if msg.transfer_type %}<span class="wa-card-type">{{ msg.transfer_type }}</span>{% endif %}{% if msg.phone_number %} <span class="wa-card-phone">{{ msg.phone_number }}</span>{% endif %}</div>{% endif %}
-                                {% if msg.amount %}<div class="wa-card-amount">{{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% endif %}
+                                {% if msg.amount %}<div class="wa-card-amount">{{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% elif msg.exchange_rate %}<div class="wa-card-amount" dir="ltr">{{ msg.exchange_rate|western:2 }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% endif %}
                                 {% with note=msg|wa_note %}{% if note %}<div class="wa-card-note" title="{{ note }}">{{ note }}</div>{% endif %}{% endwith %}
                             </div>
                         </td>
