@@ -3521,22 +3521,25 @@ def whatsapp_integration(request):
                     "commission": ("" if msg.commission is None else str(msg.commission)),
                     "currency": msg.currency or "",
                     "transfer_type": msg.transfer_type or "",
+                    "direction": msg.direction or "",
                 }
                 msg.amount = amount
                 msg.exchange_rate = rate
                 msg.commission = commission
                 msg.currency = currency
                 msg.transfer_type = ttype
+                msg.direction = _wa_direction(currency)
                 new_values = {
                     "amount": ("" if msg.amount is None else str(msg.amount)),
                     "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
                     "commission": ("" if msg.commission is None else str(msg.commission)),
                     "currency": msg.currency or "",
                     "transfer_type": msg.transfer_type or "",
+                    "direction": msg.direction or "",
                 }
                 field_labels = {
                     "amount": "المبلغ", "exchange_rate": "السعر", "commission": "العمولة",
-                    "currency": "العملة", "transfer_type": "النوع",
+                    "currency": "العملة", "transfer_type": "النوع", "direction": "الاتجاه",
                 }
                 changes = []
                 for k, nv in new_values.items():
@@ -4126,7 +4129,7 @@ def whatsapp_webhook(request):
                 exchange_rate=rate,
                 commission=commission,
                 currency=currency,
-                direction=data.get("direction", "وارد"),
+                direction=_wa_direction(currency),
                 status=data.get("status", "فعالة"),
                 transfer_type=ttype,
                 wamsg_id=wamsg_id,
@@ -4171,6 +4174,11 @@ def _wa_is_question_line(text):
         r'على\s*كم|\bبكم\b|كم\s*؟|\bكام\b|سعرها\s*كم|السعر\s*كم|شو\s*سعر|ما\s*هو\s*السعر',
         t, re.IGNORECASE,
     ))
+
+
+def _wa_direction(currency):
+    """اتجاه الحوالة حسب العملة: د ل (من مكتبنا إلى مكتب الزاجل) = صادر/دائن · ج م = وارد/مدين."""
+    return "صادر" if (currency or "").strip() == "د ل" else "وارد"
 
 
 def _parse_wa_message(text):
