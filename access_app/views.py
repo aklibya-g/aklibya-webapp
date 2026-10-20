@@ -3622,6 +3622,16 @@ def whatsapp_integration(request):
             WhatsAppMessage.objects.all().delete()
             messages.success(request, f"تم حذف جميع الرسائل ({count})")
             return redirect("whatsapp_integration")
+        elif action == "delete_empty_messages":
+            from django.db.models import Q as _Q
+            empty_qs = WhatsAppMessage.objects.filter(
+                _Q(amount__isnull=True) | _Q(amount=0),
+                exchange_rate__isnull=True,
+            ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
+            deleted_count = empty_qs.count()
+            empty_qs.delete()
+            messages.success(request, f"تم حذف {deleted_count} رسالة بلا حوالة ولا رقم")
+            return redirect("whatsapp_integration")
         elif action == "delete_inside_range":
             date_from = (request.POST.get("date_from") or "").strip()
             date_to = (request.POST.get("date_to") or "").strip()

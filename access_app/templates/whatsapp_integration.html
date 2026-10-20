@@ -235,6 +235,13 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
                     <i class="bi bi-trash"></i> حذف المحدد
                 </button>
+                <button onclick="deleteEmptyMsgs()" title="حذف كل الرسائل التي لا تحتوي على حوالة (مبلغ) ولا رقم تليفون — يعرض لك العدد ويطلب التأكيد قبل الحذف" style="padding:6px 14px;border-radius:8px;background:#fffbeb;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;white-space:nowrap">
+                    <i class="bi bi-eraser"></i> حذف بلا حوالة/رقم
+                </button>
+                <form method="POST" id="deleteEmptyForm" style="display:none">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_empty_messages">
+                </form>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <a href="{% url 'whatsapp_settlement' %}" title="كشف مقاصة الحسابات بين المكاتب (دائن/مدين بالليبي)" style="padding:6px 14px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:700;border:1px solid #ddd6fe;font-size:.78rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-arrow-left-right"></i> مقاصة</a>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
@@ -800,6 +807,16 @@ function confirmDeleteAll() {
     const total = document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
     const v = prompt('⚠️ سيتم حذف جميع الرسائل (' + total + ') نهائياً!\nاكتب "حذف الكل" للتأكيد:', '');
     return v === 'حذف الكل';
+}
+function deleteEmptyMsgs() {
+    const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
+    let n = 0;
+    rows.forEach(function (tr) {
+        if (!tr.dataset.amount && !tr.dataset.phone && !tr.dataset.rate) n++;
+    });
+    if (!n) { alert('لا توجد رسائل بلا حوالة ولا رقم'); return; }
+    if (!confirm('سيتم حذف ' + n + ' رسالة بلا حوالة ولا رقم نهائياً (لا يمكن التراجع).\nمتابعة؟')) return;
+    document.getElementById('deleteEmptyForm').submit();
 }
 function deleteInsideRange() {
     const dfrom = document.getElementById('dateFrom').value;
