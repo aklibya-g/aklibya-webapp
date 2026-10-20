@@ -267,7 +267,7 @@
                     <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
                     {% if current_user.is_admin %}
                     <a href="{% url 'backups_list' %}" class="nav-item" style="padding:7px 10px;{% if '/backups/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-cloud-arrow-up" style="color:#06b6d4;"></i> النسخ الاحتياطية</a>
-                    <a href="{% url 'whatsapp_integration' %}" class="nav-item" style="padding:7px 10px;{% if '/whatsapp/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-whatsapp" style="color:#25d366;"></i> ربط الواتساب</a>
+                    <a href="{% url 'whatsapp_integration' %}" class="nav-item" style="padding:7px 10px;{% if '/whatsapp/' in request.path %}background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;box-shadow:0 3px 12px rgba(37,211,102,.4);font-weight:800{% endif %}"><i class="bi bi-whatsapp" style="color:{% if '/whatsapp/' in request.path %}#fff{% else %}#25d366{% endif %};"></i> ربط الواتساب</a>
                     {% endif %}
                     <form method="POST" action="{% url 'toggle_maintenance' %}" style="margin:0">
                         {% csrf_token %}

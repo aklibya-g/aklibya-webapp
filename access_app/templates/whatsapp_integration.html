@@ -101,6 +101,13 @@ body.wa-dark-font .badge-cur { background:#422006; color:#fcd34d; border-color:#
 body.wa-dark-font .badge-cur-eg { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:#475569; }
 
+/* ===== SCROLL BUTTONS (hidden until hover) ===== */
+#waScrollBtns { position:fixed; left:16px; bottom:18px; display:flex; flex-direction:column; gap:8px; z-index:80; }
+.wa-scroll-btn { width:38px; height:38px; border-radius:50%; border:none; cursor:pointer; color:#fff; font-size:1.05rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .25s, transform .2s; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+.wa-scroll-btn:hover { opacity:1; transform:scale(1.12); }
+.wa-scroll-btn.s-top { background:#16a34a; }
+.wa-scroll-btn.s-bot { background:#2563eb; }
+
 /* ===== WA TABLE (existing styles below) ===== */
 </style>
 <div style="max-width:1600px;margin:0 auto">
@@ -228,21 +235,9 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
                     <i class="bi bi-trash"></i> حذف المحدد
                 </button>
-                <form method="POST" style="display:inline" onsubmit="return confirmDeleteAll()">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete_all_messages">
-                <button type="submit" style="padding:6px 14px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem">
-                        <i class="bi bi-trash-fill"></i> حذف الكل
-                    </button>
-                </form>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <a href="{% url 'whatsapp_settlement' %}" title="كشف مقاصة الحسابات بين المكاتب (دائن/مدين بالليبي)" style="padding:6px 14px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:700;border:1px solid #ddd6fe;font-size:.78rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-arrow-left-right"></i> مقاصة</a>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
-                {% if wa_current_rate %}
-                <span id="waRateBadge" title="آخر تحديث: {{ wa_rate_updated|date:'Y-m-d H:i' }} — الرسائل الجديدة بدون سعر تأخذ هذا السعر تلقائياً" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-weight:800;font-size:.75rem;border:1px solid #f59e0b;white-space:nowrap;cursor:default">
-                    <i class="bi bi-currency-exchange"></i> سعر الصرف: {{ wa_current_rate|floatformat:2 }} {{ wa_rate_currency }}
-                </span>
-                {% endif %}
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
             </div>
@@ -1364,5 +1359,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 window.addEventListener('resize', updateWaStickyTop);
 setTimeout(updateWaStickyTop, 500);
+</script>
+<div id="waScrollBtns">
+    <button class="wa-scroll-btn s-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="أعلى الصفحة"><i class="bi bi-arrow-up"></i></button>
+    <button class="wa-scroll-btn s-bot" onclick="window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'})" title="أسفل الصفحة"><i class="bi bi-arrow-down"></i></button>
+</div>
+<script>
+// إخفاء القائمة الجانبية في صفحة ربط الواتساب — تعود عند الضغط على «رجوع»
+document.body.classList.add('sidebar-hidden');
+try { localStorage.setItem('sidebarHidden', '0'); } catch (e) {}
 </script>
 {% endblock %}
