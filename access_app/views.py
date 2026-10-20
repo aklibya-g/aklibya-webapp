@@ -3628,15 +3628,15 @@ def whatsapp_integration(request):
                 messages.error(request, "يجب تحديد تاريخ البداية والنهاية أولاً (من فلاتر الشريط)")
                 return redirect("whatsapp_integration")
             try:
-                d1 = datetime.strptime(date_from, "%Y-%m-%d").replace(tzinfo=WA_TZ)
-                d2 = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=WA_TZ)
+                datetime.strptime(date_from, "%Y-%m-%d")
+                datetime.strptime(date_to, "%Y-%m-%d")
             except ValueError:
                 messages.error(request, "صيغة التاريخ غير صحيحة")
                 return redirect("whatsapp_integration")
-            if d2 < d1:
+            if date_to < date_from:
                 messages.error(request, "تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
                 return redirect("whatsapp_integration")
-            qs_out = WhatsAppMessage.objects.filter(timestamp__lt=d1) | WhatsAppMessage.objects.filter(timestamp__gt=d2)
+            qs_out = WhatsAppMessage.objects.filter(timestamp__date__lt=date_from) | WhatsAppMessage.objects.filter(timestamp__date__gt=date_to)
             deleted_count = qs_out.count()
             qs_out.delete()
             messages.success(
