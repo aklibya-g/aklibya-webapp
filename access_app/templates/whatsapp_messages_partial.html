@@ -20,9 +20,9 @@
             {% with note=msg|wa_note %}{% if note %}<div class="wa-card-note">{{ note }}</div>{% endif %}{% endwith %}
         </div>
     </td>
-    <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount %}{{ msg.amount|western }}{% else %}-{% endif %}</td>
+    <td class="num-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.currency != 'د ل' %}{{ msg.amount|western }}{% else %}-{% endif %}</td>
     <td class="rate-cell" style="text-align:center" dir="ltr">{% if msg.exchange_rate %}{{ msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
-    <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
+    <td class="conv-cell" style="text-align:center;white-space:nowrap" dir="ltr">{% if msg.currency == 'د ل' and msg.amount %}{{ msg.amount|western:2 }}{% elif msg.amount and msg.exchange_rate %}{{ msg.amount|div:msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
     <td style="text-align:center">{% if msg.currency %}{% if msg.currency == 'EG' %}<span class="badge badge-cur-eg">EG</span>{% else %}<span class="badge badge-cur">{{ msg.currency }}</span>{% endif %}{% else %}-{% endif %}</td>
     <td style="text-align:center">{% if msg.transfer_type == 'فودافون كاش' %}<span class="badge badge-type-vcash">فودافون كاش</span>{% elif msg.transfer_type == 'انستا كاش' %}<span class="badge badge-type-acash">انستا كاش</span>{% elif msg.transfer_type == 'محفظة' %}<span class="badge badge-type-wallet">محفظة</span>{% elif msg.transfer_type %}<span class="badge badge-type">{{ msg.transfer_type }}</span>{% else %}-{% endif %}</td>
     <td style="text-align:center">{% if msg.direction == 'صادر' %}<span class="badge badge-out">صادر</span>{% else %}<span class="badge badge-in">وارد</span>{% endif %}</td>
