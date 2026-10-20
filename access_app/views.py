@@ -76,34 +76,85 @@ def _wa_is_duplicate(wamsg_id, sender, jid, text):
     ).exists()
 
 
+_WA_CH_EGP_EL = re.compile(r'فودافون|فودافـون|انستا|instapay|امان', re.IGNORECASE)
+_WA_CH_POST = re.compile(r'بريد|يد\s*ا?\s*بيد|واليد|يدا', re.IGNORECASE)
+
+
+def _wa_poster_rates(text):
+    """استخراج (قناة، سعر) من نص بوستر السعر — الغرفة تعلن معدّلاً لكل قناة:
+    «فودافون كاش & انستا 5،35 ... يداً بيد & البريد 5،30» → [('فودافون',5.35),('بريد',5.30)]"""
+    if not text:
+        return []
+    t = re.sub(r'[ً-ْٰـ]', '', text)
+    t = re.sub(r'[*_☆★#`~^=|]', ' ', t)
+    t = t.replace('،', ',')
+    pairs = []
+    last_end = 0
+    for m in re.finditer(r'(?<![\d.,])(\d{1,3}[.,]\d{1,2})(?![\d.,])', t):
+        seg = t[last_end:m.start()]
+        last_end = m.end()
+        try:
+            rate = float(m.group(1).replace(',', '.'))
+        except ValueError:
+            continue
+        if not (1 <= rate <= 100):
+            continue
+        if _WA_CH_EGP_EL.search(seg):
+            ch = "فودافون"
+        elif _WA_CH_POST.search(seg):
+            ch = "بريد"
+        else:
+            ch = "عام"
+        pairs.append((ch, rate))
+    return pairs
+
+
+def _wa_msg_channel(text):
+    """قناة الحوالة: بريد/يد بيد → بريد، وإلا الافتراضي فودافون (القناة الرئيسية للغرفة)."""
+    if text and _WA_CH_POST.search(text):
+        return "بريد"
+    return "فودافون"
+
+
 def _wa_rate_timeline():
-    """أحداث تغيير السعر في غرفة الزاجل: رسائل بوستر (بلا مبلغ) حملت سعراً — مرتّبة زمنيًا."""
-    return list(
-        WhatsAppMessage.objects.filter(
-            group_jid=WA_ZAJEL_GROUP,
-            amount__isnull=True,
-            exchange_rate__isnull=False,
-            exchange_rate__gte=1,
-        ).order_by("timestamp", "id").values_list("timestamp", "exchange_rate")
-    )
+    """أحداث تغيير السعر في غرفة الزاجل: (الوقت، القناة، السعر) — القناة تُستخرج من نص البوستر."""
+    qs = WhatsAppMessage.objects.filter(
+        group_jid=WA_ZAJEL_GROUP,
+        amount__isnull=True,
+        exchange_rate__isnull=False,
+        exchange_rate__gte=1,
+    ).order_by("timestamp", "id").values_list("timestamp", "exchange_rate", "message_text")
+    out = []
+    for ts, rate, text in qs:
+        pairs = _wa_poster_rates(text)
+        if not pairs:
+            out.append((ts, "عام", rate))
+        else:
+            for ch, r in pairs:
+                out.append((ts, ch, r))
+    return out
 
 
-def _wa_rate_at(ts, timeline=None):
-    """آخر سعر معلن قبل/عند لحظة ts — وإن كانت قبل أول إعلان في يومها فتأخذ أول إعلان ذلك اليوم."""
+def _wa_rate_at(ts, channel="فودافون", timeline=None):
+    """سعر قناة الحوالة: آخر سعر معلن لهذه القناة (أو سعر عام) قبل/عند ts.
+    سعر قناة أخرى (بريد مثلاً) لا يُطبّق على قنوات غيرها. وإن كانت قبل أول إعلان في يومها فتأخذ أول إعلان يومها لقناتها."""
     if ts is None:
         return None
     if timeline is None:
         timeline = _wa_rate_timeline()
     best = None
-    for ets, rate in timeline:
-        if ets <= ts:
-            best = rate
-        else:
+    for ets, ch, rate in timeline:
+        if ets > ts:
             break
+        if ch in (channel, "عام"):
+            best = rate
     if best is not None:
         return best
     day = ts.date() if hasattr(ts, "date") else ts
-    for ets, rate in timeline:
+    for ets, ch, rate in timeline:
+        if ets.date() == day and ch in (channel, "عام"):
+            return rate
+    for ets, ch, rate in timeline:
         if ets.date() == day:
             return rate
     return None
@@ -3271,7 +3322,7 @@ def whatsapp_settlement(request):
         currency = (msg.currency or "").strip()
         rate = msg.exchange_rate
         if not rate and st.wa_rate_currency == currency:
-            rate = _wa_rate_at(msg.timestamp, rate_timeline) or st.wa_current_rate
+            rate = _wa_rate_at(msg.timestamp, _wa_msg_channel(msg.message_text), rate_timeline) or st.wa_current_rate
 
         if currency == "ج م":
             if not rate:
@@ -3508,7 +3559,7 @@ def whatsapp_integration(request):
             for msg in all_msgs:
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
                 if not rate and amount and currency and st_rate.wa_rate_currency == currency:
-                    rate = _wa_rate_at(msg.timestamp, rate_timeline) or st_rate.wa_current_rate
+                    rate = _wa_rate_at(msg.timestamp, _wa_msg_channel(msg.message_text), rate_timeline) or st_rate.wa_current_rate
                 old_values = {
                     "amount": ("" if msg.amount is None else str(msg.amount)),
                     "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
@@ -3702,7 +3753,7 @@ def whatsapp_integration(request):
                 elif cur == "د ل":
                     new_rate = None
                 else:
-                    new_rate = _wa_rate_at(msg.timestamp, rate_timeline)
+                    new_rate = _wa_rate_at(msg.timestamp, _wa_msg_channel(msg.message_text), rate_timeline)
                 old_rate = msg.exchange_rate
                 if (new_rate or 0) == (old_rate or 0) and not cur_changed:
                     continue
@@ -3732,11 +3783,14 @@ def whatsapp_integration(request):
                 if cur_changed:
                     fields.append("currency")
                 msg.save(update_fields=fields)
-            if rate_timeline:
-                last_ts, last_rate = rate_timeline[-1]
-                st_rate.wa_current_rate = last_rate
+            last_main = None
+            for ev_ts, ev_ch, ev_rate in rate_timeline:
+                if ev_ch != "بريد":
+                    last_main = (ev_ts, ev_rate)
+            if last_main:
+                st_rate.wa_current_rate = last_main[1]
                 st_rate.wa_rate_currency = "ج م"
-                st_rate.wa_rate_updated = last_ts
+                st_rate.wa_rate_updated = last_main[0]
                 st_rate.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
             messages.success(request, f"تمت إعادة احتساب الأسعار: فُحصت {checked} حوالة، عُدّل منها {updated} — أحداث السعر {len(rate_timeline)}")
             return redirect("whatsapp_integration")
@@ -4088,7 +4142,7 @@ def whatsapp_webhook(request):
                 except (ValueError, TypeError):
                     pass
             elif not rate and amount and currency and st.wa_rate_currency == currency:
-                rate = _wa_rate_at(msg_ts) or st.wa_current_rate
+                rate = _wa_rate_at(msg_ts, _wa_msg_channel(text)) or st.wa_current_rate
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
