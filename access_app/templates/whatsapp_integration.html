@@ -188,6 +188,8 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         مزامنة التاريخ الكامل
                     </label>
                 </form>
+
+                <button type="submit" form="multiGroupForm" style="padding:8px 18px;border-radius:9px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem"><i class="bi bi-save"></i> حفظ المجموعات المحددة</button>
             </div>
 
             <form method="POST" id="multiGroupForm">
@@ -196,10 +198,9 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <input type="hidden" name="group_jids" id="multiGroupJids" value="{{ monitored_group_jids }}">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                     <label style="font-size:.75rem;font-weight:700;color:var(--text)">المجموعات المراقبة (اختر واحدة أو أكثر)</label>
-                    <button type="submit" style="padding:8px 18px;border-radius:9px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem"><i class="bi bi-save"></i> حفظ المجموعات المحددة</button>
                 </div>
-                <div id="multiGroupsBox" style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg);max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
-                    <div style="font-size:.75rem;color:var(--text-muted);text-align:center;padding:8px">جاري التحميل...</div>
+                <div id="multiGroupsBox" style="border:1px solid var(--border);border-radius:10px;padding:6px;background:var(--bg);max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:.72rem;color:var(--text-muted);text-align:center;padding:6px">جاري التحميل...</div>
                 </div>
             </form>
             <p style="font-size:.7rem;color:var(--text-muted);margin:8px 0 0;line-height:1.6">
@@ -1367,10 +1368,10 @@ function loadMultiGroups() {
             var html = '';
             groups.forEach(function(g) {
                 var isChecked = checked[g.id] ? 'checked' : '';
-                html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:var(--card-bg,#fff);border:1px solid var(--border);cursor:pointer;font-size:.78rem">'
-                    + '<input type="checkbox" class="mgChk" value="' + escapeHtml(g.id) + '" ' + isChecked + ' style="width:15px;height:15px;accent-color:#0891b2;cursor:pointer">'
-                    + '<span style="font-weight:700;flex:1">' + escapeHtml(g.name || g.id) + '</span>'
-                    + '<span style="color:var(--text-muted);font-size:.68rem">' + (g.members || 0) + ' عضو</span>'
+                html += '<label style="display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:var(--card-bg,#fff);border:1px solid var(--border);cursor:pointer;font-size:.72rem;line-height:1.4">'
+                    + '<input type="checkbox" class="mgChk" value="' + escapeHtml(g.id) + '" ' + isChecked + ' style="width:13px;height:13px;accent-color:#0891b2;cursor:pointer;flex-shrink:0">'
+                    + '<span style="font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(g.name || g.id) + '</span>'
+                    + '<span style="color:var(--text-muted);font-size:.62rem;flex-shrink:0">' + (g.members || 0) + '</span>'
                     + '</label>';
             });
             box.innerHTML = html;
