@@ -3390,6 +3390,13 @@ def whatsapp_integration(request):
                     messages.success(request, "تم إيقاف البوت")
                 except Exception:
                     pass
+            try:
+                qr_state = WhatsAppQRState.get()
+                qr_state.qr_code = None
+                qr_state.status = "disconnected"
+                qr_state.save()
+            except Exception:
+                pass
             return redirect("whatsapp_integration")
         elif action == "relink_bot":
             bot_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot")
@@ -3410,6 +3417,14 @@ def whatsapp_integration(request):
                 shutil.rmtree(session_path)
                 steps.append("تم حذف الجلسة")
             try:
+                qr_state = WhatsAppQRState.get()
+                qr_state.qr_code = None
+                qr_state.status = "waiting"
+                qr_state.save()
+                steps.append("تمت إعادة تعيين حالة QR")
+            except Exception:
+                pass
+            try:
                 env = os.environ.copy()
                 if SystemSetting.get().sync_full_history:
                     env["SYNC_FULL_HISTORY"] = "1"
@@ -3419,11 +3434,13 @@ def whatsapp_integration(request):
                     env["MONITOR_ALL"] = "1"
                 else:
                     env.pop("MONITOR_ALL", None)
+                log_path = os.path.join(bot_dir, "bot.log")
+                log_f = open(log_path, "ab")
                 subprocess.Popen(
                     ["node", "index.js"],
                     cwd=bot_dir,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=log_f,
+                    stderr=log_f,
                     creationflags=subprocess.CREATE_NO_WINDOW,
                     shell=True,
                     env=env,
@@ -3586,6 +3603,13 @@ def whatsapp_integration(request):
                 messages.success(request, "تم حذف الجلسة")
             else:
                 messages.error(request, "لا توجد جلسة")
+            try:
+                qr_state = WhatsAppQRState.get()
+                qr_state.qr_code = None
+                qr_state.status = "waiting"
+                qr_state.save()
+            except Exception:
+                pass
             return redirect("whatsapp_integration")
         elif action == "delete_all_messages":
             count = WhatsAppMessage.objects.count()

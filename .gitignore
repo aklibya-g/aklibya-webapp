@@ -17,3 +17,9 @@ whatsapp-bot/sync_request
 whatsapp-bot/sync_result
 whatsapp-bot/auth_session/
 whatsapp-bot/groups.json
+whatsapp-bot/bot.log
+whatsapp-bot/bot_err.log
+whatsapp-bot/bot_test.log
+whatsapp-bot/bot_test.err
+whatsapp-bot/bot_diag.log
+whatsapp-bot/bot_diag.err

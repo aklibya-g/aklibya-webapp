@@ -618,7 +618,7 @@ async function startBot() {
         version,
         auth: state,
         printQRInTerminal: false,
-        browser: syncFullHistory ? ['Windows', 'Chrome', '10.0'] : ['Chrome', 'Desktop', '10.0'],
+        browser: ['Chrome', 'Desktop', '10.0'],
         syncFullHistory: syncFullHistory,
         defaultQueryTimeoutMs: undefined,
         markOnlineOnConnect: false,
