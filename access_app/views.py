@@ -3507,6 +3507,11 @@ def whatsapp_integration(request):
             st_rate = SystemSetting.get()
             rate_timeline = _wa_rate_timeline()
             for msg in all_msgs:
+                if msg.edited_by == "not_rate":
+                    continue
+                if (msg.message_text or "").startswith("[صورة]"):
+                    # الصور: البيانات المستخرجة بالذكاء الاصطناعي هي المرجع — نص الوصف لا يصلح لإعادة التحليل
+                    continue
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
                 if not rate and amount and currency and st_rate.wa_rate_currency == currency:
                     rate = _wa_rate_at(msg.timestamp, rate_timeline) or st_rate.wa_current_rate
@@ -3740,6 +3745,28 @@ def whatsapp_integration(request):
                 st_rate.wa_rate_updated = last_ts
                 st_rate.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
             messages.success(request, f"تمت إعادة احتساب الأسعار: فُحصت {checked} حوالة، عُدّل منها {updated} — أحداث السعر {len(rate_timeline)}")
+            return redirect("whatsapp_integration")
+        elif action == "exclude_rate_poster":
+            msg = get_object_or_404(WhatsAppMessage, id=request.POST.get("msg_id"))
+            old_rate = msg.exchange_rate
+            msg.exchange_rate = None
+            msg.edited_by = "not_rate"
+            msg.status = "ملغية"
+            try:
+                prev_log = json.loads(msg.edit_log) if msg.edit_log else []
+            except Exception:
+                prev_log = []
+            prev_log.append({
+                "source": "exclude_rate_poster",
+                "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "changes": [{
+                    "field": "exchange_rate", "label": "السعر",
+                    "old": ("—" if old_rate is None else str(old_rate)), "new": "مستبعد من إعلانات السعر",
+                }],
+            })
+            msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
+            msg.save(update_fields=["exchange_rate", "edited_by", "status", "edit_log"])
+            messages.success(request, f"تم استبعاد الرسالة من إعلانات السعر (كان {old_rate or '—'}) — الحوالات بعدها تُحتسب على السعر السابق")
             return redirect("whatsapp_integration")
         elif action == "delete_inside_range":
             date_from = (request.POST.get("date_from") or "").strip()
