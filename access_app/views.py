@@ -3624,10 +3624,20 @@ def whatsapp_integration(request):
             return redirect("whatsapp_integration")
         elif action == "delete_empty_messages":
             from django.db.models import Q as _Q
-            empty_qs = WhatsAppMessage.objects.filter(
-                _Q(amount__isnull=True) | _Q(amount=0),
-                exchange_rate__isnull=True,
-            ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
+            ids_raw = (request.POST.get("delete_ids") or "").strip()
+            ids = []
+            if ids_raw:
+                for part in ids_raw.split(","):
+                    part = part.strip()
+                    if part.isdigit():
+                        ids.append(int(part))
+            if ids:
+                empty_qs = WhatsAppMessage.objects.filter(id__in=ids)
+            else:
+                empty_qs = WhatsAppMessage.objects.filter(
+                    _Q(amount__isnull=True) | _Q(amount=0),
+                    exchange_rate__isnull=True,
+                ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
             deleted_count = empty_qs.count()
             empty_qs.delete()
             messages.success(request, f"تم حذف {deleted_count} رسالة بلا حوالة ولا رقم")

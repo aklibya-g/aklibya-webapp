@@ -4,7 +4,7 @@
     data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
     data-amount="{{ msg.amount|default:''|unlocalize }}" data-rate="{{ msg.exchange_rate|default:''|unlocalize }}" data-commission="{{ msg.commission|default:''|unlocalize }}"
     data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
-    data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
+    data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}" data-gname="{{ group_names|get_item:msg.group_jid }}"
     data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
     <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}{% with gname=group_names|get_item:msg.group_jid %}{% if gname %} — {{ gname }}{% endif %}{% endwith %}" dir="ltr">

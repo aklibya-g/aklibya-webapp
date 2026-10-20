@@ -38,6 +38,12 @@
 .wa-changed-cell::after { content:'✏'; font-size:.55rem; color:#dc2626; vertical-align:super; margin-inline-start:2px; }
 #waLogOverlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:220; align-items:center; justify-content:center; }
 #waLogModal { background:var(--card-bg,#fff); border-radius:16px; border:1px solid var(--border,#e2e8f0); padding:22px; width:min(560px,94vw); max-height:85vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+#waEmptyOverlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:230; align-items:center; justify-content:center; padding:20px; }
+#waEmptyModal { background:var(--card-bg,#fff); border-radius:16px; border:1px solid var(--border,#e2e8f0); width:min(740px,95vw); max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+#waEmptyList { flex:1; overflow-y:auto; padding:12px 16px 6px; }
+.wa-empty-item { display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border,#e2e8f0); border-radius:10px; margin-bottom:6px; background:var(--bg,#f8fafc); }
+.wa-empty-item .we-txt { font-size:.75rem; color:var(--text,#1e293b); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+.wa-empty-item .we-meta { font-size:.66rem; color:var(--text-muted,#64748b); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #waPrintReport { display:none; }
 @media print {
     body * { visibility:hidden !important; }
@@ -241,6 +247,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <form method="POST" id="deleteEmptyForm" style="display:none">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete_empty_messages">
+                    <input type="hidden" name="delete_ids" id="deleteEmptyIds" value="">
                 </form>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <a href="{% url 'whatsapp_settlement' %}" title="كشف مقاصة الحسابات بين المكاتب (دائن/مدين بالليبي)" style="padding:6px 14px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:700;border:1px solid #ddd6fe;font-size:.78rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-arrow-left-right"></i> مقاصة</a>
@@ -274,7 +281,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
                         data-amount="{{ msg.amount|default:''|unlocalize }}" data-rate="{{ msg.exchange_rate|default:''|unlocalize }}" data-commission="{{ msg.commission|default:''|unlocalize }}"
                         data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
-                        data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
+                        data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}" data-gname="{{ group_names|get_item:msg.group_jid }}"
                         data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
                         <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}{% with gname=group_names|get_item:msg.group_jid %}{% if gname %} — {{ gname }}{% endif %}{% endwith %}" dir="ltr">
@@ -366,6 +373,21 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
 </div>
 
 <div id="waPrintReport"></div>
+
+<div id="waEmptyOverlay" onclick="waCloseEmptyPreview(event)">
+    <div id="waEmptyModal" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border,#e2e8f0)">
+            <h4 style="margin:0;font-weight:800;font-size:.95rem"><i class="bi bi-eraser" style="color:#d97706"></i> مراجعة قبل الحذف — <span id="waEmptyCount" style="color:#b45309">0</span> رسالة بلا حوالة ولا رقم</h4>
+            <button type="button" onclick="waCloseEmptyPreview()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+        </div>
+        <div id="waEmptyList"></div>
+        <div style="display:flex;gap:8px;align-items:center;padding:12px 18px 14px;border-top:1px solid var(--border,#e2e8f0)">
+            <button type="button" onclick="waConfirmEmptyDelete()" style="padding:8px 18px;border-radius:9px;background:#dc2626;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.8rem"><i class="bi bi-trash"></i> تأكيد الحذف</button>
+            <button type="button" onclick="waCloseEmptyPreview()" style="padding:8px 18px;border-radius:9px;background:var(--bg,#f3f4f6);color:var(--text,#374151);font-weight:700;border:1px solid var(--border,#e2e8f0);cursor:pointer;font-size:.8rem">إلغاء</button>
+            <span style="font-size:.7rem;color:var(--text-muted);margin-inline-start:auto">راجع القائمة ثم أكّد — لا يُحذف شيء قبل ضغط «تأكيد الحذف»</span>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -808,16 +830,49 @@ function confirmDeleteAll() {
     const v = prompt('⚠️ سيتم حذف جميع الرسائل (' + total + ') نهائياً!\nاكتب "حذف الكل" للتأكيد:', '');
     return v === 'حذف الكل';
 }
+var waEmptyIds = [];
 function deleteEmptyMsgs() {
     const rows = document.querySelectorAll('#messagesTableBody tr[data-direction]');
-    let n = 0;
+    waEmptyIds = [];
+    let html = '';
     rows.forEach(function (tr) {
-        if (!tr.dataset.amount && !tr.dataset.phone && !tr.dataset.rate) n++;
+        if (tr.dataset.amount || tr.dataset.phone || tr.dataset.rate) return;
+        const id = tr.dataset.id || '';
+        if (!id) return;
+        waEmptyIds.push(id);
+        const gname = tr.dataset.gname || '';
+        const sender = tr.dataset.sender || '';
+        const when = tr.dataset.date || '';
+        const time = (tr.dataset.time || '').split(' ').slice(-1)[0] || '';
+        const txt = tr.dataset.text || '(لا يوجد نص)';
+        html += '<div class="wa-empty-item">'
+            + '<span style="font-size:.68rem;color:#94a3b8;min-width:74px;white-space:nowrap" dir="ltr">' + escapeHtml(when) + '<br>' + escapeHtml(time) + '</span>'
+            + '<div style="flex:1;min-width:0">'
+            + (gname ? '<div style="font-size:.7rem;font-weight:800;color:#0f766e;margin-bottom:1px">' + escapeHtml(gname) + '</div>' : '')
+            + '<div class="we-meta" dir="ltr" style="text-align:right">' + escapeHtml(sender) + '</div>'
+            + '<div class="we-txt">' + escapeHtml(txt) + '</div>'
+            + '</div></div>';
     });
-    if (!n) { alert('لا توجد رسائل بلا حوالة ولا رقم'); return; }
-    if (!confirm('سيتم حذف ' + n + ' رسالة بلا حوالة ولا رقم نهائياً (لا يمكن التراجع).\nمتابعة؟')) return;
+    if (!waEmptyIds.length) { alert('لا توجد رسائل بلا حوالة ولا رقم'); return; }
+    document.getElementById('waEmptyCount').textContent = waEmptyIds.length;
+    document.getElementById('waEmptyList').innerHTML = html;
+    document.getElementById('waEmptyList').scrollTop = 0;
+    document.getElementById('waEmptyOverlay').style.display = 'flex';
+}
+function waCloseEmptyPreview(e) {
+    if (e && e.target && e.target.id !== 'waEmptyOverlay') return;
+    const ov = document.getElementById('waEmptyOverlay');
+    if (ov) ov.style.display = 'none';
+}
+function waConfirmEmptyDelete() {
+    if (!waEmptyIds.length) { waCloseEmptyPreview(); return; }
+    if (!confirm('تأكيد حذف ' + waEmptyIds.length + ' رسالة بلا حوالة ولا رقم نهائياً؟')) return;
+    document.getElementById('deleteEmptyIds').value = waEmptyIds.join(',');
     document.getElementById('deleteEmptyForm').submit();
 }
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') waCloseEmptyPreview();
+});
 function deleteInsideRange() {
     const dfrom = document.getElementById('dateFrom').value;
     const dto = document.getElementById('dateTo').value;
