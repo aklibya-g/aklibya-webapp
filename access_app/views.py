@@ -3279,10 +3279,10 @@ def whatsapp_settlement(request):
                 skipped_no_rate += 1
                 continue
             lyd = msg.amount / rate
-            kind = "مصري ← ليبي"
+            kind = "وارد: مصري ← ليبي"
         elif currency == "د ل":
             lyd = msg.amount
-            kind = "ليبي محلي"
+            kind = "صادر: ليبي محلي"
         else:
             lyd = msg.amount
             kind = "بدون عملة"

@@ -99,7 +99,7 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
             <tr>
                 <td class="amount">{{ r.msg.amount|western:2 }} {{ r.msg.currency|default:"" }}</td>
                 <td class="rate">{% if r.msg.exchange_rate %}{{ r.msg.exchange_rate|western:2 }}{% else %}-{% endif %}</td>
-                <td>{{ r.kind }}</td>
+                <td>{% if r.msg.direction == 'صادر' %}<span style="color:#15803d;font-weight:800">{{ r.kind }}</span>{% else %}{{ r.kind }}{% endif %}</td>
                 <td class="date">{{ r.msg.timestamp|date:"Y-m-d" }}</td>
                 <td class="credit">{% if r.credit %}{{ r.credit|western:3 }}{% else %}0.000{% endif %}</td>
                 <td class="debit">{% if r.debit %}{{ r.debit|western:3 }}{% else %}0.000{% endif %}</td>
@@ -111,11 +111,19 @@ table.stmt tbody tr:hover td { filter:brightness(.97); }
             <tr><td colspan="9" style="color:#888;padding:24px">لا توجد حركات</td></tr>
             {% endfor %}
         </tbody>
+        <tfoot>
+            <tr style="background:#eee;font-weight:800">
+                <td colspan="4" style="text-align:left">الإجمالي</td>
+                <td class="credit">{{ credit_total|western:3 }}</td>
+                <td class="debit">{{ debit_total|western:3 }}</td>
+                <td colspan="3"></td>
+            </tr>
+        </tfoot>
     </table>
 
     <div class="stmt-foot">
         <div class="ft-note">
-            الحساب مدين بقيمة: {{ balance_words }} — لا غير.
+            إجمالي الصادر (دائن): {{ credit_total|western:3 }} د.ل &nbsp;—&nbsp; إجمالي الوارد (مدين): {{ debit_total|western:3 }} د.ل
         </div>
         <div class="ft-total">
             <div class="lbl">{{ balance_label }}</div>
