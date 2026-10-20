@@ -4160,12 +4160,25 @@ def _wa_is_summary_line(text):
     return not _WA_TRANSFER_ACTION_RE.search(text)
 
 
+def _wa_is_question_line(text):
+    """رسائل أسئلة مثل «اخر حوالة ... 10000 مصري على كم؟» — سؤال عن السعر لا حوالة حقيقية."""
+    if not text:
+        return False
+    t = re.sub(r'@\d{6,}', ' ', text)
+    if re.search(r'(?<!\d)(01\d{9}|09\d{9}|0\d{9})(?!\d)', t):
+        return False
+    return bool(re.search(
+        r'على\s*كم|\bبكم\b|كم\s*؟|\bكام\b|سعرها\s*كم|السعر\s*كم|شو\s*سعر|ما\s*هو\s*السعر',
+        t, re.IGNORECASE,
+    ))
+
+
 def _parse_wa_message(text):
     if not text:
         return None, None, None, None, "", "تحويل"
     # strip tashkeel (diacritics), tatweel, markdown decorations
     t = re.sub(r'[ً-ْٰـ]', '', text)
-    if _wa_is_summary_line(t):
+    if _wa_is_summary_line(t) or _wa_is_question_line(t):
         return None, None, None, None, "", "تحويل"
     t = t.replace('،', '.')
     t = re.sub(r'[*_☆★#`~^=|]', ' ', t)
