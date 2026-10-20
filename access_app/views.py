@@ -75,6 +75,33 @@ def _wa_is_duplicate(wamsg_id, sender, jid, text):
     ).exists()
 
 
+def _wa_rate_timeline():
+    """أحداث تغيير السعر في غرفة الزاجل: رسائل بوستر (بلا مبلغ) حملت سعراً — مرتّبة زمنيًا."""
+    return list(
+        WhatsAppMessage.objects.filter(
+            group_jid=WA_ZAJEL_GROUP,
+            amount__isnull=True,
+            exchange_rate__isnull=False,
+            exchange_rate__gte=1,
+        ).order_by("timestamp", "id").values_list("timestamp", "exchange_rate")
+    )
+
+
+def _wa_rate_at(ts, timeline=None):
+    """آخر سعر معلن قبل/عند لحظة ts — أو None إن لم يُعلن سعر قبلها."""
+    if ts is None:
+        return None
+    if timeline is None:
+        timeline = _wa_rate_timeline()
+    best = None
+    for ets, rate in timeline:
+        if ets <= ts:
+            best = rate
+        else:
+            break
+    return best
+
+
 def _write_sync_request(payload):
     path = os.path.join(_bot_dir(), "sync_request")
     with open(path, "w", encoding="utf-8") as f:
@@ -3224,6 +3251,7 @@ def whatsapp_settlement(request):
         qs = qs.filter(timestamp__date__lte=date_to)
 
     st = SystemSetting.get()
+    rate_timeline = _wa_rate_timeline()
     rows = []
     skipped_no_rate = 0
     credit_total = 0.0
@@ -3235,8 +3263,8 @@ def whatsapp_settlement(request):
             continue
         currency = (msg.currency or "").strip()
         rate = msg.exchange_rate
-        if not rate and st.wa_current_rate and st.wa_rate_currency == currency:
-            rate = st.wa_current_rate
+        if not rate and st.wa_rate_currency == currency:
+            rate = _wa_rate_at(msg.timestamp, rate_timeline) or st.wa_current_rate
 
         if currency == "ج م":
             if not rate:
@@ -3469,10 +3497,11 @@ def whatsapp_integration(request):
             all_msgs = WhatsAppMessage.objects.all()
             fixed_count = 0
             st_rate = SystemSetting.get()
+            rate_timeline = _wa_rate_timeline()
             for msg in all_msgs:
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
-                if not rate and amount and currency and st_rate.wa_current_rate and st_rate.wa_rate_currency == currency:
-                    rate = st_rate.wa_current_rate
+                if not rate and amount and currency and st_rate.wa_rate_currency == currency:
+                    rate = _wa_rate_at(msg.timestamp, rate_timeline) or st_rate.wa_current_rate
                 old_values = {
                     "amount": ("" if msg.amount is None else str(msg.amount)),
                     "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
@@ -3641,6 +3670,54 @@ def whatsapp_integration(request):
             deleted_count = empty_qs.count()
             empty_qs.delete()
             messages.success(request, f"تم حذف {deleted_count} رسالة بلا حوالة ولا رقم")
+            return redirect("whatsapp_integration")
+        elif action == "recompute_rates":
+            st_rate = SystemSetting.get()
+            rate_timeline = _wa_rate_timeline()
+            checked = 0
+            updated = 0
+            for msg in WhatsAppMessage.objects.all().order_by("timestamp", "id"):
+                if msg.amount is None:
+                    continue
+                if msg.edited_by and msg.edited_by not in ("reprocess", "timeline"):
+                    continue
+                checked += 1
+                cur = (msg.currency or "").strip()
+                _, parsed_rate, _, parsed_currency, _, _ = _parse_wa_message_learned(msg.message_text)
+                if parsed_rate:
+                    new_rate = parsed_rate
+                elif cur == "د ل":
+                    new_rate = None
+                else:
+                    new_rate = _wa_rate_at(msg.timestamp, rate_timeline)
+                old_rate = msg.exchange_rate
+                if (new_rate or 0) == (old_rate or 0):
+                    continue
+                updated += 1
+                msg.exchange_rate = new_rate
+                msg.edited_by = "timeline"
+                try:
+                    prev_log = json.loads(msg.edit_log) if msg.edit_log else []
+                except Exception:
+                    prev_log = []
+                prev_log.append({
+                    "source": "rate_timeline",
+                    "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "changes": [{
+                        "field": "exchange_rate", "label": "السعر",
+                        "old": ("—" if old_rate is None else str(old_rate)),
+                        "new": ("—" if new_rate is None else str(new_rate)),
+                    }],
+                })
+                msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
+                msg.save(update_fields=["exchange_rate", "edited_by", "edit_log"])
+            if rate_timeline:
+                last_ts, last_rate = rate_timeline[-1]
+                st_rate.wa_current_rate = last_rate
+                st_rate.wa_rate_currency = "ج م"
+                st_rate.wa_rate_updated = last_ts
+                st_rate.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+            messages.success(request, f"تمت إعادة احتساب الأسعار: فُحصت {checked} حوالة، عُدّل منها {updated} — أحداث السعر {len(rate_timeline)}")
             return redirect("whatsapp_integration")
         elif action == "delete_inside_range":
             date_from = (request.POST.get("date_from") or "").strip()
@@ -3968,6 +4045,7 @@ def whatsapp_webhook(request):
                 if img_ttype and not ttype:
                     ttype = str(img_ttype).strip()
             st = SystemSetting.get()
+            msg_ts = _wa_ts_to_naive(data.get("timestamp"))
             is_rate_poster = bool(from_image and img_rate and not img_amount and not img_phone)
             if is_rate_poster:
                 try:
@@ -3980,8 +4058,16 @@ def whatsapp_webhook(request):
                 amount = None
                 phone = ''
                 rate = float(img_rate) if img_rate else rate
-            elif not rate and amount and currency and st.wa_current_rate and st.wa_rate_currency == currency:
-                rate = st.wa_current_rate
+            elif rate and not amount and not phone and (not currency or currency == "ج م"):
+                try:
+                    st.wa_current_rate = float(rate)
+                    st.wa_rate_currency = "ج م"
+                    st.wa_rate_updated = msg_ts
+                    st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                except (ValueError, TypeError):
+                    pass
+            elif not rate and amount and currency and st.wa_rate_currency == currency:
+                rate = _wa_rate_at(msg_ts) or st.wa_current_rate
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
@@ -3995,7 +4081,7 @@ def whatsapp_webhook(request):
                 status=data.get("status", "فعالة"),
                 transfer_type=ttype,
                 wamsg_id=wamsg_id,
-                timestamp=_wa_ts_to_naive(data.get("timestamp")),
+                timestamp=msg_ts,
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:

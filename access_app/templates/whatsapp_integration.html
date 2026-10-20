@@ -186,6 +186,13 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
                     </button>
                 </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap" onsubmit="return confirm('إعادة احتساب أسعار كل الحوالات حسب جدول تغيير الأسعار؟')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="recompute_rates">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#fef3c7;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="كل حوالة تأخذ آخر سعر معلن قبل وقتها — يتبع تغيّر الأسعار تلقائياً (الاسعار قد تتغير اكثر من مرة في اليوم)">
+                        <i class="bi bi-currency-exchange"></i> احتساب الأسعار
+                    </button>
+                </form>
                 <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="sync_messages">
