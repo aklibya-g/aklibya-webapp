@@ -3513,13 +3513,18 @@ def whatsapp_integration(request):
             messages.success(request, f"تمت معالجة {all_msgs.count()} رسالة — عُدل منها {fixed_count}")
             return redirect("whatsapp_integration")
         elif action == "sync_messages":
+            allow_dup = _as_bool(request.POST.get("allow_dup"), default=False)
             _write_sync_request({
                 "mode": "all",
                 "since": 0,
                 "until": int(timezone.now().timestamp()),
-                "allow_dup": False,
+                "allow_dup": allow_dup,
             })
-            messages.success(request, "تم إرسال طلب سحب كل الرسائل السابقة (تحديث تلقائي للرسائل المفقودة)")
+            messages.success(
+                request,
+                "تم إرسال طلب سحب كل الرسائل السابقة "
+                f"({'مع التكرار' if allow_dup else 'بدون تكرار'}) — تصل بتواريخها الأصلي"
+            )
             return redirect("whatsapp_integration")
         elif action == "sync_range":
             date_from = (request.POST.get("date_from") or "").strip()
@@ -3615,6 +3620,30 @@ def whatsapp_integration(request):
             count = WhatsAppMessage.objects.count()
             WhatsAppMessage.objects.all().delete()
             messages.success(request, f"تم حذف جميع الرسائل ({count})")
+            return redirect("whatsapp_integration")
+        elif action == "delete_outside_range":
+            date_from = (request.POST.get("date_from") or "").strip()
+            date_to = (request.POST.get("date_to") or "").strip()
+            if not date_from or not date_to:
+                messages.error(request, "يجب تحديد تاريخ البداية والنهاية أولاً (من فلاتر الشريط)")
+                return redirect("whatsapp_integration")
+            try:
+                d1 = datetime.strptime(date_from, "%Y-%m-%d").replace(tzinfo=WA_TZ)
+                d2 = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=WA_TZ)
+            except ValueError:
+                messages.error(request, "صيغة التاريخ غير صحيحة")
+                return redirect("whatsapp_integration")
+            if d2 < d1:
+                messages.error(request, "تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
+                return redirect("whatsapp_integration")
+            qs_out = WhatsAppMessage.objects.filter(timestamp__lt=d1) | WhatsAppMessage.objects.filter(timestamp__gt=d2)
+            deleted_count = qs_out.count()
+            qs_out.delete()
+            messages.success(
+                request,
+                f"تم حذف {deleted_count} رسالة خارج المدى {date_from} → {date_to} — "
+                "بقيت الرسائل ضمن المدى فقط"
+            )
             return redirect("whatsapp_integration")
     setting = SystemSetting.get()
     result = _consume_sync_result()

@@ -223,11 +223,14 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
                     </button>
                 </form>
-                <form method="POST" style="display:inline">
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="sync_messages">
-                    <button type="submit" style="padding:9px 18px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:6px" title="سحب الرسائل السابقة من واتساب (يحتاج البوت يعمل)">
-                        <i class="bi bi-cloud-download"></i> سحب بيانات
+                    <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);cursor:pointer;user-select:none" title="اسمح بدخول رسائل مكررة (لإعادة تعبئة فجوات)">
+                        <input type="checkbox" name="allow_dup" value="1" style="width:14px;height:14px;cursor:pointer;accent-color:#16a34a"> تكرار
+                    </label>
+                    <button type="submit" style="padding:9px 18px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:6px" title="سحب كل الرسائل السابقة من واتساب بتواريخها الأصلي (يحتاج البوت يعمل)">
+                        <i class="bi bi-cloud-download"></i> سحب الكل
                     </button>
                 </form>
             </div>
@@ -299,6 +302,9 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     <input type="text" id="searchInput" placeholder="بحث..." style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;width:130px;flex-shrink:0">
                     <input type="date" id="dateFrom" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                     <input type="date" id="dateTo" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
+                    <button onclick="deleteOutsideRange()" title="احذف كل الرسائل خارج المدى المحدد في التاريخين — يبقي فقط ما بينهما (للاختيار بعد سحب الكل)" style="padding:5px 10px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.72rem;flex-shrink:0;white-space:nowrap">
+                        <i class="bi bi-scissors"></i> حذف خارج المدى
+                    </button>
                     <select id="directionFilter" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);font-size:.72rem;flex-shrink:0">
                         <option value="">كل الاتجاهات</option>
                         <option value="وارد">وارد</option>
@@ -871,6 +877,29 @@ function confirmDeleteAll() {
     const total = document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
     const v = prompt('⚠️ سيتم حذف جميع الرسائل (' + total + ') نهائياً!\nاكتب "حذف الكل" للتأكيد:', '');
     return v === 'حذف الكل';
+}
+function deleteOutsideRange() {
+    const dfrom = document.getElementById('dateFrom').value;
+    const dto = document.getElementById('dateTo').value;
+    if (!dfrom || !dto) { alert('حدد تاريخ البداية والنهاية أولاً في خانات التاريخ'); return; }
+    const total = document.querySelectorAll('#messagesTableBody tr[data-direction]').length;
+    let inside = 0;
+    document.querySelectorAll('#messagesTableBody tr[data-direction]').forEach(row => {
+        const d = row.dataset.date || '';
+        if (d >= dfrom && d <= dto) inside++;
+    });
+    const outside = total - inside;
+    if (outside <= 0) { alert('لا توجد رسائل خارج هذا المدى — كل الرسائل ضمنه.'); return; }
+    const v = prompt('⚠️ سيتم حذف ' + outside + ' رسالة خارج المدى ' + dfrom + ' → ' + dto + ' (يبقى ' + inside + ' فقط) نهائياً!\nاكتب "حذف" للتأكيد:', '');
+    if (v !== 'حذف') return;
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.innerHTML = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">'
+        + '<input type="hidden" name="action" value="delete_outside_range">'
+        + '<input type="hidden" name="date_from" value="' + dfrom + '">'
+        + '<input type="hidden" name="date_to" value="' + dto + '">';
+    document.body.appendChild(f);
+    f.submit();
 }
 var activeFilter = '';
 var filtersApplied = false;
