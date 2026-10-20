@@ -242,7 +242,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
             </div>
         </div>
-        <div class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
+        <div id="waTableWrap" class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
                 <thead>
                     <tr>
@@ -263,14 +263,17 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 </thead>
                 <tbody id="messagesTableBody">
                     {% for msg in messages_list %}
-                    <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
+                    <tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ group_names|get_item:msg.group_jid }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
                         data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
                         data-amount="{{ msg.amount|default:''|unlocalize }}" data-rate="{{ msg.exchange_rate|default:''|unlocalize }}" data-commission="{{ msg.commission|default:''|unlocalize }}"
                         data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
                         data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
                         data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
                         <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
-                        <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
+                        <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}{% with gname=group_names|get_item:msg.group_jid %}{% if gname %} — {{ gname }}{% endif %}{% endwith %}" dir="ltr">
+                        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:158px">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</div>
+                        {% with gname=group_names|get_item:msg.group_jid %}{% if gname %}<div dir="rtl" style="font-family:Cairo,sans-serif;font-size:.64rem;font-weight:700;color:#0f766e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:158px">{{ gname }}</div>{% endif %}{% endwith %}
+                    </td>
                         <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
                         <td>
                             <div class="wa-card" title="{{ msg.message_text }}">
@@ -1348,7 +1351,9 @@ function updateWaStickyTop() {
     var tb = document.getElementById('waToolbar');
     if (!tb) return;
     var h = Math.round(tb.getBoundingClientRect().height);
-    document.documentElement.style.setProperty('--wa-sticky-top', h + 'px');
+    var wrap = document.getElementById('waTableWrap');
+    var z = (wrap && wrap.style.zoom) ? (parseFloat(wrap.style.zoom) || 1) : 1;
+    document.documentElement.style.setProperty('--wa-sticky-top', (h / z) + 'px');
 }
 document.addEventListener('DOMContentLoaded', function() {
     updateWaStickyTop();
@@ -1368,5 +1373,38 @@ setTimeout(updateWaStickyTop, 500);
 // إخفاء القائمة الجانبية في صفحة ربط الواتساب — تعود عند الضغط على «رجوع»
 document.body.classList.add('sidebar-hidden');
 try { localStorage.setItem('sidebarHidden', '0'); } catch (e) {}
+
+// ===== ضغط الجدول ليتّسع كاملًا عند فتح القائمة الجانبية =====
+var waFitTimers = [];
+function waFitTable() {
+    var wrap = document.getElementById('waTableWrap');
+    if (!wrap) return;
+    var table = wrap.querySelector('.wa-table');
+    if (!table) return;
+    if (document.body.classList.contains('sidebar-hidden')) {
+        if (wrap.style.zoom) { wrap.style.zoom = ''; if (typeof updateWaStickyTop === 'function') updateWaStickyTop(); }
+        return;
+    }
+    wrap.style.zoom = '';
+    var avail = wrap.clientWidth;
+    var need = table.offsetWidth;
+    if (avail > 0 && need > avail) {
+        wrap.style.zoom = String(Math.max(0.5, avail / need));
+    }
+    if (typeof updateWaStickyTop === 'function') updateWaStickyTop();
+}
+function scheduleWaFit() {
+    for (var i = 0; i < waFitTimers.length; i++) clearTimeout(waFitTimers[i]);
+    waFitTimers = [];
+    [0, 350, 800].forEach(function (d) { waFitTimers.push(setTimeout(waFitTable, d)); });
+}
+window.addEventListener('resize', scheduleWaFit);
+window.addEventListener('load', scheduleWaFit);
+if (window.MutationObserver) {
+    new MutationObserver(scheduleWaFit).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    var tb = document.getElementById('messagesTableBody');
+    if (tb) new MutationObserver(scheduleWaFit).observe(tb, { childList: true });
+}
+scheduleWaFit();
 </script>
 {% endblock %}

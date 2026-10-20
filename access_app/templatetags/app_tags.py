@@ -112,3 +112,14 @@ def wa_note_filter(msg):
             continue
         lines.append(line)
     return " ".join(lines[:3])
+
+
+@register.filter(name="get_item")
+def get_item_filter(mapping, key):
+    """mapping.get(key) for template dicts (e.g. group_names|get_item:msg.group_jid)."""
+    if not mapping or not key:
+        return ""
+    try:
+        return mapping.get(key) or ""
+    except (AttributeError, TypeError):
+        return ""

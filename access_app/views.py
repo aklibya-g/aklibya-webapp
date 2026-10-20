@@ -3309,6 +3309,7 @@ def whatsapp_messages_api(request):
     messages_list = WhatsAppMessage.objects.all().order_by("-timestamp", "-id")[:1000]
     return render(request, "whatsapp_messages_partial.html", {
         "messages_list": messages_list,
+        "group_names": _wa_group_names(),
     })
 
 
@@ -3677,6 +3678,7 @@ def whatsapp_integration(request):
         "wa_current_rate": setting.wa_current_rate,
         "wa_rate_currency": setting.wa_rate_currency,
         "wa_rate_updated": setting.wa_rate_updated,
+        "group_names": _wa_group_names(),
     })
 
 
@@ -3770,6 +3772,22 @@ def whatsapp_ai_analyze(request):
 
 
 _GROUPS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "groups.json")
+
+
+def _wa_group_names():
+    names = {}
+    try:
+        if os.path.exists(_GROUPS_FILE):
+            with open(_GROUPS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            for g in data.get("groups") or []:
+                gid = str(g.get("id") or "").strip()
+                gname = str(g.get("name") or "").strip()
+                if gid and gname:
+                    names[gid] = gname
+    except Exception:
+        pass
+    return names
 
 
 @csrf_exempt

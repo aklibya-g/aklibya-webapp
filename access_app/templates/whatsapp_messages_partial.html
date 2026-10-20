@@ -1,13 +1,16 @@
 {% load humanize %}{% load app_tags %}{% load l10n %}
 {% for msg in messages_list %}
-<tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
+<tr data-id="{{ msg.id }}" data-direction="{{ msg.direction }}" data-status="{{ msg.status }}" data-date="{{ msg.timestamp|date:'Y-m-d' }}" data-search="{{ msg.sender }} {{ group_names|get_item:msg.group_jid }} {{ msg.message_text }} {{ msg.phone_number|default:'' }} {{ msg.amount|default:'' }} {{ msg.currency|default:'' }}"
     data-sender="{{ msg.sender }}" data-text="{{ msg.message_text }}" data-phone="{{ msg.phone_number|default:'' }}"
     data-amount="{{ msg.amount|default:''|unlocalize }}" data-rate="{{ msg.exchange_rate|default:''|unlocalize }}" data-commission="{{ msg.commission|default:''|unlocalize }}"
     data-currency="{{ msg.currency|default:'' }}" data-ttype="{{ msg.transfer_type|default:'' }}"
     data-time="{{ msg.timestamp|date:'Y-m-d h:i A' }}" data-group="{{ msg.group_jid|default:'' }}"
     data-edited-by="{{ msg.edited_by|default:'' }}" data-edit-log="{{ msg.edit_log|default:''|escape }}" style="cursor:pointer">
     <td style="text-align:center"><input type="checkbox" class="rowCheck" value="{{ msg.id }}" onchange="updateSelectedCount();this.closest('tr').classList.toggle('selected-row',this.checked)"></td>
-    <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}" dir="ltr">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</td>
+    <td style="text-align:right;white-space:nowrap;font-family:Consolas,monospace;font-size:.68rem;color:#334155;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="{{ msg.sender }}{% with gname=group_names|get_item:msg.group_jid %}{% if gname %} — {{ gname }}{% endif %}{% endwith %}" dir="ltr">
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:158px">{% if msg.sender %}{{ msg.sender|cut:"@s.whatsapp.net"|cut:"@g.us"|cut:"lid@" }}{% else %}-{% endif %}</div>
+        {% with gname=group_names|get_item:msg.group_jid %}{% if gname %}<div dir="rtl" style="font-family:Cairo,sans-serif;font-size:.64rem;font-weight:700;color:#0f766e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:158px">{{ gname }}</div>{% endif %}{% endwith %}
+    </td>
     <td style="text-align:center;white-space:nowrap;font-family:Consolas,monospace" dir="ltr">{{ msg.phone_number|default:"-" }}</td>
     <td>
         <div class="wa-card" title="{{ msg.message_text }}">
