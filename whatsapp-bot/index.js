@@ -23,6 +23,7 @@ let syncWatcherStarted = false;
 let configWatcherStarted = false;
 let configReady = false;
 let pendingHistoryResolve = null;
+let intentionalRestart = false;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -538,6 +539,31 @@ async function selfProbe() {
     return result;
 }
 
+async function runCatchup(req) {
+    const result = { ok: false, found: 0, saved: 0, duplicates: 0, rounds: 1, error: null, mode: 'catchup' };
+    if (!sock || !sock.user) {
+        result.error = 'البوت غير متصل — شغّل البوت ثم أعد المحاولة';
+        return result;
+    }
+    // إعادة اتصال مقصودة: عند إعادة الاتصال يرسل واتساب الرسائل الفائتة (offline buffer) تلقائيًا
+    console.log('⏩ متابعة من آخر رسالة: إعادة اتصال الواتساب لاستقبال الرسائل الفائتة...');
+    intentionalRestart = true;
+    try { sock.end(undefined); } catch (e) { }
+    result.ok = true;
+    result.note = 'تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا خلال ثوانٍ';
+    // سلامة: إذا لم يُغلق/يُعاد فتح الاتصال خلال 12 ثانية أعد التشغيل يدويًا
+    setTimeout(() => {
+        if (intentionalRestart) {
+            intentionalRestart = false;
+            console.log('⏱ لم يغلق الاتصال تلقائيًا — إعادة تشغيل البوت');
+            try { sock.end(undefined); } catch (e) { }
+            sock = null;
+            startBot();
+        }
+    }, 12000);
+    return result;
+}
+
 async function runPull(req) {
     if (pulling) {
         queuedRequests.push(req);
@@ -548,6 +574,8 @@ async function runPull(req) {
     try {
         if (req.mode === 'selfprobe') {
             result = await selfProbe();
+        } else if (req.mode === 'catchup') {
+            result = await runCatchup(req);
         } else {
             result = await pullRange(Number(req.since) || 0, Number(req.until) || Math.floor(Date.now() / 1000), !!req.allow_dup);
         }
@@ -556,9 +584,15 @@ async function runPull(req) {
     }
     pulling = false;
     writeSyncResult(result);
-    console.log(result.ok
-        ? '✅ اكتمل السحب: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
-        : '❌ فشل السحب: ' + result.error);
+    if (result.mode === 'catchup') {
+        console.log(result.ok
+            ? '✅ جاهز لاستقبال الرسائل الفائتة بعد إعادة الاتصال'
+            : '❌ فشلت المتابعة: ' + result.error);
+    } else {
+        console.log(result.ok
+            ? '✅ اكتمل السحب: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
+            : '❌ فشل السحب: ' + result.error);
+    }
     if (queuedRequests.length) {
         const next = queuedRequests.shift();
         await runPull(next);
@@ -688,6 +722,12 @@ async function startBot() {
         }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
+            if (intentionalRestart) {
+                intentionalRestart = false;
+                console.log('🔄 إعادة اتصال مقصودة (متابعة من آخر رسالة)...');
+                setTimeout(startBot, 2000);
+                return;
+            }
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 console.log('❌ تم تسجيل الخروج (device_removed) - مسح الجلسة القديمة وعرض رمز QR جديد');
                 wipeAuth();

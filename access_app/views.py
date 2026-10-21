@@ -6,6 +6,7 @@ import subprocess
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.db import models
 from django.db.models import Sum, Count
@@ -112,6 +113,12 @@ def _wa_rate_at(ts, timeline=None):
 
 def _write_sync_request(payload):
     path = os.path.join(_bot_dir(), "sync_request")
+    stale = os.path.join(_bot_dir(), "sync_result")
+    if os.path.exists(stale):
+        try:
+            os.remove(stale)
+        except OSError:
+            pass
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
     return path
@@ -132,6 +139,29 @@ def _consume_sync_result():
     except Exception:
         pass
     return data
+
+
+def _sync_result_message(result):
+    """يحوّل نتيجة السحب إلى (مستوى, نص) لعرضها كرسالة أو JSON."""
+    if result.get("ok"):
+        if str(result.get("mode", "")).startswith("history"):
+            return "success", (
+                f"وصلت مزامنة تاريخ واتساب: وُجد {result.get('found', 0)} | "
+                f"جديد {result.get('saved', 0)} | مكرر {result.get('duplicates', 0)}"
+            )
+        if result.get("mode") == "catchup":
+            return "success", (
+                result.get("note")
+                or "تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا خلال ثوانٍ"
+            )
+        return "success", (
+            f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
+            f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
+        )
+    err = result.get("error", "خطأ غير معروف")
+    if any(k in err for k in ("لا يوجد رد", "انتهت مهلة", "لم يرد")):
+        err += " | جرّب تفعيل مزامنة التاريخ الكامل ثم أعد ربط الواتساب"
+    return "error", f"فشل السحب: {err}"
 
 
 def _ensure_backup_dir():
@@ -3572,27 +3602,24 @@ def whatsapp_integration(request):
                 "تم إرسال طلب سحب كل الرسائل السابقة "
                 f"({'مع التكرار' if allow_dup else 'بدون تكرار'}) — تصل بتواريخها الأصلي"
             )
-            return redirect("whatsapp_integration")
+            return redirect(f"{reverse('whatsapp_integration')}?syncing=1")
         elif action == "sync_recent":
             last_msg = WhatsAppMessage.objects.order_by("-timestamp").first()
             if not last_msg:
                 messages.error(request, "لا توجد رسائل سابقة — استخدم «سحب الكل» أولاً")
                 return redirect("whatsapp_integration")
-            # تداخل 5 دقائق يغطي أي رسائل فائتة عند آخر اتصال (المكرر يُزاح تلقائيًا)
-            since_ts = int(last_msg.timestamp.timestamp()) - 300
-            until_ts = int(timezone.now().timestamp())
-            _write_sync_request({
-                "mode": "range",
-                "since": since_ts,
-                "until": until_ts,
-                "allow_dup": True,
-            })
+            if bot_status != "متصل":
+                messages.error(request, "البوت غير مشغّل — اضغط تشغيل البوت ثم أعد المحاولة")
+                return redirect("whatsapp_integration")
+            # catchup: إعادة اتصال الواتساب — يرسل هو الرسائل الفائتة (offline buffer) تلقائيًا
+            _write_sync_request({"mode": "catchup"})
             messages.success(
                 request,
                 f"تم إرسال طلب متابعة من آخر رسالة محفوظة "
-                f"({last_msg.timestamp.strftime('%Y-%m-%d %H:%M')}) حتى الآن — تصل بتواريخها الأصلي"
+                f"({last_msg.timestamp.strftime('%Y-%m-%d %H:%M')}) — "
+                "ستُعاد إعادة اتصال الواتساب وتصل الرسائل الفائتة تلقائيًا"
             )
-            return redirect("whatsapp_integration")
+            return redirect(f"{reverse('whatsapp_integration')}?syncing=1")
         elif action == "sync_range":
             date_from = (request.POST.get("date_from") or "").strip()
             date_to = (request.POST.get("date_to") or "").strip()
@@ -3624,7 +3651,7 @@ def whatsapp_integration(request):
                 f"تم إرسال طلب سحب رسائل من {date_from} إلى {date_to} "
                 f"({'مع التكرار' if allow_dup else 'بدون تكرار'})"
             )
-            return redirect("whatsapp_integration")
+            return redirect(f"{reverse('whatsapp_integration')}?syncing=1")
         elif action == "save_monitor_all":
             setting = SystemSetting.get()
             setting.monitor_all_groups = _as_bool(request.POST.get("monitor_all_groups"), default=False)
@@ -3817,26 +3844,15 @@ def whatsapp_integration(request):
             )
             return redirect("whatsapp_integration")
     setting = SystemSetting.get()
-    result = _consume_sync_result()
-    if result:
-        if result.get("ok"):
-            if str(result.get("mode", "")).startswith("history"):
-                messages.success(
-                    request,
-                    f"وصلت مزامنة تاريخ واتساب: وُجد {result.get('found', 0)} | "
-                    f"جديد {result.get('saved', 0)} | مكرر {result.get('duplicates', 0)}"
-                )
+    # عند التحويل بـ ?syncing=1 يعمل جافاسكريبت في المتصفح بجمع النتيجة — لا نستهلكها هنا
+    if not request.GET.get("syncing"):
+        result = _consume_sync_result()
+        if result:
+            level, text = _sync_result_message(result)
+            if level == "success":
+                messages.success(request, text)
             else:
-                messages.success(
-                    request,
-                    f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
-                    f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
-                )
-        else:
-            err = result.get("error", "خطأ غير معروف")
-            if any(k in err for k in ("لا يوجد رد", "انتهت مهلة", "لم يرد")):
-                err += " | جرّب تفعيل مزامنة التاريخ الكامل ثم أعد ربط الواتساب"
-            messages.error(request, f"فشل السحب: {err}")
+                messages.error(request, text)
     return render(request, "whatsapp_integration.html", {
         "title": "ربط الواتساب",
         "messages_list": messages_list,
@@ -3850,6 +3866,16 @@ def whatsapp_integration(request):
         "wa_rate_updated": setting.wa_rate_updated,
         "group_names": _wa_group_names(),
     })
+
+
+@login_required_custom
+def whatsapp_sync_status(request):
+    """تستهلك نتيجة السحب من البوت وتعيدها JSON — يستخدمها جافاسكريبت بعد أزرار المزامنة."""
+    result = _consume_sync_result()
+    if not result:
+        return JsonResponse({"done": False})
+    level, text = _sync_result_message(result)
+    return JsonResponse({"done": True, "ok": level == "success", "text": text})
 
 
 @csrf_exempt
