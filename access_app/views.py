@@ -3125,7 +3125,9 @@ def whatsapp_message_edit(request, msg_id):
         if edit_source not in ("ai", "inline", "manual"):
             edit_source = "manual"
         msg.sender = request.POST.get("sender", msg.sender)
-        msg.message_text = request.POST.get("message_text", msg.message_text)
+        posted_text = request.POST.get("message_text", None)
+        if posted_text:  # لا يُمسح النص أبداً بقيمة فارغة (الذكاء الاصطناعي يرسل فارغاً)
+            msg.message_text = posted_text
         msg.phone_number = request.POST.get("phone_number", "")
         msg.amount = request.POST.get("amount") or None
         msg.exchange_rate = request.POST.get("exchange_rate") or None
@@ -3523,6 +3525,9 @@ def whatsapp_integration(request):
             msg_id = request.POST.get("msg_id")
             if msg_id:
                 msg = get_object_or_404(WhatsAppMessage, id=msg_id)
+                if (msg.message_text or "").startswith("[صورة]"):
+                    # صورة — لا تُحلَّل كحوالة: فتح التعديل بدون أي بيانات مقترحة
+                    return redirect("whatsapp_message_edit", msg_id=msg.id)
                 amount, rate, commission, currency, phone, _ = _parse_wa_message_learned(msg.message_text)
                 from urllib.parse import urlencode
                 params = urlencode({
@@ -3541,7 +3546,52 @@ def whatsapp_integration(request):
                 if msg.edited_by == "not_rate":
                     continue
                 if (msg.message_text or "").startswith("[صورة]"):
-                    # الصور: البيانات المستخرجة بالذكاء الاصطناعي هي المرجع — نص الوصف لا يصلح لإعادة التحليل
+                    # الصور تأكيد استلام فقط — أي مبلغ/رقم محفوظ عليها يُمسح (بوسترات السعر بلا مبلغ تبقى كما هي)
+                    # التعديل اليدوي/الذكي الصريح من المستخدم لا يُلغى هنا
+                    if msg.amount is None and not msg.phone_number:
+                        continue
+                    if msg.edited_by in ("manual", "ai", "inline"):
+                        continue
+                    old_values = {
+                        "amount": ("" if msg.amount is None else str(msg.amount)),
+                        "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
+                        "commission": ("" if msg.commission is None else str(msg.commission)),
+                        "currency": msg.currency or "",
+                        "phone_number": msg.phone_number or "",
+                        "transfer_type": msg.transfer_type or "",
+                    }
+                    msg.amount = None
+                    msg.exchange_rate = None
+                    msg.commission = None
+                    msg.currency = None
+                    msg.phone_number = ""
+                    new_values = {
+                        "amount": "",
+                        "exchange_rate": "",
+                        "commission": "",
+                        "currency": "",
+                        "phone_number": "",
+                        "transfer_type": msg.transfer_type or "",
+                    }
+                    field_labels = {
+                        "amount": "المبلغ", "exchange_rate": "السعر", "commission": "العمولة",
+                        "currency": "العملة", "phone_number": "التليفون", "transfer_type": "النوع",
+                    }
+                    changes = []
+                    for k, nv in new_values.items():
+                        if (nv or "") != (old_values.get(k) or ""):
+                            changes.append({"field": k, "label": field_labels.get(k, k), "old": old_values.get(k) or "—", "new": nv or "—"})
+                    if changes:
+                        fixed_count += 1
+                        msg.status = "معدلة"
+                        msg.edited_by = "reprocess"
+                        try:
+                            prev_log = json.loads(msg.edit_log) if msg.edit_log else []
+                        except Exception:
+                            prev_log = []
+                        prev_log.append({"source": "reprocess", "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "changes": changes})
+                        msg.edit_log = json.dumps(prev_log[-20:], ensure_ascii=False)
+                        msg.save()
                     continue
                 amount, rate, commission, currency, _, ttype = _parse_wa_message_learned(msg.message_text)
                 if not rate and amount and currency and st_rate.wa_rate_currency == currency:
@@ -3727,9 +3777,12 @@ def whatsapp_integration(request):
             if ids:
                 empty_qs = WhatsAppMessage.objects.filter(id__in=ids)
             else:
+                # صور التأكيد لا تُحذف ضمنياً حتى بلا مبلغ/رقم — هي إثباتات استلام
                 empty_qs = WhatsAppMessage.objects.filter(
                     _Q(amount__isnull=True) | _Q(amount=0),
                     exchange_rate__isnull=True,
+                ).exclude(
+                    _Q(message_text__startswith="[صورة]")
                 ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
             deleted_count = empty_qs.count()
             empty_qs.delete()
@@ -3917,6 +3970,24 @@ def whatsapp_ai_analyze(request):
         results = []
         for msg in WhatsAppMessage.objects.filter(id__in=ids):
             text = msg.message_text or ""
+            if text.startswith("[صورة]"):
+                # الصور تأكيد استلام فقط — لا تُعرض كحوالات في التحليل الذكي أبداً
+                results.append({
+                    "id": msg.id,
+                    "text": text[:300],
+                    "amount": None,
+                    "rate": (msg.exchange_rate if msg.amount is None else None),
+                    "currency": (msg.currency if msg.amount is None else None),
+                    "phone": "",
+                    "phone_fixed": False,
+                    "phone_valid": False,
+                    "ttype": msg.transfer_type,
+                    "direction": msg.direction,
+                    "is_transfer": False,
+                    "is_image": True,
+                    "missing_fields": [],
+                })
+                continue
             amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
             phone_fixed = False
             phone_valid = False
@@ -4123,40 +4194,37 @@ def whatsapp_webhook(request):
                 img_amount = data.get("image_amount")
                 img_phone = data.get("image_phone")
                 img_ttype = data.get("image_ttype")
-                if img_rate and not rate:
-                    try:
-                        rate = float(img_rate)
-                    except (ValueError, TypeError):
-                        pass
                 if img_currency and not currency:
                     cur = str(img_currency).strip()
                     if cur in ("ج م", "د ل"):
                         currency = cur
-                if img_amount and not amount:
-                    try:
-                        amount = float(img_amount)
-                    except (ValueError, TypeError):
-                        pass
-                if img_phone and not phone:
-                    ph = re.sub(r'\D', '', str(img_phone))
-                    if len(ph) in (9, 10, 11):
-                        phone = ph
-                if img_ttype and not ttype:
-                    ttype = str(img_ttype).strip()
             st = SystemSetting.get()
             msg_ts = _wa_ts_to_naive(data.get("timestamp"))
-            is_rate_poster = bool(from_image and img_rate and not img_amount and not img_phone)
-            if is_rate_poster:
-                try:
-                    st.wa_current_rate = float(img_rate)
-                    st.wa_rate_currency = (str(img_currency).strip() if img_currency in ("ج م", "د ل") else (currency or "ج م"))
-                    st.wa_rate_updated = timezone.now()
-                    st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
-                except (ValueError, TypeError):
-                    pass
+            # الصور تأكيد استلام فقط — لا تُقرأ أي حوالة من أي صورة (ما عدا إعلان السعر بلا مبلغ/رقم)
+            is_image_msg = from_image or str(text or "").startswith("[صورة]")
+            if is_image_msg:
+                if from_image and (img_rate or img_amount or img_phone):
+                    # المرجع بيانات الذكاء الاصطناعي المنظمة لا نص الوصف
+                    is_rate_poster = bool(img_rate and not img_amount and not img_phone)
+                    poster_rate = img_rate
+                else:
+                    is_rate_poster = bool(rate and not amount and not phone)
+                    poster_rate = rate
+                if is_rate_poster:
+                    try:
+                        st.wa_current_rate = float(poster_rate)
+                        st.wa_rate_currency = (str(img_currency).strip() if img_currency in ("ج م", "د ل") else (currency or "ج م"))
+                        st.wa_rate_updated = timezone.now()
+                        st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                    except (ValueError, TypeError):
+                        pass
+                    rate = float(poster_rate)
+                else:
+                    rate = None
                 amount = None
                 phone = ''
-                rate = float(img_rate) if img_rate else rate
+                commission = None
+                ttype = ""
             elif rate and not amount and not phone and (not currency or currency == "ج م"):
                 try:
                     st.wa_current_rate = float(rate)

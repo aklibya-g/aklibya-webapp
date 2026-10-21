@@ -287,13 +287,13 @@ async function sendToDjango(msg, opts) {
             msg_id: msg.key.id || '',
             allow_dup: opts.allowDup !== false
         };
+        if (isImage) payload.from_image = true;
         if (imageAnalysis) {
             payload.image_rate = imageAnalysis.rate;
             payload.image_currency = imageAnalysis.currency;
             payload.image_amount = imageAnalysis.amount;
             payload.image_phone = imageAnalysis.phone;
             payload.image_ttype = imageAnalysis.transfer_type;
-            payload.from_image = true;
         }
         const res = await axios.post(DJANGO + '/api/whatsapp/webhook/', payload);
         const data = res.data || {};

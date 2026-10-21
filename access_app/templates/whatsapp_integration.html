@@ -713,13 +713,13 @@ function openAiModal() {
 function renderAiList() {
     var list = document.getElementById('aiList');
     var transfers = 0, invalid = 0, missing = 0;
-    aiData.forEach(function(r) { if (r.is_transfer) transfers++; else invalid++; if (r.missing_fields && r.missing_fields.length) missing++; });
-    document.getElementById('aiSummary').innerHTML = '📊 <b>' + aiData.length + '</b> رسالة | ✅ حوالات: <b style="color:#16a34a">' + transfers + '</b> | ❌ غير صالحة: <b style="color:#dc2626">' + invalid + '</b> | ⚠️ حقول ناقصة: <b style="color:#d97706">' + missing + '</b>';
+    aiData.forEach(function(r) { if (r.is_image) return; if (r.is_transfer) transfers++; else invalid++; if (r.missing_fields && r.missing_fields.length) missing++; });
+    document.getElementById('aiSummary').innerHTML = '📊 <b>' + aiData.length + '</b> رسالة | ✅ حوالات: <b style="color:#16a34a">' + transfers + '</b> | ❌ غير صالحة: <b style="color:#dc2626">' + invalid + '</b> | ⚠️ حقول ناقصة: <b style="color:#d97706">' + missing + '</b> | 📷 صور تأكيد: <b style="color:#2563eb">' + aiData.filter(function(r){return r.is_image;}).length + '</b>';
     list.innerHTML = '';
     aiData.forEach(function(r, i) {
         var card = document.createElement('div');
-        var bg = r.is_transfer ? '#f0fdf4' : '#fef2f2';
-        var border = r.is_transfer ? '#86efac' : '#fca5a5';
+        var bg = r.is_image ? '#eff6ff' : (r.is_transfer ? '#f0fdf4' : '#fef2f2');
+        var border = r.is_image ? '#93c5fd' : (r.is_transfer ? '#86efac' : '#fca5a5');
         card.style.cssText = 'border:2px solid ' + border + ';border-radius:12px;padding:12px;background:' + bg;
         var missingBadges = (r.missing_fields || []).map(function(f) {
             var labels = {amount:'المبلغ', rate:'السعر', phone:'الهاتف', currency:'العملة', ttype:'النوع'};
@@ -728,10 +728,11 @@ function renderAiList() {
         var phoneWarn = '';
         if (r.phone && !r.phone_valid) phoneWarn = '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:5px;font-size:.68rem;font-weight:700">❌ هاتف غير صالح (' + (r.phone||'').length + ' رقم)</span>';
         else if (r.phone_fixed) phoneWarn = '<span style="background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:5px;font-size:.68rem;font-weight:700">➕ أُضيف صفر</span>';
+        var kindLabel = r.is_image ? '📷 صورة تأكيد (ليست حوالة)' : (r.is_transfer ? '✅ حوالة' : '❌ غير صالحة');
         card.innerHTML =
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
                 '<input type="checkbox" class="aiCheck" data-i="' + i + '" ' + (r.is_transfer ? 'checked' : '') + ' style="width:16px;height:16px;accent-color:#8b5cf6">' +
-                '<span style="font-weight:800;font-size:.75rem">' + (r.is_transfer ? '✅ حوالة' : '❌ غير صالحة') + '</span>' +
+                '<span style="font-weight:800;font-size:.75rem">' + kindLabel + '</span>' +
                 missingBadges + phoneWarn +
                 '<span style="flex:1"></span>' +
                 '<span style="font-size:.65rem;color:var(--text-muted);font-family:monospace">#' + r.id + '</span>' +
@@ -761,7 +762,7 @@ function aiSelectAllTransfers() {
 function aiSelectAllInvalid() {
     document.querySelectorAll('.aiCheck').forEach(function(cb) {
         var r = aiData[+cb.dataset.i];
-        cb.checked = !r.is_transfer;
+        cb.checked = !r.is_transfer && !r.is_image;
     });
 }
 function aiResetFields() {
@@ -775,7 +776,7 @@ function aiDeleteInvalid() {
     var ids = [];
     document.querySelectorAll('.aiCheck').forEach(function(cb) {
         var r = aiData[+cb.dataset.i];
-        if (!r.is_transfer) ids.push(r.id);
+        if (!r.is_transfer && !r.is_image) ids.push(r.id);
     });
     if (!ids.length) { alert('لا توجد رسائل غير صالحة للحذف'); return; }
     if (!confirm('حذف ' + ids.length + ' رسالة غير صالحة نهائياً؟')) return;
@@ -863,6 +864,8 @@ function deleteEmptyMsgs() {
     let html = '';
     rows.forEach(function (tr) {
         if (tr.dataset.amount || tr.dataset.phone || tr.dataset.rate) return;
+        // صور التأكيد إثباتات استلام — لا تدخل في الحذف التلقائي
+        if ((tr.dataset.text || '').startsWith('[صورة]')) return;
         const id = tr.dataset.id || '';
         if (!id) return;
         waEmptyIds.push(id);
