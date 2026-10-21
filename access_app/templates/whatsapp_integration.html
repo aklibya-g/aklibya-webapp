@@ -183,39 +183,6 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     <span id="waMonitoredLabel" style="font-weight:800;font-size:.7rem;color:#047857;white-space:nowrap"><i class="bi bi-collection-play"></i> المتابَعة:</span>
                     <div id="waMonitoredChips" style="display:flex;gap:5px;flex-wrap:nowrap;align-items:center"></div>
                 </div>
-                <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
-                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="reprocess">
-                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="إعادة تحليل كل الرسائل المحفوظة واستخراج المبالغ والأسعار والعملات">
-                        <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
-                    </button>
-                </form>
-                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap" onsubmit="return confirm('إعادة احتساب أسعار كل الحوالات حسب جدول تغيير الأسعار؟')">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="recompute_rates">
-                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#fef3c7;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="كل حوالة تأخذ آخر سعر معلن قبل وقتها — يتبع تغيّر الأسعار تلقائياً (الاسعار قد تتغير اكثر من مرة في اليوم)">
-                        <i class="bi bi-currency-exchange"></i> احتساب الأسعار
-                    </button>
-                </form>
-                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="sync_messages">
-                    <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);cursor:pointer;user-select:none;white-space:nowrap" title="اسمح بدخول رسائل مكررة (لإعادة تعبئة فجوات)">
-                        <input type="checkbox" name="allow_dup" value="1" style="width:14px;height:14px;cursor:pointer;accent-color:#16a34a"> تكرار
-                    </label>
-                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="سحب كل الرسائل السابقة من واتساب بتواريخها الأصلي (يحتاج البوت يعمل)">
-                        <i class="bi bi-cloud-download"></i> سحب الكل
-                    </button>
-                </form>
-                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap" onsubmit="return confirm('سيتم إعادة اتصال الواتساب الآن ليصل ما فاتك من الرسائل تلقائيًا (خلال ثوانٍ) — هل تريد المتابعة؟')">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="sync_recent">
-                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#ecfeff;color:#0891b2;font-weight:700;border:1px solid #a5f3fc;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="يعيد اتصال واتساب لاستقبال كل الرسائل التي وصلت بعد آخر رسالة محفوظة — أسهل وأسرع من السحب اليدوي (يحتاج البوت يعمل)">
-                        <i class="bi bi-fast-forward"></i> متابعة من آخر رسالة
-                    </button>
-                </form>
-                </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
                     <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">
                         <button onclick="fontZoom(1)" style="width:26px;height:26px;border-radius:7px;border:none;background:#f0fdf4;color:#16a34a;font-weight:800;font-size:.8rem;cursor:pointer" title="تكبير الخط">A+</button>
@@ -270,6 +237,37 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                     <input type="hidden" name="delete_ids" id="deleteEmptyIds" value="">
                 </form>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:nowrap">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reprocess">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="إعادة تحليل كل الرسائل المحفوظة واستخراج المبالغ والأسعار والعملات">
+                        <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل الكل)
+                    </button>
+                </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:nowrap" onsubmit="return confirm('إعادة احتساب أسعار كل الحوالات حسب جدول تغيير الأسعار؟')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="recompute_rates">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#fef3c7;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="كل حوالة تأخذ آخر سعر معلن قبل وقتها — يتبع تغيّر الأسعار تلقائياً (الاسعار قد تتغير اكثر من مرة في اليوم)">
+                        <i class="bi bi-currency-exchange"></i> احتساب الأسعار
+                    </button>
+                </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:nowrap">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="sync_messages">
+                    <label style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text-muted);cursor:pointer;user-select:none;white-space:nowrap" title="اسمح بدخول رسائل مكررة (لإعادة تعبئة فجوات)">
+                        <input type="checkbox" name="allow_dup" value="1" style="width:14px;height:14px;cursor:pointer;accent-color:#16a34a"> تكرار
+                    </label>
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="سحب كل الرسائل السابقة من واتساب بتواريخها الأصلي (يحتاج البوت يعمل)">
+                        <i class="bi bi-cloud-download"></i> سحب الكل
+                    </button>
+                </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:nowrap" onsubmit="return confirm('سيتم إعادة اتصال الواتساب الآن ليصل ما فاتك من الرسائل تلقائيًا (خلال ثوانٍ) — هل تريد المتابعة؟')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="sync_recent">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#ecfeff;color:#0891b2;font-weight:700;border:1px solid #a5f3fc;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="يعيد اتصال واتساب لاستقبال كل الرسائل التي وصلت بعد آخر رسالة محفوظة — أسهل وأسرع من السحب اليدوي (يحتاج البوت يعمل)">
+                        <i class="bi bi-fast-forward"></i> متابعة من آخر رسالة
+                    </button>
+                </form>
                 <a href="{% url 'whatsapp_settlement' %}" title="كشف مقاصة الحسابات بين المكاتب (دائن/مدين بالليبي)" style="padding:6px 14px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:700;border:1px solid #ddd6fe;font-size:.78rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="bi bi-arrow-left-right"></i> مقاصة</a>
                 <span class="wa-count-badge" id="waCount" style="margin-inline-start:auto">إجمالي المعاملات: {{ messages_list|length }}</span>
                 <span id="selectedCount" style="font-size:.75rem;color:var(--text-muted)"></span>
