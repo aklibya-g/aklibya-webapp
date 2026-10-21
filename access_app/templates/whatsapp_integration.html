@@ -203,6 +203,13 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                         <i class="bi bi-cloud-download"></i> سحب الكل
                     </button>
                 </form>
+                <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap" onsubmit="return confirm('جلب كل الرسائل التي وصلت واتساب بعد آخر رسالة محفوظة في المنظومة؟')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="sync_recent">
+                    <button type="submit" style="padding:6px 14px;border-radius:9px;background:#ecfeff;color:#0891b2;font-weight:700;border:1px solid #a5f3fc;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="جلب الرسائل الجديدة فقط التي وصلت بعد آخر رسالة محفوظة (أسرع من سحب الكل — يحتاج البوت يعمل)">
+                        <i class="bi bi-fast-forward"></i> متابعة من آخر رسالة
+                    </button>
+                </form>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
                     <div style="display:flex;gap:3px;align-items:center;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:3px 5px" title="حجم خط الجدول">

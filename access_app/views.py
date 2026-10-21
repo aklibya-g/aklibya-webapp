@@ -3573,6 +3573,26 @@ def whatsapp_integration(request):
                 f"({'مع التكرار' if allow_dup else 'بدون تكرار'}) — تصل بتواريخها الأصلي"
             )
             return redirect("whatsapp_integration")
+        elif action == "sync_recent":
+            last_msg = WhatsAppMessage.objects.order_by("-timestamp").first()
+            if not last_msg:
+                messages.error(request, "لا توجد رسائل سابقة — استخدم «سحب الكل» أولاً")
+                return redirect("whatsapp_integration")
+            # تداخل 5 دقائق يغطي أي رسائل فائتة عند آخر اتصال (المكرر يُزاح تلقائيًا)
+            since_ts = int(last_msg.timestamp.timestamp()) - 300
+            until_ts = int(timezone.now().timestamp())
+            _write_sync_request({
+                "mode": "range",
+                "since": since_ts,
+                "until": until_ts,
+                "allow_dup": True,
+            })
+            messages.success(
+                request,
+                f"تم إرسال طلب متابعة من آخر رسالة محفوظة "
+                f"({last_msg.timestamp.strftime('%Y-%m-%d %H:%M')}) حتى الآن — تصل بتواريخها الأصلي"
+            )
+            return redirect("whatsapp_integration")
         elif action == "sync_range":
             date_from = (request.POST.get("date_from") or "").strip()
             date_to = (request.POST.get("date_to") or "").strip()
