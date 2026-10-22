@@ -155,6 +155,8 @@ def _sync_result_message(result):
                 or "تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا خلال ثوانٍ"
             )
         if result.get("mode") == "gapfill":
+            if not result.get("found"):
+                return "success", "السحب العكسي الذكي: لا توجد رسائل أحدث غير محفوظة — سجلك محدّث"
             return "success", (
                 f"السحب العكسي الذكي اكتمل: وُجد {result.get('found', 0)} | "
                 f"جديد {result.get('saved', 0)} | مكرر {result.get('duplicates', 0)} — "

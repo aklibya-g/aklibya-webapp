@@ -598,7 +598,12 @@ async function runGapfill() {
     let lastOldest = 0;
     while (result.rounds < MAX_ROUNDS) {
         result.rounds++;
-        const batch = await requestHistoryBatch(cur.key, cur.ts);
+        let batch = await requestHistoryBatch(cur.key, cur.ts);
+        if (!batch && result.rounds === 1) {
+            console.log('🔁 لم يرد الهاتف على الدفعة الأولى — إعادة المحاولة بعد 3 ثوانٍ...');
+            await sleep(3000);
+            batch = await requestHistoryBatch(cur.key, cur.ts);
+        }
         if (!batch) {
             if (!result.error) result.error = 'واتساب لم يرد على طلب السحب العكسي';
             break;
@@ -646,7 +651,7 @@ async function runGapfill() {
         lastOldest = oldest;
         await sleep(400);
     }
-    result.ok = true;
+    result.ok = !result.error;
     return result;
 }
 
@@ -816,12 +821,7 @@ async function startBot() {
                 pendingGapfill = false;
                 console.log('🧠 انتظار الرسائل الفائتة (8 ثوانٍ) ثم بدء السحب العكسي الذكي...');
                 setTimeout(async () => {
-                    if (pulling) { queuedRequests.push({ mode: 'gapfill' }); return; }
-                    const result = await runGapfill();
-                    writeSyncResult(result);
-                    console.log(result.ok
-                        ? '✅ اكتمل السحب العكسي الذكي: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
-                        : '❌ فشل السحب العكسي: ' + result.error);
+                    await runPull({ mode: 'gapfill' });
                 }, 8000);
             }
         }

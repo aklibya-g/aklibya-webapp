@@ -25,3 +25,7 @@ whatsapp-bot/bot_diag.log
 whatsapp-bot/bot_diag.err
 whatsapp-bot/bot_out.log
 whatsapp-bot/bot_err2.log
+bot_out.log
+bot_err2.log
+server_out.log
+server_err.log
