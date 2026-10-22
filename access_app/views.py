@@ -3827,12 +3827,10 @@ def whatsapp_integration(request):
             if ids:
                 empty_qs = WhatsAppMessage.objects.filter(id__in=ids)
             else:
-                # صور التأكيد لا تُحذف ضمنياً حتى بلا مبلغ/رقم — هي إثباتات استلام
+                # الصور غير إعلانات السعر (بلا مبلغ/رقم/سعر) تدخل في الحذف — إعلانات السعر محمية بشرط السعر
                 empty_qs = WhatsAppMessage.objects.filter(
                     _Q(amount__isnull=True) | _Q(amount=0),
                     exchange_rate__isnull=True,
-                ).exclude(
-                    _Q(message_text__startswith="[صورة]")
                 ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
             deleted_count = empty_qs.count()
             empty_qs.delete()

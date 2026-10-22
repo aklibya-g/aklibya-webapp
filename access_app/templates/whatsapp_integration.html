@@ -905,8 +905,6 @@ function deleteEmptyMsgs() {
     let html = '';
     rows.forEach(function (tr) {
         if (tr.dataset.amount || tr.dataset.phone || tr.dataset.rate) return;
-        // صور التأكيد إثباتات استلام — لا تدخل في الحذف التلقائي
-        if ((tr.dataset.text || '').startsWith('[صورة]')) return;
         const id = tr.dataset.id || '';
         if (!id) return;
         waEmptyIds.push(id);
