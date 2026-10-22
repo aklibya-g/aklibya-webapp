@@ -1195,14 +1195,37 @@ var waToastStyle = document.createElement('style');
 waToastStyle.textContent = '@keyframes waToastIn{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}';
 document.head.appendChild(waToastStyle);
 
+var waLastHtml = null;
+var waUserScrollingUntil = 0;
+window.addEventListener('scroll', function() {
+    waUserScrollingUntil = Date.now() + 1500;
+}, { passive: true });
+
 function loadMessages() {
     if (typeof waInlineEdit !== 'undefined' && waInlineEdit) return;
+    if (document.hidden) return;
+    if (Date.now() < waUserScrollingUntil) return;
     const checkedIds = new Set(Array.from(document.querySelectorAll('.rowCheck:checked')).map(cb => cb.value));
-    const scrollY = window.scrollY;
+    var tbody0 = document.getElementById("messagesTableBody");
+    var anchorId = null, anchorTop = 0;
+    if (tbody0 && window.scrollY > 0) {
+        var anchorRows = tbody0.querySelectorAll('tr[data-id]');
+        for (var i = 0; i < anchorRows.length; i++) {
+            var rect = anchorRows[i].getBoundingClientRect();
+            if (rect.bottom > 0) {
+                anchorId = anchorRows[i].getAttribute('data-id');
+                anchorTop = rect.top;
+                break;
+            }
+        }
+    }
     fetch("{% url 'whatsapp_messages_api' %}")
         .then(r => r.text())
         .then(html => {
             const tbody = document.getElementById("messagesTableBody");
+            if (html === waLastHtml) return;
+            if (Date.now() < waUserScrollingUntil) return;
+            waLastHtml = html;
             if (tbody) {
                 tbody.innerHTML = html;
             }
@@ -1237,7 +1260,14 @@ function loadMessages() {
             if (filtersApplied) applyFilters();
             updateSelectedCount();
             refreshGroupFilter();
-            window.scrollTo(0, scrollY);
+            // الحفاظ على موضع القراءة: نثبّت الصف الظاهر أعلى الشاشة في مكانه بدل إرجاع الصفحة لأعلى
+            if (anchorId !== null && tbody) {
+                var anchorNow = tbody.querySelector('tr[data-id="' + anchorId + '"]');
+                if (anchorNow && anchorNow.offsetParent !== null) {
+                    var delta = anchorNow.getBoundingClientRect().top - anchorTop;
+                    if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+                }
+            }
         })
         .catch(() => {});
 }
