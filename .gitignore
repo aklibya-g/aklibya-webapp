@@ -29,3 +29,5 @@ bot_out.log
 bot_err2.log
 server_out.log
 server_err.log
+whatsapp-bot/participants.json
+whatsapp-bot/names_cache.json

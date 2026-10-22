@@ -280,6 +280,7 @@ async function sendToDjango(msg, opts) {
     if (!finalText) return 'skip';
     // الرقم الحقيقي للمرسل (يُخفي واتساب المعرّف @lid خلفه) — أساس تصنيف صادر/وارد
     const senderPn = String(msg.key.participantAlt || msg.key.remoteJidAlt || '').split('@')[0].replace(/\D/g, '');
+    rememberName(sender, sender && sender.endsWith('@lid') ? sender : '', msg.pushName);
     try {
         const payload = {
             jid: msg.key.remoteJid,
@@ -511,6 +512,108 @@ async function forwardHistorySync(data) {
     }
 }
 
+let pushNames = {};
+try {
+    pushNames = JSON.parse(fs.readFileSync('names_cache.json', 'utf8')) || {};
+} catch (e) {
+    pushNames = {};
+}
+let namesTimer = null;
+function saveNamesSoon() {
+    if (namesTimer) return;
+    namesTimer = setTimeout(() => {
+        namesTimer = null;
+        try { fs.writeFileSync('names_cache.json', JSON.stringify(pushNames)); } catch (e) { }
+    }, 5000);
+}
+function rememberName(id, lid, name) {
+    name = String(name || '').trim();
+    if (!name) return;
+    let changed = false;
+    for (const v of [id, lid]) {
+        const raw = String(v || '').trim();
+        if (!raw) continue;
+        const keys = [raw];
+        const base = raw.split('@')[0].split(':')[0];
+        if (base) keys.push(base);
+        const digits = base.replace(/\D/g, '');
+        if (digits) keys.push(digits);
+        for (const k of keys) {
+            if (k && pushNames[k] !== name) {
+                pushNames[k] = name;
+                changed = true;
+            }
+        }
+    }
+    if (changed) saveNamesSoon();
+}
+function lookupName(phone, lid, jid) {
+    for (const v of [lid, jid, phone]) {
+        const raw = String(v || '').trim();
+        if (!raw) continue;
+        const keys = [raw];
+        const base = raw.split('@')[0].split(':')[0];
+        if (base) keys.push(base);
+        const digits = base.replace(/\D/g, '');
+        if (digits) keys.push(digits);
+        for (const k of keys) {
+            if (k && pushNames[k]) return pushNames[k];
+        }
+    }
+    return '';
+}
+
+async function postParticipants() {
+    if (!sock || !sock.user) return { ok: false, error: 'البوت غير متصل' };
+    const jids = monitoredGroupJids.length ? monitoredGroupJids.slice() : (monitoredGroupJid ? [monitoredGroupJid] : []);
+    if (!jids.length) return { ok: false, error: 'لا توجد غرفة محددة - احفظ معرف الغرفة أولاً' };
+    const out = [];
+    for (const jid of jids) {
+        try {
+            const meta = await sock.groupMetadata(jid);
+            const parts = (meta.participants || []).map(p => {
+                let phoneJid = p.jid || '';
+                let lidJid = p.lid || '';
+                if (p.id && p.id.endsWith('@s.whatsapp.net')) phoneJid = phoneJid || p.id;
+                if (p.id && p.id.endsWith('@lid')) lidJid = lidJid || p.id;
+                const phone = (phoneJid || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+                return {
+                    jid: phoneJid || p.id || '',
+                    lid: lidJid || '',
+                    phone: phone,
+                    name: (p.name || p.notify || p.verifiedName || lookupName(phone, lidJid, p.id) || '').trim(),
+                    admin: p.admin || '',
+                };
+            });
+            out.push({ group_jid: jid, group_name: (meta.subject || '').trim(), participants: parts });
+        } catch (e) {
+            console.log('❌ فشل جلب مشتركي ' + jid + ': ' + (e && e.message));
+        }
+    }
+    if (!out.length) return { ok: false, error: 'تعذر جلب المشتركين من واتساب' };
+    const total = out.reduce((n, g) => n + g.participants.length, 0);
+    try {
+        await axios.post(DJANGO + '/api/whatsapp/participants/', { groups: out });
+    } catch (e) {
+        return { ok: false, error: 'فشل إرسال قائمة المشتركين للسيرفر' };
+    }
+    return { ok: true, groups: out.length, participants: total };
+}
+
+async function runParticipants() {
+    const result = { ok: false, found: 0, saved: 0, duplicates: 0, rounds: 1, error: null, mode: 'participants' };
+    const r = await postParticipants();
+    if (r.ok) {
+        result.ok = true;
+        result.found = r.participants;
+        result.saved = r.participants;
+        result.note = 'تم تحديث بيانات المشتركين: ' + r.participants + ' مشترك في ' + r.groups + ' غرفة';
+    } else {
+        result.error = r.error;
+    }
+    return result;
+}
+
 async function selfProbe() {
     const result = { ok: false, found: 0, rounds: 1, error: null, mode: 'selfprobe' };
     if (!sock || !sock.user) {
@@ -669,6 +772,8 @@ async function runPull(req) {
             result = await runCatchup(req);
         } else if (req.mode === 'gapfill') {
             result = await runGapfill();
+        } else if (req.mode === 'participants') {
+            result = await runParticipants();
         } else {
             result = await pullRange(Number(req.since) || 0, Number(req.until) || Math.floor(Date.now() / 1000), !!req.allow_dup);
         }
@@ -685,6 +790,10 @@ async function runPull(req) {
         console.log(result.ok
             ? '✅ اكتمل السحب العكسي الذكي: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
             : '❌ فشل السحب العكسي: ' + result.error);
+    } else if (result.mode === 'participants') {
+        console.log(result.ok
+            ? '✅ تم تحديث المشتركين: ' + result.found
+            : '❌ فشل تحديث المشتركين: ' + result.error);
     } else {
         console.log(result.ok
             ? '✅ اكتمل السحب: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
@@ -782,6 +891,10 @@ async function startBot() {
 
     sock.ev.on('messaging-history.set', async (data) => {
         if (!data) return;
+        for (const ct of (data.contacts || [])) {
+            if (!ct) continue;
+            rememberName(ct.id, ct.lid, ct.name || ct.notify || ct.verifiedName);
+        }
         if (data.syncType === HISTORY_SYNC_ON_DEMAND) {
             if (pendingHistoryResolve) {
                 const resolver = pendingHistoryResolve;
@@ -816,6 +929,9 @@ async function startBot() {
             } catch (e) {
                 console.log('❌ فشل جلب قائمة الغرف: ' + (e && e.message));
             }
+            postParticipants().then(r => {
+                if (r.ok) console.log('👥 تم تحديث مشتركي الغرف: ' + r.participants);
+            }).catch(() => {});
             // بعد «متابعة من آخر رسالة»: انتظر وصول الرسائل الفائتة ثم اسحب عكسيًا حتى أول رسالة محفوظة
             if (pendingGapfill) {
                 pendingGapfill = false;
@@ -852,6 +968,19 @@ async function startBot() {
         for (const msg of messages) {
             if (!msg.message) continue;
             await sendToDjango(msg, { allowDup: true });
+        }
+    });
+
+    sock.ev.on('contacts.upsert', (contacts) => {
+        for (const ct of (contacts || [])) {
+            if (!ct) continue;
+            rememberName(ct.id, ct.lid, ct.name || ct.notify || ct.verifiedName);
+        }
+    });
+    sock.ev.on('contacts.update', (contacts) => {
+        for (const ct of (contacts || [])) {
+            if (!ct) continue;
+            rememberName(ct.id, ct.lid, ct.name || ct.notify || ct.verifiedName);
         }
     });
 }

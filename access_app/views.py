@@ -4087,6 +4087,25 @@ def whatsapp_ai_analyze(request):
 
 
 _GROUPS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "groups.json")
+_PARTICIPANTS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "participants.json")
+
+
+def _participant_match_qs(phone="", lid="", jid=""):
+    """رسائل مرسل معيّن: مطابقة رقم الهاتف في sender_pn أو معرف LID/الهاتف في sender."""
+    phone = re.sub(r"\D", "", phone or "").lstrip("0")
+    cond = models.Q(pk__in=[])
+    if phone:
+        cond |= models.Q(sender_pn=phone) | models.Q(sender_pn__endswith=phone)
+        cond |= models.Q(sender=phone + "@s.whatsapp.net") | models.Q(sender=phone)
+    for v in (lid, jid):
+        v = (v or "").strip()
+        if not v:
+            continue
+        cond |= models.Q(sender=v)
+        base = v.split("@")[0]
+        if base:
+            cond |= models.Q(sender=base)
+    return WhatsAppMessage.objects.filter(cond)
 
 
 def _wa_group_names():
@@ -4136,6 +4155,147 @@ def whatsapp_groups(request):
         except Exception:
             pass
     return JsonResponse({"ok": True, "groups": groups, "updated_at": updated_at})
+
+
+@csrf_exempt
+def whatsapp_participants(request):
+    """قائمة مشتركي الغرف: استقبال من البوت (POST) أو عرض مع الحالة (GET)."""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            groups_in = data.get("groups") or []
+            st = SystemSetting.get()
+            lid_map = st.wa_lid_map_dict()
+            lid_changed = False
+            clean = []
+            for g in groups_in:
+                gid = _normalize_group_jid(str(g.get("group_jid") or g.get("id") or ""))
+                if not gid:
+                    continue
+                parts = []
+                for p in (g.get("participants") or []):
+                    phone = re.sub(r"\D", "", str(p.get("phone") or ""))
+                    lid = str(p.get("lid") or "").strip()
+                    pjid = str(p.get("jid") or "").strip()
+                    if not phone and "@s.whatsapp.net" in pjid:
+                        phone = re.sub(r"\D", "", pjid.split("@")[0])
+                    if lid and phone and lid_map.get(lid) != phone:
+                        lid_map[lid] = phone
+                        lid_changed = True
+                    parts.append({
+                        "phone": phone,
+                        "lid": lid,
+                        "jid": pjid,
+                        "name": str(p.get("name") or "")[:120],
+                        "admin": str(p.get("admin") or ""),
+                    })
+                clean.append({
+                    "group_jid": gid,
+                    "group_name": str(g.get("group_name") or "")[:120],
+                    "participants": parts,
+                })
+            if lid_changed:
+                st.wa_lid_map = json.dumps(lid_map, ensure_ascii=False)
+                st.save(update_fields=["wa_lid_map"])
+            with open(_PARTICIPANTS_FILE, "w", encoding="utf-8") as f:
+                json.dump({"groups": clean, "updated_at": int(timezone.now().timestamp())}, f, ensure_ascii=False)
+            return JsonResponse({"ok": True, "groups": len(clean)})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+    groups = []
+    updated_at = 0
+    if os.path.exists(_PARTICIPANTS_FILE):
+        try:
+            with open(_PARTICIPANTS_FILE, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            groups = d.get("groups") or []
+            updated_at = int(d.get("updated_at") or 0)
+        except Exception:
+            pass
+    st = SystemSetting.get()
+    for g in groups:
+        rows = []
+        for p in (g.get("participants") or []):
+            phone = p.get("phone") or ""
+            lid = p.get("lid") or ""
+            rows.append({
+                "name": p.get("name") or "",
+                "phone": phone,
+                "lid": lid,
+                "jid": p.get("jid") or "",
+                "admin": p.get("admin") or "",
+                "outbound": st.wa_is_outbound(phone, lid),
+                "messages": _participant_match_qs(phone, lid, p.get("jid") or "").count(),
+            })
+        rows.sort(key=lambda r: (not r["outbound"], r["name"] or r["phone"]))
+        g["rows"] = rows
+    return JsonResponse({"ok": True, "groups": groups, "updated_at": updated_at})
+
+
+def whatsapp_participants_refresh(request):
+    """طلب جلب مشتركي الغرف من واتساب عبر البوت (تحديث فوري بدون إعادة ربط)."""
+    if request.method == "POST":
+        _write_sync_request({"mode": "participants"})
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
+
+
+@csrf_exempt
+def whatsapp_participant_toggle(request):
+    """تبديل تصنيف مشترك صادر/وارد فورًا — يُحدّث القائمة ويعيد تصنيف رسائله دون إعادة تشغيل البوت."""
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "method not allowed"}, status=405)
+    try:
+        data = json.loads(request.body or "{}")
+        phone = re.sub(r"\D", "", str(data.get("phone") or "")).lstrip("0")
+        lid = str(data.get("lid") or "").strip()
+        jid = str(data.get("jid") or "").strip()
+        outbound = _as_bool(data.get("outbound"), default=False)
+        if not phone and not lid:
+            return JsonResponse({"ok": False, "error": "رقم غير صالح"}, status=400)
+        st = SystemSetting.get()
+        nums = st.wa_outbound_list()
+        if phone:
+            if outbound:
+                if not any(phone.endswith(n) or n.endswith(phone) for n in nums):
+                    nums.append(phone)
+            else:
+                nums = [n for n in nums if not (phone.endswith(n) or n.endswith(phone))]
+        st.wa_outbound_senders = ",".join(nums)
+        fields = ["wa_outbound_senders"]
+        if lid and phone:
+            lid_map = st.wa_lid_map_dict()
+            if lid_map.get(lid) != phone:
+                lid_map[lid] = phone
+                st.wa_lid_map = json.dumps(lid_map, ensure_ascii=False)
+                fields.append("wa_lid_map")
+        st.save(update_fields=fields)
+        matched = 0
+        reclassified = 0
+        for m in _participant_match_qs(phone, lid, jid):
+            matched += 1
+            if m.edited_by in ("manual", "ai", "inline"):
+                continue
+            new_dir = "صادر" if (m.from_me or (m.sender and m.sender == m.group_jid) or st.wa_is_outbound(m.sender_pn, m.sender)) else "وارد"
+            if new_dir == m.direction:
+                continue
+            try:
+                log = json.loads(m.edit_log) if m.edit_log else []
+            except Exception:
+                log = []
+            log.append({"source": "participant", "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "changes": [
+                {"field": "direction", "label": "الاتجاه", "old": m.direction or "—", "new": new_dir},
+            ]})
+            m.edit_log = json.dumps(log[-20:], ensure_ascii=False)
+            m.direction = new_dir
+            m.status = "معدلة"
+            if m.edited_by != "reprocess":
+                m.edited_by = "participant"
+            m.save(update_fields=["direction", "status", "edited_by", "edit_log"])
+            reclassified += 1
+        return JsonResponse({"ok": True, "outbound": outbound, "matched": matched, "reclassified": reclassified})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
 
 
 @csrf_exempt
