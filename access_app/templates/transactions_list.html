@@ -93,14 +93,14 @@
                 <thead>
                     <tr>
                         <th style="width:40px;"><input type="checkbox" id="selectAllTh" onchange="toggleAll(this)"></th>
-                        <th>كود الحوالة</th>
+                        <th>الكود</th>
                         <th>التاريخ</th>
                         <th>المرسل</th>
                         <th>المستلم</th>
-                        <th>المبلغ مصري</th>
-                        <th>سعر الصرف</th>
-                        <th>المبلغ ليبي</th>
-                        <th>نوع الاستلام</th>
+                        <th>مصري</th>
+                        <th>السعر</th>
+                        <th>ليبي</th>
+                        <th>النوع</th>
                         <th>ملاحظات</th>
                         <th>إجراءات</th>
                     </tr>
@@ -117,7 +117,7 @@
                         <td>{{ t.exchange_rate|floatformat:"-3u" }}</td>
                         <td>{{ t.transfer_amount|fmt }}</td>
                         <td>{{ t.transfer_type.Transfer_type|default:"-" }}</td>
-                        <td>{{ t.remarks|truncatechars:30|default:"" }}</td>
+                        <td>{{ t.remarks|truncatechars:16|default:"" }}</td>
                         <td onclick="event.stopPropagation()">
                             <div class="d-flex gap-1">
                                 <a href="{% url 'add_transaction' %}?{% if order == 'desc' %}after{% else %}before{% endif %}={{ t.id }}" class="btn btn-outline-success btn-sm" title="إضافة حوالة فوق هذه"><i class="bi bi-plus-lg" style="font-size:.65rem"></i><i class="bi bi-caret-up-fill" style="font-size:.55rem"></i></a>
@@ -263,9 +263,15 @@ function printPage() {
 }
 </script>
 <style>
-.table-app { font-size: 0.85rem !important; }
-.table-app thead th { font-size: 0.8rem !important; padding: 8px 10px !important; }
-.table-app tbody td { padding: 8px 10px !important; }
+.table-app { font-size: 0.74rem !important; }
+.table-app thead th { font-size: 0.68rem !important; padding: 5px 4px !important; white-space: nowrap; }
+.table-app tbody td { padding: 4px 4px !important; white-space: nowrap; }
+.table-app th:first-child, .table-app td:first-child { width: 22px; padding: 2px !important; }
+.table-app td:last-child, .table-app th:last-child { position: sticky; left: 0; z-index: 2; background: var(--card-bg); box-shadow: 2px 0 5px rgba(0,0,0,.06); }
+.table-app th:last-child { z-index: 3; background: var(--bg); }
+.table-app td:last-child .btn { padding: 1px 4px !important; font-size: .62rem !important; line-height: 1.25; border-radius: 5px; }
+.table-app td:last-child .btn i { font-size: .62rem !important; }
+.table-app td:last-child .d-flex { gap: 2px !important; }
 </style>
 <script>
 window.addEventListener('scroll', function() {
