@@ -78,7 +78,7 @@ def _wa_is_duplicate(wamsg_id, sender, jid, text):
     ).exists()
 
 
-_WA_POST_RE = re.compile(r"بر[يی]د|بوس[طت][ةه]?|post|📮|📬|📭|📪|📫|📯|📝", re.IGNORECASE)
+_WA_POST_RE = re.compile(r"بر[يی]د|بوس[طت][ةه]?|تسليم\s*يد(?:وي)?|يد(?:اً|ا)?\s*ب\s*يد|post|📮|📬|📭|📪|📫|📯|📝", re.IGNORECASE)
 
 
 def _wa_is_post(text, ttype=""):

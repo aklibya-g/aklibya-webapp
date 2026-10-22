@@ -187,7 +187,7 @@ function noteKey(msg) {
 }
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash'];
+const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
 async function analyzeImageWithGemini(msg) {
     if (!GEMINI_KEY || !sock) return null;
