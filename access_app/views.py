@@ -3547,6 +3547,9 @@ def whatsapp_integration(request):
                 })
                 return redirect(f"{reverse('whatsapp_message_edit', args=[msg.id])}?{params}")
             all_msgs = WhatsAppMessage.objects.all()
+            reprocess_ids = [int(x) for x in re.findall(r"\d+", request.POST.get("reprocess_ids") or "")]
+            if reprocess_ids:
+                all_msgs = all_msgs.filter(id__in=reprocess_ids)
             fixed_count = 0
             st_rate = SystemSetting.get()
             rate_timeline = _wa_rate_timeline()
