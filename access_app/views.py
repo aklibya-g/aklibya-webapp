@@ -154,6 +154,12 @@ def _sync_result_message(result):
                 result.get("note")
                 or "تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا خلال ثوانٍ"
             )
+        if result.get("mode") == "gapfill":
+            return "success", (
+                f"السحب العكسي الذكي اكتمل: وُجد {result.get('found', 0)} | "
+                f"جديد {result.get('saved', 0)} | مكرر {result.get('duplicates', 0)} — "
+                "توقف عند أول رسالة محفوظة مسبقاً"
+            )
         return "success", (
             f"اكتمل السحب: وُجد {result.get('found', 0)} | جديد {result.get('saved', 0)} | "
             f"مكرر {result.get('duplicates', 0)} | جولات {result.get('rounds', 0)}"
@@ -3311,10 +3317,10 @@ def whatsapp_settlement(request):
                 skipped_no_rate += 1
                 continue
             lyd = msg.amount / rate
-            kind = "وارد: مصري ← ليبي"
+            kind = "صادر: ليبي ← مصري" if msg.direction == "صادر" else "وارد: مصري ← ليبي"
         elif currency == "د ل":
             lyd = msg.amount
-            kind = "صادر: ليبي محلي"
+            kind = "صادر: ليبي محلي" if msg.direction == "صادر" else "وارد: ليبي محلي"
         else:
             lyd = msg.amount
             kind = "بدون عملة"
@@ -3542,9 +3548,38 @@ def whatsapp_integration(request):
             fixed_count = 0
             st_rate = SystemSetting.get()
             rate_timeline = _wa_rate_timeline()
+
+            def _recompute_direction(m):
+                """الاتجاه حسب المرسل: صادر = حسابنا (fromMe) أو من قائمة المخرجين · وارد = كل غير ذلك."""
+                if m.edited_by in ("manual", "ai", "inline"):
+                    return m.direction
+                # رسائل مزامنة التاريخ القديمة: غياب المرسل الفردي (sender = المجموعة) يعني من حسابنا (fromMe)
+                if m.from_me or (m.sender and m.sender == m.group_jid) or st_rate.wa_is_outbound(m.sender_pn, m.sender):
+                    return "صادر"
+                return "وارد"
+
             for msg in all_msgs:
                 if msg.edited_by == "not_rate":
                     continue
+                # إعادة احتساب الاتجاه لجميع الرسائل (بما فيها الصور النظيفة) حسب المرسل
+                direction_changed = False
+                if msg.edited_by not in ("manual", "ai", "inline"):
+                    new_dir = "صادر" if (msg.from_me or st_rate.wa_is_outbound(msg.sender_pn, msg.sender)) else "وارد"
+                    if new_dir != msg.direction:
+                        direction_changed = True
+                        try:
+                            prev_dir_log = json.loads(msg.edit_log) if msg.edit_log else []
+                        except Exception:
+                            prev_dir_log = []
+                        prev_dir_log.append({"source": "reprocess", "at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"), "changes": [
+                            {"field": "direction", "label": "الاتجاه", "old": msg.direction or "—", "new": new_dir},
+                        ]})
+                        msg.edit_log = json.dumps(prev_dir_log[-20:], ensure_ascii=False)
+                        msg.direction = new_dir
+                        msg.status = "معدلة"
+                        msg.edited_by = "reprocess"
+                        fixed_count += 1
+                        msg.save()
                 if (msg.message_text or "").startswith("[صورة]"):
                     # الصور تأكيد استلام فقط — أي مبلغ/رقم محفوظ عليها يُمسح (بوسترات السعر بلا مبلغ تبقى كما هي)
                     # التعديل اليدوي/الذكي الصريح من المستخدم لا يُلغى هنا
@@ -3609,7 +3644,7 @@ def whatsapp_integration(request):
                 msg.commission = commission
                 msg.currency = currency
                 msg.transfer_type = ttype
-                msg.direction = _wa_direction(currency)
+                msg.direction = _recompute_direction(msg)
                 new_values = {
                     "amount": ("" if msg.amount is None else str(msg.amount)),
                     "exchange_rate": ("" if msg.exchange_rate is None else str(msg.exchange_rate)),
@@ -3743,6 +3778,16 @@ def whatsapp_integration(request):
                 messages.success(request, "تم تفعيل مزامنة التاريخ الكامل - أوقف البوت ثم أعد تشغيله (ويفضل حذف الجلسة وإعادة الربط)")
             else:
                 messages.success(request, "تم إلغاء مزامنة التاريخ الكامل")
+            return redirect("whatsapp_integration")
+        elif action == "save_outbound_senders":
+            setting = SystemSetting.get()
+            raw = (request.POST.get("wa_outbound_senders") or "").strip()
+            # تنظيف: احتفظ بالأرقام والفاصلة/الفاصلة العربية فقط
+            cleaned = re.sub(r"[^\d,،\s]", "", raw)
+            parts = [p.strip() for p in re.split(r"[,،]", cleaned) if re.sub(r"\D", "", p)]
+            setting.wa_outbound_senders = ",".join(parts)
+            setting.save(update_fields=["wa_outbound_senders"])
+            messages.success(request, f"تم حفظ {len(parts)} رقم كمخرج (صادر) — اضغط «المصحح» لإعادة احتساب اتجاه الرسائل القديمة")
             return redirect("whatsapp_integration")
         elif action == "delete_session":
             import shutil
@@ -3917,6 +3962,7 @@ def whatsapp_integration(request):
         "wa_current_rate": setting.wa_current_rate,
         "wa_rate_currency": setting.wa_rate_currency,
         "wa_rate_updated": setting.wa_rate_updated,
+        "wa_outbound_senders": setting.wa_outbound_senders,
         "group_names": _wa_group_names(),
     })
 
@@ -4120,7 +4166,7 @@ def whatsapp_anchor(request):
         "has_wamsg": True,
         "covers_since": covers_since,
         "id": anchor.wamsg_id,
-        "from_me": anchor.direction == "صادر",
+        "from_me": bool(anchor.from_me),
         "ts": _naive_to_unix(anchor.timestamp),
     })
 
@@ -4200,6 +4246,19 @@ def whatsapp_webhook(request):
                         currency = cur
             st = SystemSetting.get()
             msg_ts = _wa_ts_to_naive(data.get("timestamp"))
+            # الاتجاه حسب المرسل لا العملة: صادر = حسابنا (fromMe) أو من قائمة المخرجين · وارد = كل غير ذلك
+            sender_pn = re.sub(r"\D", "", str(data.get("sender_pn") or ""))
+            from_me = _as_bool(data.get("from_me"), default=False)
+            if sender_pn and sender.endswith("@lid"):
+                try:
+                    lid_map = st.wa_lid_map_dict()
+                    if lid_map.get(sender) != sender_pn:
+                        lid_map[sender] = sender_pn
+                        st.wa_lid_map = json.dumps(lid_map, ensure_ascii=False)
+                        st.save(update_fields=["wa_lid_map"])
+                except Exception:
+                    pass
+            direction = "صادر" if (from_me or st.wa_is_outbound(sender_pn, sender)) else "وارد"
             # الصور تأكيد استلام فقط — لا تُقرأ أي حوالة من أي صورة (ما عدا إعلان السعر بلا مبلغ/رقم)
             is_image_msg = from_image or str(text or "").startswith("[صورة]")
             if is_image_msg:
@@ -4244,11 +4303,13 @@ def whatsapp_webhook(request):
                 exchange_rate=rate,
                 commission=commission,
                 currency=currency,
-                direction=_wa_direction(currency),
+                direction=direction,
                 status=data.get("status", "فعالة"),
                 transfer_type=ttype,
                 wamsg_id=wamsg_id,
                 timestamp=msg_ts,
+                from_me=from_me,
+                sender_pn=sender_pn,
             )
             return JsonResponse({"status": "success", "saved": True})
         except Exception:

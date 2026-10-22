@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password, check_password
@@ -359,6 +361,8 @@ class WhatsAppMessage(models.Model):
     timestamp = models.DateTimeField(verbose_name="التوقيت", default=timezone.now)
     edited_by = models.CharField(max_length=20, blank=True, default="", verbose_name="عدّل بواسطة")  # ai / inline / manual
     edit_log = models.TextField(blank=True, default="", verbose_name="سجل التعديلات (JSON)")
+    from_me = models.BooleanField(null=True, blank=True, verbose_name="مرسلنا (حسابنا)")
+    sender_pn = models.CharField(max_length=30, blank=True, default="", verbose_name="رقم المرسل الحقيقي")
 
     class Meta:
         verbose_name = "رسالة واتساب"
@@ -396,6 +400,8 @@ class SystemSetting(models.Model):
     wa_current_rate = models.FloatField(null=True, blank=True, verbose_name="سعر الصرف الحالي")
     wa_rate_currency = models.CharField(max_length=10, default="ج م", blank=True, verbose_name="عملة السعر الحالي")
     wa_rate_updated = models.DateTimeField(null=True, blank=True, verbose_name="آخر تحديث للسعر")
+    wa_outbound_senders = models.TextField(default="", blank=True, verbose_name="أرقام المخرجين (صادر) مفصولة بفاصلة")
+    wa_lid_map = models.TextField(default="", blank=True, verbose_name="خريطة معرفات واتساب إلى أرقام (JSON)")
 
     class Meta:
         verbose_name = "إعدادات النظام"
@@ -403,6 +409,39 @@ class SystemSetting(models.Model):
 
     def __str__(self):
         return "إعدادات النظام"
+
+    def wa_outbound_list(self):
+        """أرقام المخرجين (صادر) — أرقام مطبّعة بلا صفر بادئ أو + أو 00."""
+        import re as _re
+        nums = []
+        for part in (self.wa_outbound_senders or "").replace("،", ",").split(","):
+            digits = _re.sub(r"\D", "", part or "")
+            digits = digits.lstrip("0")
+            if len(digits) >= 9:
+                nums.append(digits)
+        return nums
+
+    def wa_lid_map_dict(self):
+        try:
+            data = json.loads(self.wa_lid_map) if self.wa_lid_map else {}
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def wa_is_outbound(self, sender_pn="", lid=""):
+        """هل هذا المرسل من المخرجين (صادر)؟ مطابقة بالرقم أو عبر خريطة LID."""
+        import re as _re
+        digits = _re.sub(r"\D", "", sender_pn or "").lstrip("0")
+        for num in self.wa_outbound_list():
+            if digits and (digits.endswith(num) or num.endswith(digits)):
+                return True
+        if lid:
+            mapped = self.wa_lid_map_dict().get(lid, "")
+            digits = _re.sub(r"\D", "", mapped or "").lstrip("0")
+            for num in self.wa_outbound_list():
+                if digits and (digits.endswith(num) or num.endswith(digits)):
+                    return True
+        return False
 
     @classmethod
     def get(cls):

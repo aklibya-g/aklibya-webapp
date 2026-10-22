@@ -154,6 +154,16 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button type="submit" form="multiGroupForm" style="padding:8px 18px;border-radius:9px;background:#0891b2;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem"><i class="bi bi-save"></i> حفظ المجموعات المحددة</button>
             </div>
 
+            <form method="POST" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;border:1px dashed var(--border);border-radius:10px">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_outbound_senders">
+                <label style="font-size:.75rem;font-weight:700;color:var(--text);white-space:nowrap" title="أرقام حساباتنا (مكتب الصرافة وأبو يسن) — رسائلهم تُصنَّف صادر، وكل غيرهم وارد — حتى لو كانت الحوالة بعملة د ل">
+                    <i class="bi bi-box-arrow-up" style="color:#16a34a"></i> المخرجون (صادر):
+                </label>
+                <input type="text" name="wa_outbound_senders" value="{{ wa_outbound_senders }}" placeholder="00218924933483,00218925532333,..." style="flex:1;min-width:220px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:.74rem;font-family:monospace;direction:ltr;text-align:left">
+                <button type="submit" style="padding:6px 14px;border-radius:8px;background:#f0fdf4;color:#16a34a;font-weight:700;border:1px solid #bbf7d0;cursor:pointer;font-size:.74rem"><i class="bi bi-save"></i> حفظ</button>
+            </form>
+
             <form method="POST" id="multiGroupForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="save_groups_multi">

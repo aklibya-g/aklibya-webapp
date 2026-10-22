@@ -24,6 +24,7 @@ let configWatcherStarted = false;
 let configReady = false;
 let pendingHistoryResolve = null;
 let intentionalRestart = false;
+let pendingGapfill = false;
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -277,10 +278,14 @@ async function sendToDjango(msg, opts) {
         finalText = '[صورة] بانتظار التحليل';
     }
     if (!finalText) return 'skip';
+    // الرقم الحقيقي للمرسل (يُخفي واتساب المعرّف @lid خلفه) — أساس تصنيف صادر/وارد
+    const senderPn = String(msg.key.participantAlt || msg.key.remoteJidAlt || '').split('@')[0].replace(/\D/g, '');
     try {
         const payload = {
             jid: msg.key.remoteJid,
             sender: sender,
+            sender_pn: senderPn,
+            from_me: !!msg.key.fromMe,
             message: finalText,
             timestamp: toSec(msg.messageTimestamp) || undefined,
             direction: msg.key.fromMe ? 'صادر' : 'وارد',
@@ -548,9 +553,10 @@ async function runCatchup(req) {
     // إعادة اتصال مقصودة: عند إعادة الاتصال يرسل واتساب الرسائل الفائتة (offline buffer) تلقائيًا
     console.log('⏩ متابعة من آخر رسالة: إعادة اتصال الواتساب لاستقبال الرسائل الفائتة...');
     intentionalRestart = true;
+    pendingGapfill = true; // بعد الاتصال: سحب عكسي ذكي حتى أول رسالة محفوظة محليًا
     try { sock.end(undefined); } catch (e) { }
     result.ok = true;
-    result.note = 'تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا خلال ثوانٍ';
+    result.note = 'تمت إعادة اتصال الواتساب — الرسائل الفائتة تصل تلقائيًا ثم يبدأ السحب العكسي الذكي';
     // سلامة: إذا لم يُغلق/يُعاد فتح الاتصال خلال 12 ثانية أعد التشغيل يدويًا
     setTimeout(() => {
         if (intentionalRestart) {
@@ -561,6 +567,86 @@ async function runCatchup(req) {
             startBot();
         }
     }, 12000);
+    return result;
+}
+
+// سحب عكسي ذكي: من آخر رسالة وصلت فعليًا نسحب للخلف دفعة-بدفعة حتى نصل
+// لرسالة معرفها موجود بالجدول المحلي (أول رسالة مكررة = الحد الفاصل) ثم نتوقف.
+async function runGapfill() {
+    const result = { ok: false, found: 0, saved: 0, duplicates: 0, rounds: 0, error: null, mode: 'gapfill' };
+    if (!sock || !sock.user) {
+        result.error = 'البوت غير متصل';
+        return result;
+    }
+    const targetJid = await detectGroup();
+    if (!targetJid) {
+        result.error = 'لا توجد مجموعة محددة';
+        return result;
+    }
+    // المرساة: آخر رسالة وصلت فعليًا من واتساب (ليست محفوظة محليًا بالضرورة)
+    let cur = lastSeenKey && lastSeenKey.key && lastSeenKey.key.remoteJid === targetJid
+        ? { key: lastSeenKey.key, ts: lastSeenKey.ts } : null;
+    if (!cur) {
+        // لا توجد رسالة حية — جلب أحدث رسالة محفوظة محليًا كمرساة
+        cur = await fetchAnchor(targetJid, 0);
+    }
+    if (!cur) {
+        result.error = 'لا توجد نقطة بداية — انتظر وصول رسالة جديدة ثم أعد المحاولة';
+        return result;
+    }
+    console.log('🧠 سحب عكسي ذكي من رسالة ' + new Date(cur.ts * 1000).toLocaleString('ar-LY') + '...');
+    let lastOldest = 0;
+    while (result.rounds < MAX_ROUNDS) {
+        result.rounds++;
+        const batch = await requestHistoryBatch(cur.key, cur.ts);
+        if (!batch) {
+            if (!result.error) result.error = 'واتساب لم يرد على طلب السحب العكسي';
+            break;
+        }
+        const msgs = (batch.messages || []).filter(m => m && m.key && m.message && m.key.remoteJid === targetJid);
+        if (!msgs.length) {
+            console.log('🧠 دفعة ' + result.rounds + ': فارغة — نهاية السجل (تم)');
+            break;
+        }
+        let oldest = 0;
+        let oldestMsg = null;
+        let hitKnown = false;
+        for (const m of msgs) {
+            const ts = toSec(m.messageTimestamp);
+            if (ts && (!oldest || ts < oldest)) {
+                oldest = ts;
+                oldestMsg = m;
+            }
+            // كل رسالة تُدفع للسيرفر — الديدب يكشف المحفوظ محليًا
+            result.found++;
+            const status = await sendToDjango(m, { allowDup: false });
+            if (status === 'dup') {
+                hitKnown = true; // وصلنا لرسالة مدخلة مسبقاً — الحد الفاصل
+                result.duplicates++;
+            } else if (status === 'saved') {
+                result.saved++;
+            }
+            await sleep(120);
+        }
+        console.log('🧠 دفعة ' + result.rounds + ': ' + msgs.length + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates);
+        if (hitKnown) {
+            console.log('✅ السحب العكسي توقف عند رسالة محفوظة مسبقاً — اكتملت الفجوة');
+            break;
+        }
+        if (!oldest || !oldestMsg) break;
+        if (oldest >= cur.ts) {
+            console.log('🧠 لا يوجد تقدم في السحب — توقف');
+            break;
+        }
+        cur = {
+            key: { remoteJid: oldestMsg.key.remoteJid, fromMe: !!oldestMsg.key.fromMe, id: oldestMsg.key.id },
+            ts: oldest
+        };
+        if (oldest === lastOldest) break;
+        lastOldest = oldest;
+        await sleep(400);
+    }
+    result.ok = true;
     return result;
 }
 
@@ -576,6 +662,8 @@ async function runPull(req) {
             result = await selfProbe();
         } else if (req.mode === 'catchup') {
             result = await runCatchup(req);
+        } else if (req.mode === 'gapfill') {
+            result = await runGapfill();
         } else {
             result = await pullRange(Number(req.since) || 0, Number(req.until) || Math.floor(Date.now() / 1000), !!req.allow_dup);
         }
@@ -588,6 +676,10 @@ async function runPull(req) {
         console.log(result.ok
             ? '✅ جاهز لاستقبال الرسائل الفائتة بعد إعادة الاتصال'
             : '❌ فشلت المتابعة: ' + result.error);
+    } else if (result.mode === 'gapfill') {
+        console.log(result.ok
+            ? '✅ اكتمل السحب العكسي الذكي: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
+            : '❌ فشل السحب العكسي: ' + result.error);
     } else {
         console.log(result.ok
             ? '✅ اكتمل السحب: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
@@ -718,6 +810,19 @@ async function startBot() {
                 console.log('📋 تم إرسال ' + groups.length + ' غرفة للسيرفر');
             } catch (e) {
                 console.log('❌ فشل جلب قائمة الغرف: ' + (e && e.message));
+            }
+            // بعد «متابعة من آخر رسالة»: انتظر وصول الرسائل الفائتة ثم اسحب عكسيًا حتى أول رسالة محفوظة
+            if (pendingGapfill) {
+                pendingGapfill = false;
+                console.log('🧠 انتظار الرسائل الفائتة (8 ثوانٍ) ثم بدء السحب العكسي الذكي...');
+                setTimeout(async () => {
+                    if (pulling) { queuedRequests.push({ mode: 'gapfill' }); return; }
+                    const result = await runGapfill();
+                    writeSyncResult(result);
+                    console.log(result.ok
+                        ? '✅ اكتمل السحب العكسي الذكي: وُجد ' + result.found + ' | جديد ' + result.saved + ' | مكرر ' + result.duplicates
+                        : '❌ فشل السحب العكسي: ' + result.error);
+                }, 8000);
             }
         }
         if (connection === 'close') {
