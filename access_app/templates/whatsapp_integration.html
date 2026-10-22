@@ -250,7 +250,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 </form>
                 <button onclick="waPrintReport()" title="طباعة تقرير بالمجاميع (حسب الفلتر الحالي)" style="padding:6px 14px;border-radius:8px;background:#fff7ed;color:#ea580c;font-weight:700;border:1px solid #fed7aa;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-printer"></i> طباعة</button>
                 <button type="button" onclick="openReprocessModal()" style="padding:6px 14px;border-radius:9px;background:#dbeafe;color:#2563eb;font-weight:700;border:1px solid #bfdbfe;cursor:pointer;font-size:.78rem;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" title="اختر الرسائل التي تريد إعادة تحليلها واستثنِ ما لا تريد قبل التصحيح">
-                    <i class="bi bi-arrow-repeat"></i> المصحح (إعادة تحليل)
+                    <i class="bi bi-arrow-repeat"></i> المصحح
                 </button>
                 <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex-wrap:nowrap" onsubmit="return confirm('إعادة احتساب أسعار كل الحوالات حسب جدول تغيير الأسعار؟')">
                     {% csrf_token %}
