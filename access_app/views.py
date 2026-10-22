@@ -3855,12 +3855,15 @@ def whatsapp_integration(request):
                     msg.currency = parsed_currency
                     cur = parsed_currency
                     cur_changed = True
-                if parsed_rate:
-                    new_rate = parsed_rate
-                elif cur == "د ل":
+                if cur == "د ل":
                     new_rate = None
-                else:
+                elif rate_timeline:
+                    # آخر إعلان سعر قبل الحوالة هو المرجع حتى لو ذكر نصها سعرًا مخالفًا
                     new_rate = _wa_rate_at(msg.timestamp, rate_timeline)
+                    if new_rate is None:
+                        new_rate = parsed_rate
+                else:
+                    new_rate = parsed_rate
                 old_rate = msg.exchange_rate
                 if (new_rate or 0) == (old_rate or 0) and not cur_changed:
                     continue
@@ -4455,8 +4458,16 @@ def whatsapp_webhook(request):
                     st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
                 except (ValueError, TypeError):
                     pass
-            elif not rate and amount and currency and st.wa_rate_currency == currency:
-                rate = _wa_rate_at(msg_ts) or st.wa_current_rate
+            elif amount and currency:
+                # جدول إعلانات السعر هو المرجع: أي حوالة تأخذ آخر سعر معلن قبلها حتى لو ذكر نصها سعرًا مخالفًا
+                if currency == "د ل":
+                    rate = None
+                elif st.wa_rate_currency == currency:
+                    tl_rate = _wa_rate_at(msg_ts)
+                    if tl_rate is not None:
+                        rate = tl_rate
+                    elif rate is None:
+                        rate = st.wa_current_rate
             WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,

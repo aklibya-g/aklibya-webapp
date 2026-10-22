@@ -651,7 +651,7 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') waCan
 
 // ===== EDIT LOG VIEWER + CHANGED-CELL HIGHLIGHT =====
 var WA_FIELD_COL = { phone_number: 2, amount: 4, exchange_rate: 5, currency: 7, transfer_type: 8, direction: 9 };
-var WA_SOURCE_LABEL = { ai: '🤖 ذكاء اصطناعي', reprocess: '🛠 مصحح تلقائي', inline: '✏ تعديل من الجدول', manual: '✋ تعديل يدوي' };
+var WA_SOURCE_LABEL = { ai: '🤖 ذكاء اصطناعي', reprocess: '🛠 مصحح تلقائي', inline: '✏ تعديل من الجدول', manual: '✋ تعديل يدوي', rate_timeline: '⚙️ احتساب الأسعار', participant: '👥 تصنيف مشترك' };
 
 function waParseLog(raw) {
     if (!raw) return [];
