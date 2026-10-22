@@ -123,6 +123,7 @@ class Database(models.Model):
     receiver_name = models.CharField(max_length=200, verbose_name="اسم المستلم", null=True, blank=True)
     receiver_tele = models.CharField(max_length=200, verbose_name="هاتف المستلم", null=True, blank=True)
     from_source = models.ForeignKey(FromSource, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="من")
+    seq = models.FloatField(default=0, db_index=True, editable=False, verbose_name="الترتيب")
 
     class Meta:
         verbose_name = "عملية"
@@ -130,6 +131,12 @@ class Database(models.Model):
 
     def __str__(self):
         return f"عملية #{self.id}"
+
+    def save(self, *args, **kwargs):
+        if not self.seq:
+            max_seq = Database.objects.aggregate(m=models.Max("seq"))["m"] or 0
+            self.seq = max_seq + 1
+        super().save(*args, **kwargs)
 
 
 class Dbcash(models.Model):

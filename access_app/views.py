@@ -532,7 +532,7 @@ def home(request):
 
 def transactions(request):
     order = request.GET.get("order", "desc")
-    order_field = "-id" if order == "desc" else "id"
+    order_field = "-seq" if order == "desc" else "seq"
     qs = Database.objects.select_related("from_source", "office_name", "order_type", "transfer_type").all().order_by(order_field)
     q = request.GET.get("q", "").strip()
     date_from = request.GET.get("date_from", "").strip()
@@ -937,11 +937,38 @@ def _next_order_number(office_code=""):
     return f"{prefix}001"
 
 
+def _insert_seq_near(anchor, mode):
+    if mode == "before":
+        prev = Database.objects.filter(seq__lt=anchor.seq).order_by("-seq").first()
+        if prev:
+            return (prev.seq + anchor.seq) / 2
+        return anchor.seq - 1 or -1
+    nxt = Database.objects.filter(seq__gt=anchor.seq).order_by("seq").first()
+    if nxt:
+        return (anchor.seq + nxt.seq) / 2
+    return anchor.seq + 1
+
+
 def add_transaction(request):
     now_str = datetime.now().strftime("%Y-%m-%d")
     time_str = datetime.now().strftime("%H:%M")
     next_num = _next_order_number()
-    form = DatabaseForm(initial={"order_number": next_num, "office_name": 1, "date": now_str, "time": time_str})
+    insert_anchor = None
+    insert_mode = ""
+    for key in ("before", "after"):
+        ref_id = request.GET.get(key) or request.POST.get(key)
+        if ref_id:
+            insert_anchor = Database.objects.filter(id=ref_id).first()
+            if insert_anchor:
+                insert_mode = key
+                break
+    initial = {"order_number": next_num, "office_name": 1, "date": now_str, "time": time_str}
+    if insert_anchor:
+        if insert_anchor.date:
+            initial["date"] = insert_anchor.date.strftime("%Y-%m-%d")
+        if insert_anchor.time:
+            initial["time"] = insert_anchor.time.strftime("%H:%M")
+    form = DatabaseForm(initial=initial)
 
     clients, total_egp = _get_clients_with_remaining()
     offices = OfficeName.objects.all()
@@ -975,6 +1002,8 @@ def add_transaction(request):
                 "clients": clients,
                 "total_egp": total_egp,
                 "offices": offices,
+                "insert_anchor": insert_anchor,
+                "insert_mode": insert_mode,
             })
         client_name = ClientBalance.objects.filter(id=client_id).values_list("name", flat=True).first()
         if client_name:
@@ -987,7 +1016,10 @@ def add_transaction(request):
                 post_data["order_number"] = _next_order_number(office.code)
         form = DatabaseForm(post_data)
         if form.is_valid():
-            t = form.save()
+            t = form.save(commit=False)
+            if insert_anchor:
+                t.seq = _insert_seq_near(insert_anchor, insert_mode)
+            t.save()
             return render(request, "transaction_success.html", {"t": t})
     return render(request, "form.html", {
         "title": "إضافة حوالة جديدة",
@@ -996,6 +1028,8 @@ def add_transaction(request):
         "clients": clients,
         "total_egp": total_egp,
         "offices": offices,
+        "insert_anchor": insert_anchor,
+        "insert_mode": insert_mode,
     })
 
 

@@ -22,6 +22,15 @@
 <form method="POST">
     {% csrf_token %}
     <input type="hidden" name="order_number" value="{{ form.order_number.value }}">
+    {% if insert_anchor %}
+    <input type="hidden" name="{{ insert_mode }}" value="{{ insert_anchor.id }}">
+    <div class="stat-card mb-3" style="padding:10px 16px !important;border-right:4px solid #10b981;">
+        <i class="bi bi-arrow-down-up text-success"></i>
+        سيتم إضافة الحوالة {% if insert_mode == 'before' %}قبل{% else %}بعد{% endif %}
+        الحوالة <strong>#{{ insert_anchor.order_number|default:insert_anchor.id }}</strong> في القائمة.
+        <a href="{% url 'transactions' %}" class="text-decoration-none" style="margin-right:8px;">إلغاء الإدراج</a>
+    </div>
+    {% endif %}
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:8px 20px;border-radius:10px;font-weight:700;font-size:0.95rem;">
