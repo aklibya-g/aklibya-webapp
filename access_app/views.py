@@ -3834,7 +3834,7 @@ def whatsapp_integration(request):
                 ).filter(_Q(phone_number__isnull=True) | _Q(phone_number=""))
             deleted_count = empty_qs.count()
             empty_qs.delete()
-            messages.success(request, f"تم حذف {deleted_count} رسالة بلا حوالة ولا رقم")
+            messages.success(request, f"تم حذف {deleted_count} رسالة غير مفيدة (بلا حوالة/رقم/سعر)")
             return redirect("whatsapp_integration")
         elif action == "recompute_rates":
             st_rate = SystemSetting.get()

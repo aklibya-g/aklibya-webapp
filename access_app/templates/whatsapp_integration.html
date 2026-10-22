@@ -240,8 +240,8 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button onclick="deleteSelected()" style="padding:6px 14px;border-radius:8px;background:#fef2f2;color:#dc2626;font-weight:700;border:1px solid #fecaca;cursor:pointer;font-size:.78rem">
                     <i class="bi bi-trash"></i> حذف المحدد
                 </button>
-                <button onclick="deleteEmptyMsgs()" title="حذف كل الرسائل التي لا تحتوي على حوالة (مبلغ) ولا رقم تليفون — يعرض لك العدد ويطلب التأكيد قبل الحذف" style="padding:6px 14px;border-radius:8px;background:#fffbeb;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;white-space:nowrap">
-                    <i class="bi bi-eraser"></i> حذف بلا حوالة/رقم
+                <button onclick="deleteEmptyMsgs()" title="حذف الرسائل غير المفيدة: بلا حوالة (مبلغ) ولا رقم ولا سعر — دردشة وصور عادية (إعلانات السعر محمية) — مع معاينة وتأكيد قبل الحذف" style="padding:6px 14px;border-radius:8px;background:#fffbeb;color:#b45309;font-weight:700;border:1px solid #fcd34d;cursor:pointer;font-size:.78rem;white-space:nowrap">
+                    <i class="bi bi-eraser"></i> تنظيف غير المفيد
                 </button>
                 <form method="POST" id="deleteEmptyForm" style="display:none">
                     {% csrf_token %}
@@ -444,7 +444,7 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
 <div id="waEmptyOverlay" onclick="waCloseEmptyPreview(event)">
     <div id="waEmptyModal" onclick="event.stopPropagation()">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border,#e2e8f0)">
-            <h4 style="margin:0;font-weight:800;font-size:.95rem"><i class="bi bi-eraser" style="color:#d97706"></i> مراجعة قبل الحذف — <span id="waEmptyCount" style="color:#b45309">0</span> رسالة بلا حوالة ولا رقم</h4>
+            <h4 style="margin:0;font-weight:800;font-size:.95rem"><i class="bi bi-eraser" style="color:#d97706"></i> مراجعة قبل الحذف — <span id="waEmptyCount" style="color:#b45309">0</span> رسالة غير مفيدة (بلا حوالة/رقم/سعر)</h4>
             <button type="button" onclick="waCloseEmptyPreview()" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
         </div>
         <div id="waEmptyList"></div>
@@ -921,7 +921,7 @@ function deleteEmptyMsgs() {
             + '<div class="we-txt">' + escapeHtml(txt) + '</div>'
             + '</div></div>';
     });
-    if (!waEmptyIds.length) { alert('لا توجد رسائل بلا حوالة ولا رقم'); return; }
+    if (!waEmptyIds.length) { alert('لا توجد رسائل غير مفيدة'); return; }
     document.getElementById('waEmptyCount').textContent = waEmptyIds.length;
     document.getElementById('waEmptyList').innerHTML = html;
     document.getElementById('waEmptyList').scrollTop = 0;
@@ -934,7 +934,7 @@ function waCloseEmptyPreview(e) {
 }
 function waConfirmEmptyDelete() {
     if (!waEmptyIds.length) { waCloseEmptyPreview(); return; }
-    if (!confirm('تأكيد حذف ' + waEmptyIds.length + ' رسالة بلا حوالة ولا رقم نهائياً؟')) return;
+    if (!confirm('تأكيد حذف ' + waEmptyIds.length + ' رسالة غير مفيدة نهائياً؟')) return;
     document.getElementById('deleteEmptyIds').value = waEmptyIds.join(',');
     document.getElementById('deleteEmptyForm').submit();
 }
