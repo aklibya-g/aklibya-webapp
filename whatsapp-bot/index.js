@@ -202,7 +202,7 @@ async function analyzeImageWithGemini(msg) {
         if (!buffer || !buffer.length) return null;
         const b64 = buffer.toString('base64');
         const mime = imgNode.mimetype || 'image/jpeg';
-        const prompt = 'هذه صورة من غرفة واتساب لشركة تحويلات مالية. اقرأ كل الأرقام والنصوص المالية الظاهرة فيها. أعد JSON فقط بدون أي نص آخر بالشكل: {"rate": number|null, "currency": "د ل"|"ج م"|null, "amount": number|null, "phone": string|null, "transfer_type": "تحويل"|"محفظة"|"فودافون كاش"|"انستا كاش"|null, "summary": "ملخص عربي قصير لمحتوى الصورة"}. rate هو سعر التحويل الظاهر في الصورة (مثال: 5.30 أو 13.25). currency استنتجها من سياق الصورة (مصر=ج م، ليبيا/تونس/الجزائر=د ل). إذا الصورة إعلان سعر فقط بدون معاملة فاترك amount و phone و transfer_type = null.';
+        const prompt = 'هذه صورة من غرفة واتساب لشركة تحويلات مالية. اقرأ كل الأرقام والنصوص المالية الظاهرة فيها. أعد JSON فقط بدون أي نص آخر بالشكل: {"rate": number|null, "post_rate": number|null, "currency": "د ل"|"ج م"|null, "amount": number|null, "phone": string|null, "transfer_type": "تحويل"|"محفظة"|"فودافون كاش"|"انستا كاش"|null, "summary": "ملخص عربي قصير لمحتوى الصورة"}. rate هو سعر التحويل الظاهر في الصورة (مثال: 5.30 أو 13.25). currency استنتجها من سياق الصورة (مصر=ج م، ليبيا/تونس/الجزائر=د ل). إذا الصورة إعلان سعر فقط بدون معاملة فاترك amount و phone و transfer_type = null. إذا ظهر سعران في الصورة (سعر فودافون كاش/انستا باي/الحوالات العامة وسعر البريد/التسليم اليد) فضع سعر فودافون/انستا في rate والسعر الأدنى في post_rate، وإلا post_rate = null.';
         for (const model of GEMINI_MODELS) {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
@@ -296,6 +296,7 @@ async function sendToDjango(msg, opts) {
         if (isImage) payload.from_image = true;
         if (imageAnalysis) {
             payload.image_rate = imageAnalysis.rate;
+            payload.image_post_rate = imageAnalysis.post_rate;
             payload.image_currency = imageAnalysis.currency;
             payload.image_amount = imageAnalysis.amount;
             payload.image_phone = imageAnalysis.phone;

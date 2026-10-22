@@ -359,6 +359,7 @@ class WhatsAppMessage(models.Model):
     message_text = models.TextField(verbose_name="نص الرسالة")
     amount = models.FloatField(verbose_name="المبلغ", null=True, blank=True)
     exchange_rate = models.FloatField(verbose_name="سعر الصرف", null=True, blank=True)
+    post_rate = models.FloatField(verbose_name="سعر البريد", null=True, blank=True)
     commission = models.FloatField(verbose_name="العمولة", null=True, blank=True)
     currency = models.CharField(max_length=100, verbose_name="العملة", null=True, blank=True)
     direction = models.CharField(max_length=10, default="وارد", verbose_name="الاتجاه")

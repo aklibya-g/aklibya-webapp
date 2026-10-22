@@ -41,6 +41,10 @@
                     <input type="text" name="currency" value="{{ prefill.currency|default:msg.currency|default:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
                 </div>
             </div>
+            <div style="margin-bottom:16px">
+                <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">سعر البريد (لإعلان السعر فقط — يُطبّق على حوالات البريد)</label>
+                <input type="number" step="0.01" name="post_rate" value="{{ msg.post_rate|default_if_none:'' }}" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">
+            </div>
             <div style="margin-bottom:20px">
                 <label style="font-size:.82rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نوع التحويل</label>
                 <select name="transfer_type" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);font-size:.88rem">

@@ -16,7 +16,7 @@
         <div class="wa-card" title="{{ msg.message_text }}">
             {% if msg.transfer_type %}<div class="wa-card-type">💸 {{ msg.transfer_type }}</div>{% endif %}
             {% if msg.phone_number %}<div class="wa-card-phone">{{ msg.phone_number }}</div>{% endif %}
-            {% if msg.amount %}<div class="wa-card-amount">المبلغ {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% elif msg.exchange_rate %}<div class="wa-card-amount" dir="ltr">السعر {{ msg.exchange_rate|western:2 }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% endif %}
+            {% if msg.amount %}<div class="wa-card-amount">المبلغ {{ msg.amount|western }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% elif msg.exchange_rate %}<div class="wa-card-amount" dir="ltr">السعر {{ msg.exchange_rate|western:2 }}{% if msg.currency %} {{ msg.currency|cur_full }}{% endif %}</div>{% if msg.post_rate %}<div class="wa-card-note">البريد {{ msg.post_rate|western:2 }}</div>{% endif %}{% endif %}
             {% with note=msg|wa_note %}{% if note %}<div class="wa-card-note">{{ note }}</div>{% endif %}{% endwith %}
         </div>
     </td>
