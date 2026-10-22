@@ -3,7 +3,8 @@ import os
 import csv
 import re
 import subprocess
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -3234,6 +3235,85 @@ def whatsapp_message_edit(request, msg_id):
         "currency": request.GET.get("currency", ""),
     }
     return render(request, "whatsapp_message_edit.html", {"msg": msg, "prefill": prefill})
+
+
+def _wa_insert_timestamp(anchor, mode):
+    if mode == "above":
+        ref = WhatsAppMessage.objects.filter(
+            models.Q(timestamp__gt=anchor.timestamp) |
+            models.Q(timestamp=anchor.timestamp, id__gt=anchor.id)
+        ).order_by("timestamp", "id").first()
+        if ref and ref.timestamp > anchor.timestamp:
+            return anchor.timestamp + (ref.timestamp - anchor.timestamp) / 2
+        return anchor.timestamp
+    ref = WhatsAppMessage.objects.filter(
+        models.Q(timestamp__lt=anchor.timestamp) |
+        models.Q(timestamp=anchor.timestamp, id__lt=anchor.id)
+    ).order_by("-timestamp", "-id").first()
+    if ref and ref.timestamp < anchor.timestamp:
+        return ref.timestamp + (anchor.timestamp - ref.timestamp) / 2
+    return anchor.timestamp - timedelta(seconds=1)
+
+
+@login_required_custom
+def whatsapp_message_add(request):
+    user = get_current_user(request)
+    if not user:
+        return redirect("index")
+    anchor_id = request.POST.get("anchor_id") or request.GET.get("above") or request.GET.get("below")
+    anchor = WhatsAppMessage.objects.filter(id=anchor_id).first() if anchor_id else None
+    if not anchor:
+        messages.error(request, "لم يتم تحديد الرسالة المرجعية")
+        return redirect("whatsapp_integration")
+    mode = request.POST.get("mode") if request.POST.get("mode") in ("above", "below") else ("above" if request.GET.get("above") else "below")
+    if request.method == "POST":
+        text = (request.POST.get("message_text") or "").strip()
+        phone = (request.POST.get("phone_number") or "").strip()
+        amount = request.POST.get("amount") or None
+        rate = request.POST.get("exchange_rate") or None
+        commission = request.POST.get("commission") or None
+        currency = (request.POST.get("currency") or "").strip().replace("د.ل", "د ل").replace("ج.م", "ج م")
+        ttype = (request.POST.get("transfer_type") or "").strip()
+        direction = request.POST.get("direction") or "وارد"
+        if text:
+            p_amount, p_rate, p_comm, p_cur, p_phone, p_ttype = _parse_wa_message_learned(text)
+            amount = amount or p_amount
+            rate = rate or p_rate
+            commission = commission or p_comm
+            phone = phone or p_phone
+            if not currency:
+                currency = p_cur
+            if not ttype:
+                ttype = p_ttype or ""
+        if not currency:
+            currency = "ج م"
+        ts = _wa_insert_timestamp(anchor, mode)
+        if not text:
+            parts = [str(amount or ""), currency, phone]
+            text = ("إضافة يدوية: " + " ".join([p for p in parts if p])).strip()
+        WhatsAppMessage.objects.create(
+            sender=anchor.sender,
+            group_jid=anchor.group_jid,
+            message_text=text,
+            phone_number=phone,
+            amount=amount,
+            exchange_rate=rate,
+            commission=commission,
+            currency=currency,
+            transfer_type=ttype,
+            direction=direction,
+            status="فعالة",
+            wamsg_id="manual-" + uuid.uuid4().hex,
+            timestamp=ts,
+        )
+        messages.success(request, "تمت إضافة الصف بنجاح")
+        return redirect("whatsapp_integration")
+    ts = _wa_insert_timestamp(anchor, mode)
+    return render(request, "whatsapp_message_add.html", {
+        "anchor": anchor,
+        "mode": mode,
+        "insert_ts": ts,
+    })
 
 
 @login_required_custom

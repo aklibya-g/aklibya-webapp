@@ -90,5 +90,6 @@ urlpatterns = [
     path('api/whatsapp/anchor/', views.whatsapp_anchor, name='whatsapp_anchor'),
     path('api/whatsapp/sync-status/', views.whatsapp_sync_status, name='whatsapp_sync_status'),
     path('whatsapp/message/<int:msg_id>/edit/', views.whatsapp_message_edit, name='whatsapp_message_edit'),
+    path('whatsapp/message/add/', views.whatsapp_message_add, name='whatsapp_message_add'),
     path('whatsapp/message/<int:msg_id>/delete/', views.whatsapp_message_delete, name='whatsapp_message_delete'),
 ]

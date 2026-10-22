@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}إضافة صف{% endblock %}
+{% block content %}
+<div style="max-width:620px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h4 style="margin:0;font-weight:800"><i class="bi bi-plus-square" style="color:#059669"></i> إضافة صف {% if mode == 'above' %}فوق{% else %}تحت{% endif %} الرسالة</h4>
+        <a href="{% url 'whatsapp_integration' %}" style="font-size:.85rem;font-weight:600;color:var(--text-muted);text-decoration:none"><i class="bi bi-arrow-right"></i> رجوع</a>
+    </div>
+
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;line-height:1.7">
+        سيُضاف الصف <strong>{% if mode == 'above' %}فوق{% else %}تحت{% endif %}</strong>
+        الرسالة <strong>#{{ anchor.id }}</strong>
+        <span style="color:var(--text-muted)">({{ anchor.timestamp|date:"Y-m-d h:i A" }})</span>
+        <br>
+        وقت الإدراج المحسوب: <strong dir="ltr">{{ insert_ts|date:"Y-m-d h:i:s A" }}</strong>
+    </div>
+
+    <div style="background:var(--card-bg);border-radius:16px;border:1px solid var(--border);padding:22px">
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="anchor_id" value="{{ anchor.id }}">
+            <input type="hidden" name="mode" value="{{ mode }}">
+
+            <div style="margin-bottom:14px">
+                <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">نص الرسالة (اختياري — يُستخرج منه المبلغ والسعر والهاتف تلقائيًا)</label>
+                <textarea name="message_text" rows="2" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem"></textarea>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:14px">
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">المبلغ</label>
+                    <input type="number" step="0.01" name="amount" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">السعر</label>
+                    <input type="number" step="0.01" name="exchange_rate" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:14px">
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">هاتف المستلم</label>
+                    <input type="text" name="phone_number" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem" dir="ltr">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العمولة</label>
+                    <input type="number" step="0.01" name="commission" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:14px">
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">العملة</label>
+                    <input type="text" name="currency" value="ج م" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">النوع</label>
+                    <select name="transfer_type" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                        <option value="">-</option>
+                        <option value="تحويل">تحويل</option>
+                        <option value="كاش">كاش</option>
+                        <option value="فودافون كاش">فودافون كاش</option>
+                        <option value="أمان كاش">أمان كاش</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">الاتجاه</label>
+                    <select name="direction" style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:.86rem">
+                        <option value="وارد" {% if anchor.direction != 'صادر' %}selected{% endif %}>وارد</option>
+                        <option value="صادر" {% if anchor.direction == 'صادر' %}selected{% endif %}>صادر</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" style="width:100%;padding:12px;border-radius:10px;background:#059669;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.9rem">
+                <i class="bi bi-check-lg"></i> إضافة الصف
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
