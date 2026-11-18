@@ -116,6 +116,18 @@ body{margin:0;padding:0!important;-webkit-print-color-adjust:exact;print-color-a
     </form>
 </div>
 
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0">
+    <form method="POST" action="{% url 'bulk_delete_internal' %}" id="bulkInternalForm" style="display:flex;align-items:center;gap:8px;margin:0">
+        {% csrf_token %}
+        <button type="button" class="btn" onclick="toggleAllInternal(this)" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:8px;padding:7px 12px;font-weight:700"><i class="bi bi-check2-square"></i> تحديد الكل</button>
+        <button type="submit" class="btn" onclick="return confirmSelectedInternal()" style="background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;border-radius:8px;padding:7px 12px;font-weight:700"><i class="bi bi-trash3"></i> حذف المحدد</button>
+    </form>
+    <form method="POST" action="{% url 'bulk_delete_internal' %}" style="margin:0" onsubmit="return confirm('سيتم حذف جميع الحوالات الداخلية نهائيًا. هل أنت متأكد؟')">
+        {% csrf_token %}<input type="hidden" name="delete_all" value="1">
+        <button type="submit" class="btn" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-weight:700"><i class="bi bi-trash3-fill"></i> حذف الكل</button>
+    </form>
+</div>
+
 <div class="stats-row">
     <div class="stat-mini"><div class="sm-label">عدد الحوالات</div><div class="sm-value" style="color:#3b82f6">{{ count }}</div></div>
     <div class="stat-mini"><div class="sm-label">إجمالي المرسل</div><div class="sm-value" style="color:#1e40af">{{ total_sent|fmt }} LYD</div></div>
@@ -129,6 +141,7 @@ body{margin:0;padding:0!important;-webkit-print-color-adjust:exact;print-color-a
         <table class="int-table">
             <thead>
                 <tr>
+                    <th class="print-hide"><input type="checkbox" id="selectAllInternal" onchange="toggleAllInternal(this)"></th>
                     <th class="print-hide">#</th>
                     <th>رقم الحوالة</th>
                     <th>التاريخ</th>
@@ -147,6 +160,7 @@ body{margin:0;padding:0!important;-webkit-print-color-adjust:exact;print-color-a
             <tbody>
                 {% for t in transfers %}
                 <tr class="row-{{ t.status }}" data-id="{{ t.id }}" data-status="{{ t.status }}" ondblclick="openModal(this)">
+                    <td class="print-hide" onclick="event.stopPropagation()"><input type="checkbox" name="ids" value="{{ t.id }}" form="bulkInternalForm" class="internal-check"></td>
                     <td class="print-hide" style="color:#9ca3af">{{ forloop.counter }}</td>
                     <td style="color:#3b82f6;font-weight:600">{{ t.order_number }}</td>
                     <td>{{ t.date|date:"Y-m-d" }}</td>
@@ -241,10 +255,10 @@ var currentId=null,currentStatus=null;
 function openModal(row){
     currentId=row.dataset.id;
     currentStatus=row.dataset.status;
-    document.getElementById('m_order').textContent=row.cells[1].textContent;
-    document.getElementById('m_sender').textContent=row.cells[3].textContent;
-    document.getElementById('m_receiver').textContent=row.cells[5].textContent;
-    document.getElementById('m_amount').textContent=row.cells[10].textContent+' LYD';
+    document.getElementById('m_order').textContent=row.cells[2].textContent;
+    document.getElementById('m_sender').textContent=row.cells[4].textContent;
+    document.getElementById('m_receiver').textContent=row.cells[6].textContent;
+    document.getElementById('m_amount').textContent=row.cells[11].textContent+' LYD';
     document.querySelectorAll('.status-btn').forEach(b=>{b.classList.toggle('active',b.dataset.status===currentStatus)});
     document.getElementById('statusModal').style.display='flex';
 }
@@ -292,6 +306,18 @@ function printReceived(){
 function closePrintBox(){
     var box=document.getElementById('printReceivedBox');
     if(box) box.style.display='none';
+}
+function toggleAllInternal(source){
+    var master=document.getElementById('selectAllInternal');
+    var checks=document.querySelectorAll('.internal-check');
+    var checked=source.type==='checkbox' ? source.checked : !Array.from(checks).every(function(c){return c.checked;});
+    checks.forEach(function(c){c.checked=checked;});
+    if(master) master.checked=checked;
+}
+function confirmSelectedInternal(){
+    var count=document.querySelectorAll('.internal-check:checked').length;
+    if(!count){alert('حدد حوالة واحدة على الأقل');return false;}
+    return confirm('سيتم حذف '+count+' حوالة داخلية. هل أنت متأكد؟');
 }
 </script>
 {% endblock %}

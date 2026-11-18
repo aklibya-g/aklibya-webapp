@@ -2356,16 +2356,23 @@ def internal_transfer_receipt(request, id):
     return render(request, "internal_transfer_receipt.html", {"t": obj})
 
 
-@csrf_exempt
+@login_required_custom
 def bulk_delete_internal(request):
+    user = get_current_user(request)
+    if not user or not user.is_admin:
+        messages.error(request, "ليس لديك صلاحية حذف الحوالات الداخلية")
+        return redirect("internal_transfer_list")
     if request.method == "POST":
-        ids = request.POST.getlist("ids")
-        if ids:
-            InternalTransfer.objects.filter(id__in=ids).delete()
-            messages.success(request, f"تم حذف {len(ids)} حوالة")
+        if request.POST.get("delete_all") == "1":
+            deleted = InternalTransfer.objects.all().delete()[0]
+            messages.success(request, f"تم حذف جميع الحوالات الداخلية ({deleted})")
         else:
-            InternalTransfer.objects.all().delete()
-            messages.success(request, "تم حذف جميع الحوالات الداخلية")
+            ids = request.POST.getlist("ids")
+            deleted = InternalTransfer.objects.filter(id__in=ids).delete()[0] if ids else 0
+            if deleted:
+                messages.success(request, f"تم حذف {deleted} حوالة داخلية")
+            else:
+                messages.warning(request, "لم يتم تحديد أي حوالة")
     return redirect("internal_transfer_list")
 
 
@@ -2880,7 +2887,7 @@ def settings_page(request):
         elif action == "clear_data":
             data_type = request.POST.get("data_type")
             confirm_text = request.POST.get("confirm_text", "").strip()
-            labels = {"balances": "الأرصدة", "transfers": "الحوالات", "expenses": "المصروفات"}
+            labels = {"balances": "الأرصدة", "transfers": "الحوالات", "internal_transfers": "الحوالات الداخلية", "expenses": "المصروفات"}
             if confirm_text != "مسح" or data_type not in labels:
                 messages.error(request, "للتأكيد اكتب كلمة مسح بشكل صحيح")
             else:
@@ -2890,6 +2897,8 @@ def settings_page(request):
                         ClientBalance.objects.all().update(egp_balance=0, lyd_balance=0)
                     elif data_type == "transfers":
                         deleted = Database.objects.all().delete()[0]
+                    elif data_type == "internal_transfers":
+                        deleted = InternalTransfer.objects.all().delete()[0]
                     else:
                         deleted = Expense.objects.all().delete()[0]
                 messages.success(request, f"تم مسح {deleted} سجل من {labels[data_type]}")

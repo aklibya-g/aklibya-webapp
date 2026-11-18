@@ -68,6 +68,11 @@
                         <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
                         <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="bi bi-arrow-left-right"></i> مسح الحوالات</button>
                     </form>
+                    <form method="POST" onsubmit="return confirm('سيتم مسح جميع الحوالات الداخلية نهائيًا. هل أنت متأكد؟')">
+                        {% csrf_token %}<input type="hidden" name="action" value="clear_data"><input type="hidden" name="data_type" value="internal_transfers">
+                        <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
+                        <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="bi bi-arrow-repeat"></i> مسح الحوالات الداخلية</button>
+                    </form>
                     <form method="POST" onsubmit="return confirm('سيتم مسح جميع المصروفات. هل أنت متأكد؟')">
                         {% csrf_token %}<input type="hidden" name="action" value="clear_data"><input type="hidden" name="data_type" value="expenses">
                         <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
