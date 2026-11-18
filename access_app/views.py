@@ -599,7 +599,11 @@ def _get_clients_with_remaining():
 @login_required_custom
 def home(request):
     db_count = Database.objects.count()
-    cap_count = Capital.objects.count()
+    # Carryover rows represent an already existing balance, not a new
+    # deposit.  Excluding them keeps the dashboard totals consistent with
+    # the per-client balance calculation in _get_clients_with_remaining().
+    capital_qs = Capital.objects.exclude(in_type="ترحيل")
+    cap_count = capital_qs.count()
     exp_count = Expense.objects.count()
     client_count = ClientBalance.objects.count()
 
@@ -611,7 +615,7 @@ def home(request):
     db_total_egp = agg["total_egp"] or 0
     avg_rate = round(db_total_egp / db_total_lyd, 3) if db_total_lyd else 0
 
-    cap_agg = Capital.objects.aggregate(
+    cap_agg = capital_qs.aggregate(
         total_egp=Sum("cash_in"),
         total_lyd=Sum("libyan_cash"),
     )
