@@ -626,9 +626,11 @@ def home(request):
     exp_agg = Expense.objects.aggregate(total=Sum("amount"))
     exp_total = exp_agg["total"] or 0
 
-    remaining_egp = cap_total_egp - db_total_egp
-
     clients, total_egp_clients = _get_clients_with_remaining()
+    # Use the same client-level calculation shown in the ticker and the
+    # client balances list, so the dashboard summary cannot disagree with
+    # the individual balances because of unmatched or carryover records.
+    remaining_egp = total_egp_clients
 
     latest = list(Database.objects.order_by("-date")[:10])
     latest_capital = list(Capital.objects.select_related("client", "from_source").order_by("-date")[:10])
