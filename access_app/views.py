@@ -3134,6 +3134,19 @@ def api_smart_detect(request):
         return JsonResponse({"error": "POST only"}, status=405)
     text = request.POST.get("text", "").strip()
     content_type = request.POST.get("type", "")
+    excel_file = request.FILES.get("file")
+    if excel_file:
+        try:
+            results, detected_type, mapping, warnings = _parse_smart_excel(excel_file, content_type)
+            return JsonResponse({
+                "results": results,
+                "type": detected_type,
+                "count": len(results),
+                "mapping": mapping,
+                "warnings": warnings,
+            })
+        except Exception as exc:
+            return JsonResponse({"error": f"تعذر قراءة ملف Excel: {exc}"}, status=400)
     if not text:
         return JsonResponse({"error": "no text"}, status=400)
 
@@ -3159,6 +3172,100 @@ def api_smart_detect(request):
                 "amount_lyd": item.get("amount_lyd", 0),
             })
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
+
+
+def _excel_header_key(value):
+    """Normalize Arabic/English Excel headers for smart column matching."""
+    value = str(value or "").strip().lower()
+    value = re.sub(r"[\u064B-\u065F\u0670\u0640]", "", value)
+    value = value.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ة", "ه")
+    return re.sub(r"[\s_\-./()\[\]{}:]+", "", value)
+
+
+def _excel_number(value):
+    if value is None or value == "":
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    raw = str(value).strip().replace("،", ",")
+    raw = re.sub(r"[^0-9,.-]", "", raw)
+    if not raw:
+        return 0.0
+    if re.match(r"^\d{1,3}\.\d{3}$", raw):
+        raw = raw.replace(".", "")
+    else:
+        raw = raw.replace(",", "")
+    try:
+        return float(raw)
+    except ValueError:
+        return 0.0
+
+
+def _parse_smart_excel(uploaded_file, requested_type=""):
+    """Read an Excel sheet by column headings, not by fixed column positions."""
+    wb = openpyxl.load_workbook(uploaded_file, read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return [], requested_type or "transfer", {}, ["الملف فارغ"]
+
+    aliases = {
+        "phone": ["الهاتف", "رقم الهاتف", "هاتف المستلم", "رقم المحمول", "المحمول", "receivertele", "phone", "mobile", "recipientphone"],
+        "egp": ["المبلغ مصري", "المبلغالمصري", "المبلغ ج م", "المبلغ ج.م", "المبلغ ج.م", "المبلغ", "مبلغ مصري", "amount egp", "amountegp", "egp", "transferedamount"],
+        "rate": ["سعر الصرف", "السعر", "السعر المذكور", "rate", "exchangerate"],
+        "lyd": ["المبلغ ليبي", "المبلغ الليبي", "نقدي ليبي", "amount lyd", "amountlyd", "lyd", "transferamount"],
+        "type": ["نوع التحويل", "الطريقة", "نوع", "transfer type", "transfertype"],
+        "client": ["العميل", "صاحب الرصيد", "من رصيد", "client", "customer"],
+    }
+    alias_keys = {k: {_excel_header_key(v) for v in vals} for k, vals in aliases.items()}
+    header_idx = None
+    colmap = {}
+    for ridx, row in enumerate(rows[:10]):
+        keys = [_excel_header_key(v) for v in row]
+        found = {}
+        for col, key in enumerate(keys):
+            if not key:
+                continue
+            for field, candidates in alias_keys.items():
+                if key in candidates or any(c and (c in key or key in c) for c in candidates):
+                    found.setdefault(field, col)
+        if found.get("egp") is not None and (found.get("rate") is not None or found.get("phone") is not None):
+            header_idx, colmap = ridx, found
+            break
+    if header_idx is None:
+        raise ValueError("لم يتم العثور على صف عناوين يحتوي على المبلغ وسعر الصرف")
+
+    detected_type = requested_type if requested_type in ("transfer", "balance") else "transfer"
+    if detected_type == "transfer" and not colmap.get("phone") and colmap.get("client"):
+        detected_type = "balance"
+    mapping = {field: str(rows[header_idx][col] or "") for field, col in colmap.items()}
+    warnings = []
+    results = []
+    for row in rows[header_idx + 1:]:
+        if not row or not any(v not in (None, "") for v in row):
+            continue
+        get = lambda field: row[colmap[field]] if field in colmap and colmap[field] < len(row) else None
+        egp = _excel_number(get("egp"))
+        if egp <= 0:
+            continue
+        rate = _excel_number(get("rate"))
+        lyd = _excel_number(get("lyd"))
+        if detected_type == "balance":
+            if rate <= 0:
+                warnings.append(f"صف بدون سعر صرف: {len(results) + header_idx + 2}")
+                continue
+            results.append({"egp": egp, "rate": rate, "lyd": lyd or round(egp / rate, 2)})
+        else:
+            results.append({
+                "receiver_tele": str(get("phone") or "").strip(),
+                "transfer_type": str(get("type") or "كاش").strip() or "كاش",
+                "amount_egp": egp,
+                "exchange_rate": rate,
+                "amount_lyd": lyd or (round(egp / rate, 2) if rate > 0 else 0),
+            })
+    if "rate" not in colmap:
+        warnings.append("لم يتم العثور على عمود سعر الصرف")
+    return results, detected_type, mapping, warnings
 
 
 

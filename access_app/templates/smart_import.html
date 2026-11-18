@@ -170,8 +170,8 @@
             <div class="si-zone" id="dropZone" onclick="document.getElementById('txtFile').click()">
                 <span class="icon">📄</span>
                 <p>اسحب الملف هنا أو اضغط للاختيار</p>
-                <small>الملفات المدعومة: .txt فقط</small>
-                <input type="file" name="text_file" id="txtFile" accept=".txt" onchange="handleFile(this)">
+                 <small>الملفات المدعومة: .txt و .xlsx و .xls — يتم التعرف على الأعمدة تلقائيًا</small>
+                 <input type="file" name="text_file" id="txtFile" accept=".txt,.xlsx,.xls" onchange="handleFile(this)">
             </div>
             <div id="fileInfo" style="display:none;margin-top:12px;padding:12px;background:#ecfdf5;border-radius:10px;font-size:.85rem;font-weight:600;color:#059669;border:1px solid #a7f3d0"></div>
             <div id="fileStatus" class="si-status" style="display:none"></div>
@@ -348,6 +348,7 @@ var smartType = 'transfer';
 var smartResults = [];
 var smartUndoStack = [];
 var currentFileText = null;
+var currentExcelFile = null;
 var waFileText = null;
 
 function setType(t) {
@@ -408,7 +409,7 @@ dropZone.addEventListener('drop', function(e) {
     dropZone.style.borderColor = '';
     dropZone.style.background = '';
     var files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith('.txt')) {
+    if (files.length > 0 && /\.(txt|xlsx?|xls)$/i.test(files[0].name)) {
         document.getElementById('txtFile').files = files;
         handleFile(document.getElementById('txtFile'));
     }
@@ -420,6 +421,8 @@ function handleFile(input) {
         document.getElementById('fileInfo').style.display = 'block';
         document.getElementById('fileInfo').innerHTML = '<i class="bi bi-file-earmark-text"></i> ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB) ✓';
         document.getElementById('analyzeBtn').disabled = false;
+        currentExcelFile = /\.(xlsx?|xls)$/i.test(file.name) ? file : null;
+        if (currentExcelFile) { currentFileText = ''; return; }
         var reader = new FileReader();
         reader.onload = function(e) { currentFileText = e.target.result; };
         reader.readAsText(file, 'UTF-8');
@@ -464,8 +467,8 @@ function detectType(text) {
 
 // ===== Analyze functions =====
 function analyzeFile() {
-    if (!currentFileText) { showStatus('file', 'error', 'الرجاء اختيار ملف أولاً'); return; }
-    analyzeAndRender(currentFileText.trim(), 'file');
+    if (!currentFileText && !currentExcelFile) { showStatus('file', 'error', 'الرجاء اختيار ملف أولاً'); return; }
+    analyzeAndRender((currentFileText || '').trim(), 'file');
 }
 
 function analyzeText() {
@@ -493,7 +496,8 @@ function analyzeAndRender(text, source) {
     showStatus(source, 'loading', 'جاري التحليل...');
 
     var formData = new FormData();
-    formData.append('text', text);
+    if (currentExcelFile) formData.append('file', currentExcelFile);
+    else formData.append('text', text);
     formData.append('type', type);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token|unlocalize }}');
 
@@ -501,6 +505,8 @@ function analyzeAndRender(text, source) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.results && data.results.length > 0) {
+            if (data.type && data.type !== type) { type = data.type; setType(type); }
+            smartType = type;
             smartResults = data.results;
             smartUndoStack = [];
             document.getElementById('undoBtn').style.display = 'none';
@@ -509,6 +515,7 @@ function analyzeAndRender(text, source) {
                 var filled = fillMissingRates(smartResults);
                 if (filled > 0) msg += ' (' + filled + ' تم أخذ سعرها من الحوالة السابقة)';
             }
+            if (data.warnings && data.warnings.length) msg += ' — ' + data.warnings[0];
             showStatus(source, 'success', msg);
             showPreview();
         } else {
@@ -765,6 +772,7 @@ function resetAll() {
     smartResults = [];
     smartUndoStack = [];
     currentFileText = null;
+    currentExcelFile = null;
     waFileText = null;
     document.getElementById('txtFile').value = '';
     document.getElementById('fileInfo').style.display = 'none';
