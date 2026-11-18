@@ -197,12 +197,31 @@
             .dash-title { font-size: 0.78rem; }
             .ticker-item { padding: 8px 14px; }
         }
-        @media (max-width: 480px) {
+         @media (max-width: 480px) {
             .sidebar { width: 100%; }
             .topbar .topbar-actions { gap: 6px; }
             .topbar .topbar-actions > div:not(.btn-icon) { display: none; }
-            .d-flex.flex-wrap { flex-direction: column; }
-        }
+             .d-flex.flex-wrap { flex-direction: column; }
+         }
+         /* Theme-aware sidebar: keep contrast readable in every theme. */
+         .sidebar { background:var(--sidebar-bg); border-left:1px solid var(--card-border); box-shadow:-8px 0 28px rgba(15,23,42,.12); }
+         .sidebar .brand { background:var(--primary-bg); border-bottom:1px solid var(--card-border); }
+         .sidebar .brand .logo { background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,.22); }
+         .sidebar .brand span { color:var(--text)!important; text-shadow:none; font-weight:800; }
+         .sidebar .nav-item:not(.active) { color:var(--sidebar-text)!important; }
+         .sidebar .nav-item:not(.active) i { color:var(--primary); }
+         .sidebar .nav-item:hover { background:var(--sidebar-hover)!important; color:var(--sidebar-text-hover)!important; }
+         .sidebar .nav-item.active { background:var(--sidebar-active)!important; color:var(--primary)!important; box-shadow:inset 3px 0 0 var(--primary); }
+         .sidebar .nav-item.active i { color:var(--primary)!important; }
+         .sidebar .nav-section { color:var(--sidebar-section)!important; }
+         .sidebar .nav-section::after { background:var(--card-border); }
+         .sidebar .sec-box { background:var(--card-bg); border:1px solid var(--card-border); box-shadow:var(--shadow-sm); }
+         .sidebar .sec-box:hover { background:var(--sidebar-hover); border-color:var(--primary); }
+         .sidebar .sidebar-footer { background:var(--card-bg); border-top:1px solid var(--card-border); }
+         .sidebar .sidebar-footer .nav-item { color:var(--sidebar-text)!important; }
+         .topbar .topbar-actions .btn-icon.active { background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 3px 10px rgba(79,70,229,.25); }
+         body.font-bold .sidebar .nav-item, body.font-bold .sidebar .nav-section, body.font-bold .sidebar .brand span, body.font-bold .sidebar-footer .nav-item { font-weight:800!important; }
+         body.font-bold .page-content, body.font-bold .topbar { font-weight:600; }
     </style>
 </head>
 <body class="{% if maintenance_mode %}maintenance-active{% endif %}">
@@ -335,7 +354,8 @@
                     <button class="btn-icon d-md-none" data-action="toggleSidebar"><i class="bi bi-list"></i></button>
                     <div class="btn-icon" id="toggleSidebarHide" title="إخفاء/إظهار القائمة الجانبية"><i class="bi bi-layout-sidebar"></i></div>
                     <div class="btn-icon" data-action="toggleTheme" title="السمات اللونية"><i class="bi bi-palette" id="themeIcon"></i></div>
-                    <div class="btn-icon" data-action="toggleFontSize" title="حجم الخط" style="font-weight:700;font-size:0.8rem;"><span id="fontIcon">A</span><sup id="fontSizeLabel" style="font-size:0.6rem;">1</sup></div>
+                     <div class="btn-icon" data-action="toggleFontSize" title="حجم الخط" style="font-weight:700;font-size:0.8rem;"><span id="fontIcon">A</span><sup id="fontSizeLabel" style="font-size:0.6rem;">1</sup></div>
+                     <div class="btn-icon" data-action="toggleBold" id="toggleBold" title="تغليظ الخط" style="font-weight:900;font-size:1rem;"><b>B</b></div>
                     {% block wa_status %}{% endblock %}
                     {% if current_user %}
                     <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-right:8px">
@@ -442,14 +462,18 @@
         }
         var saved = ls.getItem('darkMode') || 'light';
         applyTheme(saved);
-        var fs = parseInt(ls.getItem('fontSize')) || 2;
+         var fs = parseInt(ls.getItem('fontSize')) || 2;
         if (fs < 1) fs = 1; if (fs > 3) fs = 3;
         document.body.classList.remove('size-1','size-2','size-3');
         document.body.classList.add('size-' + fs);
         ls.setItem('fontSize', fs);
         var fl = document.getElementById('fontSizeLabel');
-        if (fl) fl.textContent = fs;
-        var els = document.querySelectorAll('[data-action="toggleTheme"],[data-action="toggleFontSize"],[data-action="toggleSidebar"]');
+         if (fl) fl.textContent = fs;
+         var bold = ls.getItem('boldText') === '1';
+         document.body.classList.toggle('font-bold', bold);
+         var boldBtn = document.getElementById('toggleBold');
+         if (boldBtn) boldBtn.classList.toggle('active', bold);
+         var els = document.querySelectorAll('[data-action="toggleTheme"],[data-action="toggleFontSize"],[data-action="toggleBold"],[data-action="toggleSidebar"]');
         for (var i = 0; i < els.length; i++) {
             (function(el) {
                 var action = el.getAttribute('data-action');
@@ -468,8 +492,12 @@
                         document.body.classList.add('size-' + fs);
                         ls.setItem('fontSize', fs);
                         var fl = document.getElementById('fontSizeLabel');
-                        if (fl) fl.textContent = fs;
-                    } else if (action === 'toggleSidebar') {
+                         if (fl) fl.textContent = fs;
+                     } else if (action === 'toggleBold') {
+                         var enabled = document.body.classList.toggle('font-bold');
+                         ls.setItem('boldText', enabled ? '1' : '0');
+                         el.classList.toggle('active', enabled);
+                     } else if (action === 'toggleSidebar') {
                         document.getElementById('sidebar').classList.toggle('open');
                     }
                 });
