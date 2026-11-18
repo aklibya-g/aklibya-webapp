@@ -1344,8 +1344,8 @@ def _extract_egp(ln):
     # If line has 🇾🇪 or 🇱🇾 flag after number AND has 'ج.م' or 'ج م', it's EGP not LYD
     # Otherwise 🇾🇪 just means "via Yemen channel", not currency - ignore it
 
-    # Pattern 1: "استلام XXX" - extract number after استلام
-    m = re.search(r'استلام\s*(\d[\d,\.]*)', ln)
+    # Pattern 1: "استلام XXX" or "دخول XXX" - extract the EGP amount.
+    m = re.search(r'(?:استلام|دخول)\s*(\d[\d,\.]*)', ln)
     if m:
         try:
             v = _clean_number(m.group(1))
@@ -1587,12 +1587,21 @@ def import_balance(request):
                     created_records = []
                     for item in parsed:
                         try:
-                            client.egp_balance += item["egp"]
-                            client.lyd_balance += item["lyd"]
+                            # Accept preview data from older clients as well as the
+                            # current format (egp/rate/lyd).
+                            egp = float(item.get("egp", item.get("amount_egp", item.get("cash_in", 0))) or 0)
+                            rate = float(item.get("rate", item.get("exchange_rate", 0)) or 0)
+                            lyd = float(item.get("lyd", item.get("amount_lyd", item.get("libyan_cash", 0))) or 0)
+                            if egp <= 0 or rate <= 0:
+                                raise ValueError("المبلغ أو سعر الصرف غير صالح")
+                            if lyd <= 0:
+                                lyd = round(egp / rate, 2)
+                            client.egp_balance = (client.egp_balance or 0) + egp
+                            client.lyd_balance = (client.lyd_balance or 0) + lyd
                             rec = Capital.objects.create(
-                                cash_in=item["egp"],
-                                libyan_cash=item["lyd"],
-                                exchange_rate=item["rate"],
+                                cash_in=egp,
+                                libyan_cash=lyd,
+                                exchange_rate=rate,
                                 date=item["date"],
                                 in_type="إيداع",
                                 client=client,
