@@ -176,8 +176,8 @@ function printPage() {
     html += 'thead th{background:#059669;color:#fff;padding:8px 6px;font-weight:700;text-align:center;font-size:8.5pt}';
     html += 'tbody td{padding:6px 5px;border-bottom:1px solid #e5e7eb;text-align:center}';
     html += 'tbody tr:nth-child(even){background:#f0fdf4}';
-    html += '.total-row{background:#d1fae5;font-weight:800;border-top:2px solid #059669}';
-    html += '.total-row td{padding:10px 6px;font-size:9.5pt}';
+     html += '.total-summary{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;background:#d1fae5;font-weight:800;border-top:2px solid #059669;margin-top:0;padding:10px 6px;font-size:9.5pt;text-align:center;break-inside:avoid;page-break-inside:avoid}';
+     html += '.total-summary .label{text-align:right;font-size:11pt}.total-summary .egp{color:#059669;font-size:11pt}.total-summary .lyd{color:#1e40af;font-size:11pt}';
     html += '.footer{margin-top:16px;text-align:center;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px}';
     html += '.btn-print{display:inline-block;padding:10px 30px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
     html += '.scroll-nav{position:fixed;z-index:9999;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;font-size:1.2rem;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:all .2s;opacity:.85}';
@@ -191,14 +191,7 @@ function printPage() {
     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
     html += '<span>عدد السجلات: ' + displayCount + '</span></div>';
 
-    html += '<div class="stats">';
-    html += '<div class="stat-box"><div class="label">عدد السجلات</div><div class="val">' + displayCount + '</div></div>';
-    html += '<div class="stat-box"><div class="label">إجمالي المصري (EGP)</div><div class="val">' + totalEGPServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
-    html += '<div class="stat-box"><div class="label">إجمالي الليبي (LYD)</div><div class="val">' + totalLYDServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
-    html += '<div class="stat-box"><div class="label">متوسط السعر</div><div class="val">' + avgRate + '</div></div>';
-    html += '</div>';
-
-    html += '<table><thead><tr><th>#</th><th>التاريخ</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th>النوع</th><th>العميل</th></tr></thead><tbody>';
+     html += '<table><thead><tr><th>#</th><th>التاريخ</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th>النوع</th><th>العميل</th></tr></thead><tbody>';
 
     var idx = 1;
     var sumEGP = 0, sumLYD = 0;
@@ -220,7 +213,8 @@ function printPage() {
         }
     });
 
-    html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
+     html += '</tbody></table>';
+     html += '<div class="total-summary"><div class="label">الإجمالي</div><div class="egp">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div><div class="lyd">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
 
     html += '<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center" id="printBtnWrap"><button class="btn-print" onclick="window.print()" style="display:none">طباعة</button></div>';

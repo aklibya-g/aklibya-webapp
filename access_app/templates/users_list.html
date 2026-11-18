@@ -13,7 +13,7 @@
 
 <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#9a3412;font-size:.85rem">
     <i class="bi bi-shield-lock-fill"></i>
-    <strong>حساب وضع الصيانة:</strong> اسم المستخدم <code>maintenance</code> — يعمل فقط عند تفعيل وضع الصيانة، ولا يمكن حذفه أو تعطيله.
+    <strong>حساب وضع الصيانة:</strong> اسم المستخدم <code>main</code> — يعمل فقط عند تفعيل وضع الصيانة، ولا يمكن حذفه أو تعطيله.
 </div>
 
 <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden">
@@ -37,7 +37,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <div style="width:32px;height:32px;border-radius:8px;background:{% if u.is_admin %}linear-gradient(135deg,#8b5cf6,#a78bfa){% elif not u.is_active %}linear-gradient(135deg,#9ca3af,#d1d5db){% else %}linear-gradient(135deg,#2563eb,#60a5fa){% endif %};display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:800">{{ u.username|first }}</div>
                             <div>
-                                 {{ u.username }}{% if u.username == 'maintenance' %} <span style="background:#ffedd5;color:#c2410c;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;margin-right:4px">حساب الصيانة</span>{% endif %}
+                                 {{ u.username }}{% if u.username == 'main' %} <span style="background:#ffedd5;color:#c2410c;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;margin-right:4px">حساب الصيانة</span>{% endif %}
                                 {% if not u.is_active %}<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;margin-right:4px">معطّل</span>{% endif %}
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                     <td>
                         <div class="d-flex gap-1">
                             <a href="{% url 'edit_user' u.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem"><i class="bi bi-pencil"></i></a>
-                             {% if not u.is_admin and u.username != 'maintenance' %}
+                             {% if not u.is_admin and u.username != 'main' %}
                             <form method="POST" action="{% url 'toggle_user_active' u.id %}" style="display:inline">
                                 {% csrf_token %}
                                 <button type="submit" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem;border-color:{% if u.is_active %}#d97706{% else %}#059669{% endif %};color:{% if u.is_active %}#d97706{% else %}#059669{% endif %}" title="{% if u.is_active %}تعطيل{% else %}تفعيل{% endif %}">

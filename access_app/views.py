@@ -503,10 +503,10 @@ def login_view(request):
         # During maintenance, only the dedicated maintenance account is allowed
         # to sign in; normal user passwords are temporarily rejected.
         if setting.maintenance_mode:
-            if username != "maintenance":
-                messages.error(request, "وضع الصيانة مفعل. استخدم حساب maintenance وكلمة مرور الصيانة.")
+            if username != "main":
+                messages.error(request, "وضع الصيانة مفعل. استخدم حساب main وكلمة مرور الصيانة.")
                 return render(request, "login.html")
-            user = SystemUser.objects.filter(username="maintenance", is_active=True).first()
+            user = SystemUser.objects.filter(username="main", is_active=True).first()
             if not user or not user.check_password(password):
                 messages.error(request, "كلمة مرور وضع الصيانة غير صحيحة")
                 return render(request, "login.html")
@@ -514,8 +514,8 @@ def login_view(request):
             request.session["username"] = user.username
             request.session["is_admin"] = True
             return redirect("welcome")
-        if username == "maintenance":
-            messages.error(request, "حساب maintenance يعمل فقط أثناء وضع الصيانة")
+        if username == "main":
+            messages.error(request, "حساب main يعمل فقط أثناء وضع الصيانة")
             return render(request, "login.html")
         user = SystemUser.objects.filter(username=username).first()
         if user and user.check_password(password):
@@ -2485,7 +2485,7 @@ def edit_user(request, id):
         messages.error(request, "ليس لديك صلاحية الوصول لهذه الصفحة")
         return redirect("home")
     user_obj = get_object_or_404(SystemUser, id=id)
-    if user_obj.username == "maintenance":
+    if user_obj.username == "main":
         messages.error(request, "لا يمكن تعديل حساب الصيانة من هذه الصفحة")
         return redirect("users_list")
     if request.method == "POST":
@@ -2525,7 +2525,7 @@ def delete_user(request, id):
         messages.error(request, "ليس لديك صلاحية الوصول لهذه الصفحة")
         return redirect("home")
     user_obj = get_object_or_404(SystemUser, id=id)
-    if user_obj.username == "maintenance":
+    if user_obj.username == "main":
         messages.error(request, "لا يمكن حذف حساب الصيانة")
         return redirect("users_list")
     if user_obj.is_admin:
