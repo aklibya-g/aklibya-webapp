@@ -3227,7 +3227,11 @@ def _parse_smart_excel(uploaded_file, requested_type=""):
             if not key:
                 continue
             for field, candidates in alias_keys.items():
-                if key in candidates or any(c and (c in key or key in c) for c in candidates):
+                # Never fuzzy-match very short headings (for example the
+                # numbering column "م"), otherwise one character can match
+                # every Arabic heading in the sheet.
+                fuzzy = len(key) >= 3 and any(len(c) >= 3 and (c in key or key in c) for c in candidates)
+                if key in candidates or fuzzy:
                     found.setdefault(field, col)
         if found.get("egp") is not None and (found.get("rate") is not None or found.get("phone") is not None):
             header_idx, colmap = ridx, found
