@@ -26,7 +26,9 @@ def is_phone_line(text):
 
 
 def is_header_line(line):
-    return bool(re.match(r"^\[.*\d{1,2}:\d{2}", line))
+    # WhatsApp exports may use either [date, time] or date, time without
+    # brackets.  The latter is the format used by recent Arabic exports.
+    return bool(re.match(r"^\[.*\d{1,2}:\d{2}|^\d{1,2}[/-]\d{1,2}[/-]\d{2,4},?\s*\d{1,2}:\d{2}", line))
 
 
 def _parse_number(raw_str):
@@ -86,7 +88,9 @@ def extract_egp_from_line(line):
     m = re.match(r'^\s*(\d[\d,\.]*)\s*$', line_norm)
     if m:
         raw = m.group(1).replace(",", "").replace("،", "")
-        if not raw.startswith("0") and len(raw) >= 3:
+        # A bare numeric amount is limited to normal money-sized values;
+        # longer values are usually phone/account numbers.
+        if not raw.startswith("0") and 3 <= len(raw) <= 8:
             v = _parse_number(m.group(1))
             if v and v >= 50:
                 return v
@@ -283,7 +287,8 @@ def parse_whatsapp_block(block, block_raw=None):
                 if egp:
                     amount_egp = egp
                 else:
-                    remaining = re.sub(r'(?<!\d)(01\d{9})(?!\d)', '', line)
+                    remaining = re.sub(r'(?<!\d)(?:00\d{10,}|01\d{9})(?!\d)', '', line)
+                    remaining = re.sub(r'\+?\d[\d\s-]{8,}\d', '', remaining)
                     remaining = re.sub(r'\b(تحويل|فودافون\s*كاش|كاش|فات|م)\b', '', remaining)
                     remaining = remaining.replace(",", "").replace("،", "")
                     nums = re.findall(r'(\d{2,8})', remaining)
@@ -348,6 +353,10 @@ def parse_whatsapp_block(block, block_raw=None):
             if re.match(r'^\+?\d', line) and len(re.sub(r'[^\d]', '', line)) >= 10:
                 continue
             line_no_comma = line.replace(",", "").replace("،", "")
+            # Long numeric lines are account/phone numbers, not transfer
+            # amounts.  Do not inspect their 3-8 digit substrings.
+            if len(re.sub(r'[^\d]', '', line_no_comma)) >= 10:
+                continue
             for m in re.finditer(r'(\d{3,8})', line_no_comma):
                 raw = m.group(1)
                 if raw.startswith("00") or raw.startswith("01"):
