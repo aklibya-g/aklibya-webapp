@@ -610,9 +610,12 @@ function editRow(idx) {
         fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + (r.exchange_rate || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
         fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.amount_lyd || '') + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
     } else {
-        fields += '<div class="mb-3"><label class="si-label">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.egp || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
-        fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + (r.rate || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
-        fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.lyd || '') + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
+        var balEgp = r.egp || r.amount_egp || r.cash_in || '';
+        var balRate = r.rate || r.exchange_rate || '';
+        var balLyd = r.lyd || r.amount_lyd || r.libyan_cash || '';
+        fields += '<div class="mb-3"><label class="si-label">المبلغ مصري</label><input type="number" id="seEgp" value="' + balEgp + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + balRate + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
+        fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + balLyd + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
     }
     document.getElementById('editFields').innerHTML = fields;
     new bootstrap.Modal(document.getElementById('editModal')).show();
@@ -638,6 +641,9 @@ function saveEdit() {
         smartResults[idx].egp = parseFloat(document.getElementById('seEgp').value) || 0;
         smartResults[idx].rate = parseFloat(document.getElementById('seRate').value) || 0;
         smartResults[idx].lyd = parseFloat(document.getElementById('seLyd').value) || 0;
+        if ('amount_egp' in smartResults[idx]) smartResults[idx].amount_egp = smartResults[idx].egp;
+        if ('exchange_rate' in smartResults[idx]) smartResults[idx].exchange_rate = smartResults[idx].rate;
+        if ('amount_lyd' in smartResults[idx]) smartResults[idx].amount_lyd = smartResults[idx].lyd;
     }
     smartUndoStack.push({type: 'edit', idx: idx, old: old});
     document.getElementById('undoBtn').style.display = 'inline-flex';
