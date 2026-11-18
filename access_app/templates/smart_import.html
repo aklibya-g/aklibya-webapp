@@ -511,6 +511,10 @@ function analyzeAndRender(text, source) {
             smartUndoStack = [];
             document.getElementById('undoBtn').style.display = 'none';
             var msg = 'تم التعرف على ' + data.results.length + ' ' + (type === 'transfer' ? 'حوالة' : 'رصيد');
+            var importedEgpTotal = data.results.reduce(function(sum, item) {
+                return sum + Number(item.amount_egp || item.egp || 0);
+            }, 0);
+            if (type === 'transfer') msg += ' — إجمالي المصري: ' + fmt(importedEgpTotal) + ' جنيه';
             if (type === 'transfer' && document.getElementById('siPrevRate').checked) {
                 var filled = fillMissingRates(smartResults);
                 if (filled > 0) msg += ' (' + filled + ' تم أخذ سعرها من الحوالة السابقة)';
