@@ -217,28 +217,6 @@
          .sidebar .nav-section::after { background:var(--card-border); }
          .sidebar .sec-box { background:var(--card-bg); border:1px solid var(--card-border); box-shadow:var(--shadow-sm); }
          .sidebar .sec-box:hover { background:var(--sidebar-hover); border-color:var(--primary); }
-         /* Consistent section cards and equal-width action buttons. */
-         .sidebar .sec-box { min-height:72px; padding:6px; border-radius:14px; }
-         .sidebar .sec-box > div[style*="display:flex"] { display:flex!important; align-items:stretch; gap:5px!important; padding:0 2px!important; }
-         .sidebar .sec-box > div[style*="display:flex"] > .nav-item { flex:1 1 0!important; width:0; min-width:0; height:38px; justify-content:center; padding:7px 4px!important; white-space:nowrap; }
-         .sidebar .sec-box > .nav-item,
-         .sidebar .sec-box > form .nav-item { width:100%; min-height:38px; height:38px; padding:7px 10px!important; }
-         .sidebar .sec-box > .nav-item i,
-         .sidebar .sec-box > form .nav-item i { margin-left:2px; }
-         .sidebar .sec-box:not(.balances):not(.expenses):not(.internal):not(.profits) { background:linear-gradient(135deg,var(--primary-bg),var(--card-bg))!important; border-color:var(--primary)!important; }
-         .sidebar .sec-box.balances { background:var(--sec-balance)!important; border-color:var(--sec-balance-border)!important; }
-         .sidebar .sec-box.expenses { background:var(--sec-expense)!important; border-color:var(--sec-expense-border)!important; }
-         .sidebar .sec-box.internal { background:linear-gradient(135deg,var(--info-bg),var(--card-bg))!important; border-color:var(--info)!important; }
-         .sidebar .sec-box.profits { background:var(--sec-profit)!important; border-color:var(--sec-profit-border)!important; }
-         .sidebar .sec-box.system-box { background:linear-gradient(135deg,var(--primary-bg),var(--card-bg))!important; border-color:var(--primary)!important; }
-         .sidebar .sec-box.communication-box { background:linear-gradient(135deg,var(--info-bg),var(--card-bg))!important; border-color:var(--info)!important; }
-         .sidebar .sec-box.import-box { background:linear-gradient(135deg,var(--success-bg),var(--card-bg))!important; border-color:var(--success)!important; }
-         .sidebar .sec-box .nav-section { color:var(--text-muted)!important; }
-         .sidebar .sec-box .nav-item { color:var(--text)!important; }
-         .sidebar .sec-box .nav-item i { color:var(--primary); }
-         .sidebar .sec-box .nav-item:hover { background:var(--sidebar-hover)!important; color:var(--text)!important; }
-         .sidebar .sec-box .nav-item.active { background:var(--primary)!important; color:#fff!important; }
-         .sidebar .sec-box .nav-item.active i { color:#fff!important; }
          .sidebar .sidebar-footer { background:var(--card-bg); border-top:1px solid var(--card-border); }
          .sidebar .sidebar-footer .nav-item { color:var(--sidebar-text)!important; }
          .topbar .topbar-actions .btn-icon.active { background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 3px 10px rgba(79,70,229,.25); }
@@ -329,7 +307,7 @@
                 {% endif %}
 
                 {% if current_user.perm_users or current_user.is_admin %}
-                <div class="sec-box system-box" style="margin-top:6px">
+                <div class="sec-box" style="margin-top:6px">
                     <div class="nav-section" style="color:#8b5cf6">إدارة النظام</div>
                     <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
                     {% if current_user.is_admin %}
@@ -347,14 +325,14 @@
                 </div>
                 {% endif %}
 
-                <div class="sec-box communication-box" style="margin-top:6px">
+                <div class="sec-box" style="margin-top:6px">
                     <div class="nav-section" style="color:#0ea5e9">التواصل</div>
                     <a href="{% url 'messages_inbox' %}" class="nav-item" style="padding:7px 10px;{% if '/messages/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
                         <i class="bi bi-envelope-fill" style="color:#0ea5e9;"></i> الرسائل
                     </a>
                 </div>
 
-                <div class="sec-box import-box" style="margin-top:6px">
+                <div class="sec-box" style="margin-top:6px;background:linear-gradient(135deg,rgba(37,211,102,0.15),rgba(18,140,126,0.08));border-color:rgba(37,211,102,0.25)">
                     <a href="{% url 'smart_import' %}" class="nav-item" style="padding:7px 10px;{% if '/smart-import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
                         <i class="bi bi-stars" style="color:#25d366;"></i> استيراد ذكي
                     </a>
