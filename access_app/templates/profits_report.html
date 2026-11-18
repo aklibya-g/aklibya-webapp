@@ -38,9 +38,9 @@
 .table-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e8ecf0;overflow:hidden}
 .table-card .table-header{padding:18px 22px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
 .table-card .table-header h3{font-size:1.05rem;font-weight:700;color:#1a1a2e;margin:0}
-.profit-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
-.profit-table thead th{background:#f8fafb;color:#4b5563;font-size:.72rem;font-weight:700;padding:8px 6px;text-align:center;border-bottom:2px solid #e5e7eb;white-space:nowrap;letter-spacing:.2px}
-.profit-table tbody td{padding:8px 6px;text-align:center;font-size:.8rem;border-bottom:1px solid #f0f0f0;color:#374151;transition:background .15s}
+.profit-table{width:100%;border-collapse:collapse;border-spacing:0;table-layout:auto}
+.profit-table thead th{background:#f8fafb;color:#4b5563;font-size:.72rem;font-weight:700;padding:8px 6px;text-align:center;border:1px solid #cbd5e1;white-space:nowrap;letter-spacing:.2px}
+.profit-table tbody td{padding:8px 6px;text-align:center;font-size:.8rem;border:1px solid #dbe2e8;color:#374151;transition:background .15s;white-space:nowrap}
 .profit-table tbody tr:hover td{background:#f0fdf9}
 .profit-table tbody tr:nth-child(even) td{background:#fafbfc}
 .profit-table tbody tr:nth-child(even):hover td{background:#f0fdf9}
@@ -48,7 +48,7 @@
 .profit-table .profit-pos{color:#059669;font-weight:800}
 .profit-table .profit-neg{color:#dc2626;font-weight:800}
 .profit-table .rate-cell{background:#f8fafb;color:#6b7280;font-size:.82rem}
-.profit-table tfoot td{background:#f0fdf9;font-weight:800;color:#1a1a2e;border-top:2px solid #059669;padding:10px 6px;font-size:.82rem}
+.profit-table tfoot td{background:#f0fdf9;font-weight:800;color:#1a1a2e;border:1px solid #86c9a3;border-top:2px solid #059669;padding:10px 6px;font-size:.82rem}
 .profit-table tfoot .total-profit{font-size:1.1rem}
 .empty-state{text-align:center;padding:60px 20px;color:#9ca3af}
 .empty-state i{font-size:3rem;margin-bottom:12px;display:block}
@@ -68,7 +68,7 @@
 .toggle-btn{padding:7px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
 .toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
 .toggle-btn:hover:not(.active){background:#f3f4f6}
-@media print{.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-card,.btn-filter,.btn-print,.toggle-view{display:none!important}.main-area{margin-right:0!important}.page-content{padding:8px!important}.profit-header{background:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 20px}.print-logo{display:block!important;text-align:center;margin-bottom:12px}.print-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #fff}.summary-cards{grid-template-columns:repeat(4,1fr);gap:10px}.s-card{box-shadow:none!important;border:1px solid #ccc;padding:12px}.table-card{box-shadow:none!important;border:1px solid #ccc}.monthly-detail{display:none!important}.profit-table thead th{background:#f0fdf0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.profit-table tfoot td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.formula-box{display:none!important}}
+@media print{@page{size:landscape;margin:8mm}.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-card,.btn-filter,.btn-print,.toggle-view{display:none!important}.main-area{margin-right:0!important}.page-content{padding:8px!important}.profit-header{background:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 20px}.print-logo{display:block!important;text-align:center;margin-bottom:12px}.print-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #fff}.summary-cards{grid-template-columns:repeat(4,1fr);gap:10px}.s-card{box-shadow:none!important;border:1px solid #ccc;padding:10px}.table-card{box-shadow:none!important;border:1px solid #ccc}.monthly-detail{display:none!important}.profit-table{table-layout:auto!important;width:100%!important}.profit-table thead th{background:#f0fdf0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt!important;padding:5px 3px!important}.profit-table tbody td,.profit-table tfoot td{font-size:7pt!important;padding:5px 3px!important;border:1px solid #aeb8c2!important}.profit-table tfoot td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.formula-box{display:none!important}}
 @media(max-width:992px){.summary-cards{grid-template-columns:repeat(2,1fr)}.monthly-detail{grid-template-columns:1fr}}
 @media(max-width:576px){.summary-cards{grid-template-columns:1fr}}
 </style>
