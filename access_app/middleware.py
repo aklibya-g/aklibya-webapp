@@ -31,6 +31,10 @@ class MaintenanceMiddleware:
                     return self.get_response(request)
                 if "/api/toggle-maintenance/" in request.path:
                     return self.get_response(request)
+                # Keep the login form available so an administrator can sign in
+                # and disable maintenance mode using the dashboard or logo shortcut.
+                if "/login/" in request.path:
+                    return self.get_response(request)
                 if "/logout/" in request.path:
                     return self.get_response(request)
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
