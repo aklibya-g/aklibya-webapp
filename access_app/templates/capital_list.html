@@ -55,7 +55,7 @@
         <span class="text-muted">|</span>
         <span><strong style="color:var(--success)">{{ total_lyd|fmt }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">LYD</span></span>
         <span class="text-muted">|</span>
-        <span><strong>{{ avg_rate|floatformat:"-3u" }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">متوسط السعر</span></span>
+        <span><strong>{{ avg_rate|floatformat:"3u" }}</strong> <span style="font-size:.78rem;color:var(--text-muted)">متوسط السعر</span></span>
     </div>
 </div>
 
@@ -94,7 +94,7 @@
                         <td>{{ c.id }}</td>
                         <td>{{ c.date|date:"Y-m-d" }}</td>
                         <td>{{ c.cash_in|fmt }}</td>
-                        <td>{{ c.exchange_rate|floatformat:"-3u" }}</td>
+                        <td>{{ c.exchange_rate|floatformat:"3u" }}</td>
                         <td>{{ c.libyan_cash|fmt }}</td>
                         <td>{{ c.in_type|default:"-" }}</td>
                         <td>{{ c.client.name|default:"-" }}</td>
