@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - شركة اليمامة المالية</title>
+    <title>تسجيل الدخول - {{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -54,8 +54,8 @@
     <div class="login-container">
         <div class="login-card">
             <div class="logo-section">
-                <img src="/static/images/logo.jpeg" alt="شعار شركة اليمامة المالية" class="logo-img">
-                <h1>شركة اليمامة المالية</h1>
+                <img src="{{ company_logo_url }}" alt="شعار {{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}" class="logo-img">
+                <h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1>
                 <p class="subtitle">نظام إدارة الحوالات والأرصدة</p>
                 <div class="divider"></div>
             </div>
@@ -93,7 +93,7 @@
             </form>
             
             <div class="footer-text">
-                جميع الحقوق محفوظة &copy; 2026 <span>شركة اليمامة المالية</span>
+                جميع الحقوق محفوظة &copy; 2026 <span>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</span>
             </div>
         </div>
     </div>

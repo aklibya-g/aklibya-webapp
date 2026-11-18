@@ -162,7 +162,7 @@ function printPage() {
     html += '@media print{body{padding:8mm 10mm}.btn-print{display:none!important}}';
     html += '</style></head><body>';
     
-    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #d97706"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير المصروفات</div></div>';
+    html += '<div class="header"><img src="' + window.location.origin + '{{ company_logo_url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #d97706"><h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1><div class="sub">تقرير المصروفات</div></div>';
     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
     html += '<span>عدد السجلات: ' + rows.length + '</span></div>';
     
@@ -197,7 +197,7 @@ function printPage() {
     
     html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#dc2626;font-size:11pt">' + total.toLocaleString('ar-LY',{minimumFractionDigits:3}) + ' LYD</td><td colspan="3"></td></tr></tfoot></table>';
     
-    html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
+    html += '<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center"><button class="btn-print" onclick="window.print()">طباعة</button></div>';
     html += '</body></html>';
     

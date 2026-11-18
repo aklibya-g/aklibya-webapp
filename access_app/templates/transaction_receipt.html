@@ -41,8 +41,8 @@ body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;font-size:11pt
 <body>
 <div class="receipt" id="receipt">
 <div class="header">
-<img src="{% static 'images/logo.jpeg' %}" alt="شعار الشركة">
-<h1>شركة اليمامة المالية</h1>
+<img src="{{ company_logo_url }}" alt="شعار الشركة">
+<h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1>
 <div class="order-badge"># {{ t.order_number|default:t.id }}</div>
 </div>
 <div class="info-grid">
@@ -73,7 +73,7 @@ body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;font-size:11pt
 <strong>ملاحظات:</strong> {{ t.remarks }}
 </div>
 {% endif %}
-<div class="footer">شركة اليمامة المالية</div>
+<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</div>
 </div>
 <div class="no-print">
 <button class="btn btn-primary" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>

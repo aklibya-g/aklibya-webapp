@@ -25,7 +25,7 @@ DESKTOP = os.path.join(os.path.expanduser("~"), "Desktop")
 
 def main():
     print("=" * 60)
-    print("  استخراج رسائل الواتساب — شركة اليمامة المالية")
+    print("  استخراج رسائل الواتساب — شركة العربي للحوالات المالية")
     print("=" * 60)
     print()
     print("  الخطوة 1: فتح واتساب ويب...")

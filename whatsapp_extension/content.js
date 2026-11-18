@@ -59,7 +59,7 @@ function createPanel() {
   panel.innerHTML = `
     <div class="yma-header">
       <span class="yma-logo">📦</span>
-      <span class="yma-title">شركة اليمامة المالية</span>
+      <span class="yma-title">شركة العربي للحوالات المالية</span>
       <button class="yma-close" id="yma-close">✕</button>
     </div>
     <div class="yma-body">

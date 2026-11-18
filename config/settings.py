@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-z+pn5wu%blgnw9x*4gj87l(ksli1_%)eg59rp2#uzaxhpoqw)y')
 
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ["*"]
 
@@ -65,13 +65,27 @@ DATABASE_PATH = os.environ.get('DATABASE_PATH', str(BASE_DIR / 'db.sqlite3'))
 if os.path.exists('/data'):
     DATABASE_PATH = '/data/db.sqlite3'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DATABASE_PATH,
-        'OPTIONS': {'timeout': 20},
+# قاعدة البيانات: PostgreSQL عبر DATABASE_URL (للإنتاج/السيرفر)، وإلا SQLite افتراضيًا (تطوير محلي)
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+
+if DATABASE_URL:
+    import dj_database_url
+
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': DATABASE_PATH,
+            'OPTIONS': {'timeout': 20},
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = []
 
@@ -82,6 +96,8 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

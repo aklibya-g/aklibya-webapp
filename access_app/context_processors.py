@@ -63,7 +63,8 @@ def current_user_processor(request):
 def maintenance_processor(request):
     from .models import SystemSetting
     setting = SystemSetting.get()
-    return {"maintenance_mode": setting.maintenance_mode, "maintenance_message": setting.maintenance_message}
+    logo_url = setting.company_logo.url if setting.company_logo else "/static/images/logo.jpeg"
+    return {"maintenance_mode": setting.maintenance_mode, "maintenance_message": setting.maintenance_message, "company_settings": setting, "company_logo_url": logo_url}
 
 
 def import_alerts_processor(request):

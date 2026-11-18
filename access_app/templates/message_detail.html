@@ -66,7 +66,7 @@
             </div>
             <div class="info">
                 <div class="name">{{ msg.sender.username }}</div>
-                <div class="office">{{ msg.sender.office_name|default:"شركة اليمامة المالية" }}</div>
+                <div class="office">{{ msg.sender.office_name|default:"{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}" }}</div>
             </div>
         </div>
         <div class="message-text">{{ msg.body }}</div>

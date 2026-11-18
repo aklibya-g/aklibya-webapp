@@ -50,6 +50,56 @@
 <div class="grid-2">
 
     <div>
+        <div class="set-card" style="border-color:#fecaca">
+            <div class="set-header" style="background:linear-gradient(135deg,#fff1f2,#fff7ed)">
+                <div class="icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-trash3-fill"></i></div>
+                <h6 style="color:#b91c1c">مسح البيانات المدخلة</h6>
+            </div>
+            <div class="set-body">
+                <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:12px">هذه العملية لا تمس المستخدمين أو الإعدادات أو أنواع البيانات. للتأكيد اكتب كلمة <strong>مسح</strong>.</div>
+                <div class="grid-2" style="gap:8px">
+                    <form method="POST" onsubmit="return confirm('سيتم مسح جميع الأرصدة وسجلاتها وتصفير أرصدة العملاء. هل أنت متأكد؟')">
+                        {% csrf_token %}<input type="hidden" name="action" value="clear_data"><input type="hidden" name="data_type" value="balances">
+                        <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
+                        <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="bi bi-wallet2"></i> مسح الأرصدة</button>
+                    </form>
+                    <form method="POST" onsubmit="return confirm('سيتم مسح جميع الحوالات. هل أنت متأكد؟')">
+                        {% csrf_token %}<input type="hidden" name="action" value="clear_data"><input type="hidden" name="data_type" value="transfers">
+                        <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
+                        <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="bi bi-arrow-left-right"></i> مسح الحوالات</button>
+                    </form>
+                    <form method="POST" onsubmit="return confirm('سيتم مسح جميع المصروفات. هل أنت متأكد؟')">
+                        {% csrf_token %}<input type="hidden" name="action" value="clear_data"><input type="hidden" name="data_type" value="expenses">
+                        <input class="form-control mb-2" name="confirm_text" placeholder="اكتب: مسح" required>
+                        <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="bi bi-receipt"></i> مسح المصروفات</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="set-card">
+            <div class="set-header">
+                <div class="icon" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#2563eb"><i class="bi bi-building-check"></i></div>
+                <h6>بيانات الشركة والهوية</h6>
+            </div>
+            <div class="set-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_company">
+                    <label>اسم الشركة</label>
+                    <input class="form-control mb-2" type="text" name="company_name" value="{{ setting.company_name }}" required>
+                    <label>العنوان</label>
+                    <input class="form-control mb-2" type="text" name="company_address" value="{{ setting.company_address }}" placeholder="عنوان الشركة">
+                    <label>الهاتف</label>
+                    <input class="form-control mb-2" type="text" name="company_phone" value="{{ setting.company_phone }}" placeholder="رقم الهاتف">
+                    <label>الشعار</label>
+                    <input class="form-control mb-2" type="file" name="company_logo" accept="image/*">
+                    {% if setting.company_logo %}<img src="{{ setting.company_logo.url }}" alt="الشعار الحالي" style="width:76px;height:76px;object-fit:cover;border-radius:12px;margin:4px 0 10px">{% endif %}
+                    <div style="margin-top:12px;text-align:left"><button type="submit" class="save-btn"><i class="bi bi-check-lg"></i> حفظ بيانات الشركة</button></div>
+                </form>
+            </div>
+        </div>
+
         <div class="set-card">
             <div class="set-header">
                 <div class="icon" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);color:#dc2626"><i class="bi bi-tools"></i></div>

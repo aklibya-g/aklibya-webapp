@@ -1,5 +1,8 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.static import serve
 from access_app import views
 
 urlpatterns = [
@@ -93,3 +96,5 @@ urlpatterns = [
     path('whatsapp/message/add/', views.whatsapp_message_add, name='whatsapp_message_add'),
     path('whatsapp/message/<int:msg_id>/delete/', views.whatsapp_message_delete, name='whatsapp_message_delete'),
 ]
+# Serve uploaded company assets in local and hosted deployments.
+urlpatterns += [re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})]

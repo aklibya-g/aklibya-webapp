@@ -40,8 +40,8 @@ body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;font-size:11pt
 <body>
 <div class="receipt">
 <div class="header">
-<img src="{% static 'images/logo.jpeg' %}" alt="شعار الشركة">
-<h1>شركة اليمامة المالية</h1>
+<img src="{{ company_logo_url }}" alt="شعار الشركة">
+<h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1>
 <div class="sub">إيصال استلام — ليبيا</div>
 <div class="order-badge"># {{ t.order_number }}</div>
 </div>
@@ -87,7 +87,7 @@ body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;font-size:11pt
 <div class="barcode-num">{{ t.order_number }}</div>
 </div>
 
-<div class="footer">شركة اليمامة المالية — إيصال استلام — {{ t.date|date:"Y-m-d" }}</div>
+<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — إيصال استلام — {{ t.date|date:"Y-m-d" }}</div>
 </div>
 
 <div class="no-print">
@@ -98,7 +98,7 @@ body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;font-size:11pt
 <script>
 try{JsBarcode("#barcode","{{ t.order_number }}",{format:"CODE128",width:2,height:50,displayValue:false,fontSize:14,margin:5})}catch(e){}
 function copyReceipt(){
-var txt='( *شركة اليمامة المالية* 🏦)\n';
+var txt='( *{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}* 🏦)\n';
 txt+='━━━━━━━━━━━━━━━━━\n';
 txt+='📋 إيصال استلام #{{ t.order_number }}\n';
 txt+='📅 التاريخ: {{ t.date|date:"Y-m-d" }}\n';
@@ -116,7 +116,7 @@ txt+='💰 المبلغ المرسل: {{ t.sent_amount|fmt }} LYD\n';
 txt+='🏦 عمولة المكتب: {{ t.office_commission|fmt }} LYD\n';
 txt+='✅ المبلغ المستلم: {{ t.received_amount|fmt }} LYD\n';
 txt+='━━━━━━━━━━━━━━━━━\n';
-txt+='🤍 شكرًا لاختياركم شركة اليمامة المالية';
+txt+='🤍 شكرًا لاختياركم {{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}';
 navigator.clipboard.writeText(txt).then(function(){
 alert('تم نسخ الإيصال! يمكنك لصقه في واتساب');
 });

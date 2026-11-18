@@ -187,7 +187,7 @@ function printPage() {
     html += '@media print{body{padding:8mm 10mm}.btn-print,.scroll-nav{display:none!important}}';
     html += '</style></head><body>';
 
-    html += '<div class="header"><img src="' + window.location.origin + '/static/images/logo.jpeg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>شركة اليمامة المالية</h1><div class="sub">تقرير الأرصدة' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
+    html += '<div class="header"><img src="' + window.location.origin + '{{ company_logo_url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1><div class="sub">تقرير الأرصدة' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
     html += '<span>عدد السجلات: ' + displayCount + '</span></div>';
 
@@ -222,7 +222,7 @@ function printPage() {
 
     html += '</tbody><tfoot><tr class="total-row"><td colspan="2" style="font-weight:900">الإجمالي</td><td style="font-weight:900;color:#059669;font-size:11pt">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td>-</td><td style="font-weight:900;color:#1e40af;font-size:11pt">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</td><td colspan="2"></td></tr></tfoot></table>';
 
-    html += '<div class="footer">شركة اليمامة المالية — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
+    html += '<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center" id="printBtnWrap"><button class="btn-print" onclick="window.print()" style="display:none">طباعة</button></div>';
     html += '<button class="scroll-nav scroll-top" onclick="window.scrollTo({top:0,behavior:\'smooth\'})" title="العودة للأعلى"><i class="bi bi-arrow-up"></i></button>';
     html += '<button class="scroll-nav scroll-bottom" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:\'smooth\'})" title="الذهاب للأسفل"><i class="bi bi-arrow-down"></i></button>';

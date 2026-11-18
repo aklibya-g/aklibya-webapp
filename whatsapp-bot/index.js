@@ -4,7 +4,7 @@ const axios = require('axios');
 const fs = require('fs');
 require('dotenv').config();
 
-const DJANGO = 'http://127.0.0.1:1500';
+const DJANGO = process.env.DJANGO_URL || 'http://127.0.0.1:1500';
 const HISTORY_SYNC_ON_DEMAND = 6;
 const MAX_ROUNDS = 60;
 const BATCH_SIZE = 100;
@@ -61,6 +61,9 @@ async function fetchGroupJid() {
             monitoredGroupJids = (res.data.group_jids || '').split(',').map(s => normalizeGroupJid(s.trim())).filter(Boolean);
             monitorAll = !!res.data.monitor_all;
             syncFullHistory = !!res.data.sync_full_history;
+            if (res.data.gemini_api_key) {
+                GEMINI_KEY = res.data.gemini_api_key;
+            }
             configReady = true;
             const mode = monitorAll ? 'الكل' : (monitoredGroupJids.length ? monitoredGroupJids.length + ' غرف' : (monitoredGroupJid || 'الكل'));
             const sig = mode + '|' + syncFullHistory;
@@ -177,6 +180,21 @@ function extractText(message) {
         || '';
 }
 
+function extractForwardInfo(message) {
+    const m = normalizeContent(message);
+    if (!m) return { isForwarded: false, forwardingScore: 0, originalSender: '' };
+    const contextInfo = m.extendedTextMessage?.contextInfo 
+        || m.imageMessage?.contextInfo
+        || m.videoMessage?.contextInfo
+        || m.documentMessage?.contextInfo
+        || {};
+    return {
+        isForwarded: !!contextInfo.isForwarded,
+        forwardingScore: contextInfo.forwardingScore || 0,
+        originalSender: contextInfo.participant || ''
+    };
+}
+
 function noteKey(msg) {
     if (!msg || !msg.key || !msg.key.id) return;
     const ts = toSec(msg.messageTimestamp);
@@ -186,7 +204,7 @@ function noteKey(msg) {
     }
 }
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+let GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
 async function analyzeImageWithGemini(msg) {
@@ -267,6 +285,7 @@ async function sendToDjango(msg, opts) {
     if (!text && !isImage) return 'skip';
     const sender = msg.key.participant || msg.key.remoteJid;
     noteKey(msg);
+    const forwardInfo = extractForwardInfo(msg.message);
     let imageAnalysis = null;
     if (isImage) {
         imageAnalysis = await analyzeImageWithGemini(msg);
@@ -291,7 +310,10 @@ async function sendToDjango(msg, opts) {
             timestamp: toSec(msg.messageTimestamp) || undefined,
             direction: msg.key.fromMe ? 'صادر' : 'وارد',
             msg_id: msg.key.id || '',
-            allow_dup: opts.allowDup !== false
+            allow_dup: opts.allowDup !== false,
+            is_forwarded: forwardInfo.isForwarded,
+            forwarding_score: forwardInfo.forwardingScore,
+            original_sender: forwardInfo.originalSender
         };
         if (isImage) payload.from_image = true;
         if (imageAnalysis) {
@@ -987,3 +1009,16 @@ async function startBot() {
 }
 
 startBot();
+
+// Minimal HTTP health listener (required for alwaysdata Node.js site to keep the process supervised).
+// Only activates when PORT is set (e.g. on alwaysdata); inert when running locally.
+if (process.env.PORT) {
+    const http = require('http');
+    const host = process.env.HOST || process.env.IP || '0.0.0.0';
+    http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+    }).listen(parseInt(process.env.PORT, 10), host, () => {
+        console.log('HTTP health server listening on ' + host + ':' + process.env.PORT);
+    });
+}

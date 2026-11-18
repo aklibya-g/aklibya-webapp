@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
@@ -20,6 +20,25 @@ from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from .models import Database, Capital, Expense, T1Summary, ClientBalance, FromSource, TransferType, OfficeName, InternalTransfer, DeliveryArea, SystemUser, ImportAlert, BalanceType, CurrencyCapital, OrderType, Message, SystemSetting, Dbcash, WhatsAppMessage, WhatsAppQRState
 from .forms import DatabaseForm, CapitalForm, CapitalDepositForm, ExpenseForm, InternalTransferForm
+
+
+# --- Cross-platform helpers (Windows local / Linux server) ---
+_CREATE_NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+
+def _kill_process(pid):
+    """Kill a process (and its children) cross-platform."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+        else:
+            import signal
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    except Exception:
+        pass
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
 
@@ -114,10 +133,32 @@ _WA_USD_RE = re.compile(r"دولار", re.IGNORECASE)
 
 
 def _wa_rate_timeline():
-    """أحداث تغيير السعر في غرفة الزاجل: (التوقيت، السعر العام، سعر البريد، العملة).
+    """أحداث تغيير السعر في جميع المجموعات المراقبة: (التوقيت، السعر العام، سعر البريد، العملة).
     إعلان البريد فقط يحدّث سعر البريد دون المساس بالسعر العام."""
+    st = SystemSetting.get()
+    monitored_jids = []
+    if st.monitored_group_jid:
+        monitored_jids.append(st.monitored_group_jid)
+    for j in (st.monitored_group_jids or "").split(","):
+        j = j.strip()
+        if j:
+            monitored_jids.append(j)
+    
+    # إذا لم تُضبط مجموعات في الإعدادات، استنتجها من الرسائل التي فيها أسعار (بوسترات)
+    if not monitored_jids:
+        # خذ المجموعات التي فيها رسائل بسعر بلا مبلغ (بوسترات)
+        inferred_jids = list(WhatsAppMessage.objects.filter(
+            amount__isnull=True,
+            exchange_rate__isnull=False,
+            exchange_rate__gte=1,
+        ).values_list("group_jid", flat=True).distinct())
+        if inferred_jids:
+            monitored_jids = inferred_jids
+        else:
+            monitored_jids = [WA_ZAJEL_GROUP]
+    
     rows = WhatsAppMessage.objects.filter(
-        group_jid=WA_ZAJEL_GROUP,
+        group_jid__in=monitored_jids,
         amount__isnull=True,
         exchange_rate__isnull=False,
         exchange_rate__gte=1,
@@ -1974,7 +2015,7 @@ def export_profits_report(request):
 
     sub_font = Font(name="Cairo", size=10, bold=True, color="FFFFFF")
     ws.merge_cells("A2:L2")
-    ws["A2"] = "شركة اليمامة المالية"
+    ws["A2"] = "شركة العربي للحوالات المالية"
     ws["A2"].font = sub_font
     ws["A2"].fill = header_fill
     ws["A2"].alignment = Alignment(horizontal="center")
@@ -2818,6 +2859,32 @@ def settings_page(request):
             setting.save()
             messages.success(request, "تم حفظ إعدادات الصيانة")
 
+        elif action == "update_company":
+            setting.company_name = request.POST.get("company_name", "").strip() or "شركة العربي للحوالات المالية"
+            setting.company_address = request.POST.get("company_address", "").strip()
+            setting.company_phone = request.POST.get("company_phone", "").strip()
+            if request.FILES.get("company_logo"):
+                setting.company_logo = request.FILES["company_logo"]
+            setting.save()
+            messages.success(request, "تم حفظ بيانات الشركة")
+
+        elif action == "clear_data":
+            data_type = request.POST.get("data_type")
+            confirm_text = request.POST.get("confirm_text", "").strip()
+            labels = {"balances": "الأرصدة", "transfers": "الحوالات", "expenses": "المصروفات"}
+            if confirm_text != "مسح" or data_type not in labels:
+                messages.error(request, "للتأكيد اكتب كلمة مسح بشكل صحيح")
+            else:
+                with transaction.atomic():
+                    if data_type == "balances":
+                        deleted = Capital.objects.all().delete()[0]
+                        ClientBalance.objects.all().update(egp_balance=0, lyd_balance=0)
+                    elif data_type == "transfers":
+                        deleted = Database.objects.all().delete()[0]
+                    else:
+                        deleted = Expense.objects.all().delete()[0]
+                messages.success(request, f"تم مسح {deleted} سجل من {labels[data_type]}")
+
         elif action == "add_area":
             name = request.POST.get("name", "").strip()
             if name:
@@ -3604,6 +3671,16 @@ def whatsapp_integration(request):
             bot_status = "مفصول"
     if request.method == "POST":
         action = request.POST.get("action")
+        if action == "save_gemini_key":
+            key = (request.POST.get("gemini_api_key") or "").strip()
+            setting = SystemSetting.get()
+            setting.gemini_api_key = key
+            setting.save(update_fields=["gemini_api_key"])
+            if key:
+                messages.success(request, "✅ تم حفظ مفتاح Gemini API بنجاح — سيستخدمه البوت خلال ثوانٍ")
+            else:
+                messages.success(request, "تم مسح مفتاح Gemini API")
+            return redirect("whatsapp_integration")
         if action == "start_bot":
             pid_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot", "whatsapp_bot.pid")
             if os.path.exists(pid_path):
@@ -3630,7 +3707,7 @@ def whatsapp_integration(request):
                     cwd=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "whatsapp-bot"),
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    creationflags=_CREATE_NO_WINDOW,
                     shell=True,
                     env=env,
                 )
@@ -3644,7 +3721,7 @@ def whatsapp_integration(request):
                 try:
                     with open(pid_path, "r") as f:
                         pid = int(f.read().strip())
-                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+                    _kill_process(pid)
                     os.remove(pid_path)
                     messages.success(request, "تم إيقاف البوت")
                 except Exception:
@@ -3665,7 +3742,7 @@ def whatsapp_integration(request):
                 try:
                     with open(pid_path, "r") as f:
                         pid = int(f.read().strip())
-                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+                    _kill_process(pid)
                     os.remove(pid_path)
                     steps.append("تم إيقاف البوت")
                 except Exception:
@@ -3700,7 +3777,7 @@ def whatsapp_integration(request):
                     cwd=bot_dir,
                     stdout=log_f,
                     stderr=log_f,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    creationflags=_CREATE_NO_WINDOW,
                     shell=True,
                     env=env,
                 )
@@ -4023,13 +4100,52 @@ def whatsapp_integration(request):
             return redirect("whatsapp_integration")
         elif action == "recompute_rates":
             st_rate = SystemSetting.get()
+            # 1) إعادة مسح الرسائل النصية للكشف عن بوسترات سعر جديدة
+            for msg in WhatsAppMessage.objects.all().order_by("timestamp", "id"):
+                if msg.amount is not None:
+                    continue
+                if msg.exchange_rate is not None and msg.exchange_rate >= 1:
+                    continue
+                text = msg.message_text or ""
+                if not text or text.startswith("[صورة]"):
+                    continue
+                amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
+                if rate and rate >= 1 and not amount and not phone:
+                    poster_post_rate = _wa_extract_post_rate(text, rate)
+                    msg.exchange_rate = rate
+                    msg.post_rate = poster_post_rate
+                    msg.currency = currency or "ج م"
+                    msg.transfer_type = ttype
+                    msg.edited_by = "reprocess"
+                    msg.save(update_fields=["exchange_rate", "post_rate", "currency", "transfer_type", "edited_by"])
+            
+            # 2) للرسائل الصورية التي لها تحليل محفوظ: استخدم سعر الصورة كمرجع
+            for msg in WhatsAppMessage.objects.filter(image_rate__isnull=False).exclude(image_rate__lt=1).order_by("timestamp", "id"):
+                if msg.amount is not None:
+                    # حوالة بصورة - حدث سعر الصرف من تحليل الصورة
+                    if msg.image_rate and msg.image_rate >= 1:
+                        msg.exchange_rate = msg.image_rate
+                        if msg.image_currency in ("ج م", "د ل"):
+                            msg.currency = msg.image_currency
+                        if msg.image_post_rate:
+                            msg.post_rate = msg.image_post_rate
+                        if msg.image_transfer_type:
+                            msg.transfer_type = msg.image_transfer_type
+                        msg.edited_by = "reprocess_image"
+                        msg.save(update_fields=["exchange_rate", "post_rate", "currency", "transfer_type", "edited_by"])
+                elif msg.exchange_rate and msg.exchange_rate >= 1:
+                    # بوستر سعر بصورة - تأكد من حفظ post_rate
+                    if msg.image_post_rate and not msg.post_rate:
+                        msg.post_rate = msg.image_post_rate
+                        msg.save(update_fields=["post_rate"])
+            
             rate_timeline = _wa_rate_timeline()
             checked = 0
             updated = 0
             for msg in WhatsAppMessage.objects.all().order_by("timestamp", "id"):
                 if msg.amount is None:
                     continue
-                if msg.edited_by and msg.edited_by not in ("reprocess", "timeline"):
+                if msg.edited_by and msg.edited_by not in ("reprocess", "timeline", "reprocess_image"):
                     continue
                 checked += 1
                 old_currency = (msg.currency or "").strip()
@@ -4048,9 +4164,17 @@ def whatsapp_integration(request):
                     if ev_rate is not None:
                         new_rate = _wa_pick_rate(ev_rate, ev_post, msg.message_text, msg.transfer_type)
                     else:
-                        new_rate = parsed_rate
+                        # للرسائل الصورية: استخدم سعر الصورة المحفوظ كاحتياطي
+                        if msg.image_rate and msg.image_rate >= 1:
+                            new_rate = msg.image_rate
+                        else:
+                            new_rate = parsed_rate
                 else:
-                    new_rate = parsed_rate
+                    # لا يوجد تايم لاين - للرسائل الصورية استخدم سعر الصورة
+                    if msg.image_rate and msg.image_rate >= 1:
+                        new_rate = msg.image_rate
+                    else:
+                        new_rate = parsed_rate
                 old_rate = msg.exchange_rate
                 if (new_rate or 0) == (old_rate or 0) and not cur_changed:
                     continue
@@ -4081,11 +4205,12 @@ def whatsapp_integration(request):
                     fields.append("currency")
                 msg.save(update_fields=fields)
             if rate_timeline:
-                last_ts, last_rate, _last_post, _last_cur = rate_timeline[-1]
+                last_ts, last_rate, last_post, last_cur = rate_timeline[-1]
                 st_rate.wa_current_rate = last_rate
-                st_rate.wa_rate_currency = _last_cur
+                st_rate.wa_post_rate = last_post
+                st_rate.wa_rate_currency = last_cur
                 st_rate.wa_rate_updated = last_ts
-                st_rate.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                st_rate.save(update_fields=["wa_current_rate", "wa_post_rate", "wa_rate_currency", "wa_rate_updated"])
             messages.success(request, f"تمت إعادة احتساب الأسعار: فُحصت {checked} حوالة، عُدّل منها {updated} — أحداث السعر {len(rate_timeline)}")
             return redirect("whatsapp_integration")
         elif action == "exclude_rate_poster":
@@ -4156,6 +4281,7 @@ def whatsapp_integration(request):
         "wa_rate_currency": setting.wa_rate_currency,
         "wa_rate_updated": setting.wa_rate_updated,
         "wa_outbound_senders": setting.wa_outbound_senders,
+        "gemini_api_key": setting.gemini_api_key or "",
         "group_names": _wa_group_names(),
     })
 
@@ -4178,6 +4304,7 @@ def whatsapp_config(request):
         "group_jids": setting.monitored_group_jids or "",
         "monitor_all": bool(setting.monitor_all_groups),
         "sync_full_history": bool(setting.sync_full_history),
+        "gemini_api_key": setting.gemini_api_key or "",
     })
 
 
@@ -4586,7 +4713,7 @@ def whatsapp_webhook(request):
                 return JsonResponse({"status": "success", "saved": False, "duplicate": True})
             amount, rate, commission, currency, phone, ttype = _parse_wa_message_learned(text)
             from_image = _as_bool(data.get("from_image"), default=False)
-            img_rate = img_currency = img_amount = img_phone = img_ttype = img_post_rate = None
+            img_rate = img_currency = img_amount = img_phone = img_ttype = img_post_rate = img_summary = None
             if from_image:
                 img_rate = data.get("image_rate")
                 img_post_rate = data.get("image_post_rate")
@@ -4594,6 +4721,7 @@ def whatsapp_webhook(request):
                 img_amount = data.get("image_amount")
                 img_phone = data.get("image_phone")
                 img_ttype = data.get("image_ttype")
+                img_summary = data.get("image_summary") or ""
                 if img_currency and not currency:
                     cur = str(img_currency).strip()
                     if cur in ("ج م", "د ل"):
@@ -4603,6 +4731,13 @@ def whatsapp_webhook(request):
             # الاتجاه حسب المرسل لا العملة: صادر = حسابنا (fromMe) أو من قائمة المخرجين · وارد = كل غير ذلك
             sender_pn = re.sub(r"\D", "", str(data.get("sender_pn") or ""))
             from_me = _as_bool(data.get("from_me"), default=False)
+            # معلومات إعادة التوجيه
+            is_forwarded = _as_bool(data.get("is_forwarded"), default=False)
+            forwarding_score = int(data.get("forwarding_score") or 0)
+            original_sender = data.get("original_sender", "") or ""
+            # إذا كانت معاد توجيهها، استخدم المرسل الأصلي لتحديد الاتجاه
+            effective_sender = original_sender if is_forwarded and original_sender else sender
+            effective_sender_pn = re.sub(r"\D", "", str(original_sender.split("@")[0])) if is_forwarded and original_sender else sender_pn
             if sender_pn and sender.endswith("@lid"):
                 try:
                     lid_map = st.wa_lid_map_dict()
@@ -4612,10 +4747,13 @@ def whatsapp_webhook(request):
                         st.save(update_fields=["wa_lid_map"])
                 except Exception:
                     pass
-            direction = "صادر" if (from_me or st.wa_is_outbound(sender_pn, sender)) else "وارد"
-            # الصور تأكيد استلام فقط — لا تُقرأ أي حوالة من أي صورة (ما عدا إعلان السعر بلا مبلغ/رقم)
+            direction = "صادر" if (from_me or st.wa_is_outbound(effective_sender_pn, effective_sender)) else "وارد"
+            # الصور: إذا كانت بوستر سعر (سعر فقط بلا مبلغ/هاتف) → حدث السعر
+            # إذا كانت حوالة بصورة (مع مبلغ/هاتف) → استخدم سعر الصورة كـ exchange_rate
             is_image_msg = from_image or str(text or "").startswith("[صورة]")
             poster_post_rate = None
+            poster_rate = None
+            is_rate_poster = False
             if is_image_msg:
                 if from_image and (img_rate or img_amount or img_phone):
                     # المرجع بيانات الذكاء الاصطناعي المنظمة لا نص الوصف
@@ -4634,28 +4772,53 @@ def whatsapp_webhook(request):
                     if is_rate_poster:
                         poster_post_rate = _wa_extract_post_rate(text, rate)
                 if is_rate_poster:
+                    poster_rate_val = float(poster_rate)
+                    poster_currency = (str(img_currency).strip() if img_currency in ("ج م", "د ل") else (currency or "ج م"))
                     try:
-                        st.wa_current_rate = float(poster_rate)
-                        st.wa_rate_currency = (str(img_currency).strip() if img_currency in ("ج م", "د ل") else (currency or "ج م"))
+                        st.wa_current_rate = poster_rate_val
+                        st.wa_post_rate = float(poster_post_rate) if poster_post_rate is not None else None
+                        st.wa_rate_currency = poster_currency
                         st.wa_rate_updated = timezone.now()
-                        st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                        st.save(update_fields=["wa_current_rate", "wa_post_rate", "wa_rate_currency", "wa_rate_updated"])
                     except (ValueError, TypeError):
                         pass
-                    rate = float(poster_rate)
+                    rate = poster_rate_val
+                    currency = poster_currency
                 else:
-                    rate = None
+                    # حوالة بصورة: استخدم سعر الصورة كسعر صرف إذا وجد
+                    if from_image and img_rate and img_rate >= 1:
+                        rate = float(img_rate)
+                        if img_currency and img_currency in ("ج م", "د ل"):
+                            currency = img_currency
+                        if img_post_rate:
+                            poster_post_rate = float(img_post_rate)
+                        if img_ttype:
+                            ttype = str(img_ttype)
+                    # إذا لا يوجد سعر في الصورة، خذ من التايم لاين/الإعدادات
+                    elif not rate and currency and currency != "د ل":
+                        ev_rate, ev_post = _wa_rate_event_at(msg_ts, currency=currency)
+                        if ev_rate is not None:
+                            rate = _wa_pick_rate(ev_rate, ev_post, text, ttype)
+                        elif st.wa_rate_currency == currency:
+                            rate = st.wa_current_rate
+                            if _wa_is_post(text, ttype) and st.wa_post_rate is not None:
+                                rate = st.wa_post_rate
+                    rate = None if rate is None else rate
                     poster_post_rate = None
                 amount = None
                 phone = ''
                 commission = None
-                ttype = ""
+                # ttype already set from image analysis if available
             elif rate and not amount and not phone and (not currency or currency == "ج م"):
+                # إعلان سعر نصي (ليس صورة)
+                poster_rate = rate
                 poster_post_rate = _wa_extract_post_rate(text, rate)
                 try:
-                    st.wa_current_rate = float(rate)
-                    st.wa_rate_currency = "ج م"
+                    st.wa_current_rate = float(poster_rate)
+                    st.wa_post_rate = float(poster_post_rate) if poster_post_rate is not None else None
+                    st.wa_rate_currency = currency or "ج م"
                     st.wa_rate_updated = msg_ts
-                    st.save(update_fields=["wa_current_rate", "wa_rate_currency", "wa_rate_updated"])
+                    st.save(update_fields=["wa_current_rate", "wa_post_rate", "wa_rate_currency", "wa_rate_updated"])
                 except (ValueError, TypeError):
                     pass
             elif amount and currency:
@@ -4669,7 +4832,10 @@ def whatsapp_webhook(request):
                         rate = _wa_pick_rate(ev_rate, ev_post, text, ttype)
                     elif rate is None and st.wa_rate_currency == currency:
                         rate = st.wa_current_rate
-            WhatsAppMessage.objects.create(
+                        # استخدام سعر البريد من الإعدادات كاحتياطي
+                        if _wa_is_post(text, ttype) and st.wa_post_rate is not None:
+                            rate = st.wa_post_rate
+            msg = WhatsAppMessage.objects.create(
                 sender=sender,
                 group_jid=jid,
                 phone_number=phone,
@@ -4686,10 +4852,23 @@ def whatsapp_webhook(request):
                 timestamp=msg_ts,
                 from_me=from_me,
                 sender_pn=sender_pn,
+                is_forwarded=is_forwarded,
+                forwarding_score=forwarding_score,
+                original_sender=original_sender,
+                # تحليل الصورة
+                image_rate=float(img_rate) if from_image and img_rate else None,
+                image_post_rate=float(img_post_rate) if from_image and img_post_rate else None,
+                image_currency=str(img_currency) if from_image and img_currency else "",
+                image_amount=float(img_amount) if from_image and img_amount else None,
+                image_phone=str(img_phone) if from_image and img_phone else "",
+                image_transfer_type=str(img_ttype) if from_image and img_ttype else "",
+                image_summary=str(img_summary) if from_image and img_summary else "",
             )
             return JsonResponse({"status": "success", "saved": True})
-        except Exception:
-            return JsonResponse({"status": "error"}, status=400)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({"status": "error", "detail": str(e)}, status=400)
     return JsonResponse({"status": "error"}, status=405)
 
 

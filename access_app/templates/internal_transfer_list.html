@@ -5,8 +5,8 @@
 
 {% block content %}
 <div class="print-header" style="display:none">
-    <img src="/static/images/logo.jpeg" alt="شعار الشركة">
-    <h1>شركة اليمامة المالية</h1>
+    <img src="{{ company_logo_url }}" alt="شعار الشركة">
+    <h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1>
     <div class="sub">تقرير الحوالات الداخلية</div>
 </div>
 <style>

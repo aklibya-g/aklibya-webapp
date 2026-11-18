@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="print-logo" style="display:none">
-    <img src="/static/images/logo.jpeg" alt="شعار الشركة">
+    <img src="{{ company_logo_url }}" alt="شعار الشركة">
 </div>
 <style>
 .profit-header{background:linear-gradient(135deg,#0f766e 0%,#065f46 100%);color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden}
@@ -80,7 +80,7 @@
         </div>
         <div>
             <h2>تقرير الأرباح الشهري</h2>
-            <p>شركة اليمامة المالية — {{ year }}</p>
+            <p>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — {{ year }}</p>
         </div>
     </div>
 </div>

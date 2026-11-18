@@ -272,6 +272,16 @@ body.wa-dark-font .badge-type { background:#1e293b; color:#cbd5e1; border-color:
                 <button id="waAlertBtn" onclick="waToggleAlert()" title="تنبيه الرسائل الجديدة" style="padding:5px 10px;border-radius:8px;background:#dcfce7;color:#16a34a;font-weight:700;border:1px solid #86efac;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-bell-fill"></i></button>
             </div>
         </div>
+        <div style="margin:8px 4px;padding:10px 14px;border-radius:12px;background:#f5f3ff;border:1px solid #ddd6fe;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:.8rem;font-weight:800;color:#6d28d9;display:inline-flex;align-items:center;gap:6px"><i class="bi bi-robot"></i> مفتاح Gemini API (لتحليل صور الأسعار)</span>
+            <form method="POST" style="display:inline-flex;gap:8px;align-items:center;flex:1;min-width:240px;margin:0">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_gemini_key">
+                <input type="text" name="gemini_api_key" value="{{ gemini_api_key|default:'' }}" placeholder="الصق مفتاح Gemini API هنا..." style="flex:1;min-width:200px;padding:6px 10px;border-radius:8px;border:1px solid #c4b5fd;font-size:.78rem;font-family:monospace" autocomplete="off">
+                <button type="submit" style="padding:6px 14px;border-radius:8px;background:#6d28d9;color:#fff;font-weight:700;border:none;cursor:pointer;font-size:.78rem;white-space:nowrap"><i class="bi bi-check-lg"></i> حفظ</button>
+            </form>
+            <span style="font-size:.68rem;color:#7c3aed">الحد المجاني: 20 صورة/يوم</span>
+        </div>
         <div id="waTableWrap" class="table-responsive" style="overflow:visible;max-width:100%;padding:0 4px 8px">
             <table class="wa-table">
                 <thead>

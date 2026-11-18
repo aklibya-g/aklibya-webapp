@@ -31,6 +31,7 @@
 
 <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
     <div class="d-flex align-items-center gap-2">
+        <img src="{{ company_logo_url }}" alt="شعار الشركة" style="width:42px;height:42px;object-fit:cover;border-radius:12px;border:2px solid var(--primary);box-shadow:0 3px 10px rgba(0,0,0,.12)">
         <i class="bi bi-person-plus fs-4" style="color:#8b5cf6"></i>
         <h5 class="mb-0 fw-bold">{% if mode == 'add' %}إضافة مستخدم جديد{% else %}تعديل بيانات {{ user_obj.username }}{% endif %}</h5>
     </div>

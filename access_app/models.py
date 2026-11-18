@@ -371,6 +371,17 @@ class WhatsAppMessage(models.Model):
     edit_log = models.TextField(blank=True, default="", verbose_name="سجل التعديلات (JSON)")
     from_me = models.BooleanField(null=True, blank=True, verbose_name="مرسلنا (حسابنا)")
     sender_pn = models.CharField(max_length=30, blank=True, default="", verbose_name="رقم المرسل الحقيقي")
+    is_forwarded = models.BooleanField(default=False, verbose_name="معدلة/معادة توجيه")
+    forwarding_score = models.IntegerField(default=0, verbose_name="درجة إعادة التوجيه")
+    original_sender = models.CharField(max_length=200, blank=True, default="", verbose_name="المرسل الأصلي")
+    # نتائج تحليل الصورة (Gemini)
+    image_rate = models.FloatField(verbose_name="سعر الصورة", null=True, blank=True)
+    image_post_rate = models.FloatField(verbose_name="سعر بريد الصورة", null=True, blank=True)
+    image_currency = models.CharField(max_length=10, blank=True, default="", verbose_name="عملة الصورة")
+    image_amount = models.FloatField(verbose_name="مبلغ الصورة", null=True, blank=True)
+    image_phone = models.CharField(max_length=30, blank=True, default="", verbose_name="هاتف الصورة")
+    image_transfer_type = models.CharField(max_length=100, blank=True, default="", verbose_name="نوع تحويل الصورة")
+    image_summary = models.TextField(blank=True, default="", verbose_name="ملخص الصورة")
 
     class Meta:
         verbose_name = "رسالة واتساب"
@@ -399,6 +410,10 @@ class WhatsAppQRState(models.Model):
 
 
 class SystemSetting(models.Model):
+    company_name = models.CharField(max_length=200, default="شركة العربي للحوالات المالية", blank=True, verbose_name="اسم الشركة")
+    company_address = models.CharField(max_length=300, default="", blank=True, verbose_name="عنوان الشركة")
+    company_phone = models.CharField(max_length=100, default="", blank=True, verbose_name="هاتف الشركة")
+    company_logo = models.ImageField(upload_to="company/", null=True, blank=True, verbose_name="شعار الشركة")
     maintenance_mode = models.BooleanField(default=False, verbose_name="وضع الصيانة")
     maintenance_message = models.TextField(default="النظام تحت الصيانة حالياً. يرجى المحاولة لاحقاً.", verbose_name="رسالة الصيانة")
     monitored_group_jid = models.CharField(max_length=200, default="", blank=True, verbose_name="معرف المجموعة المراقبة")
@@ -406,10 +421,12 @@ class SystemSetting(models.Model):
     monitor_all_groups = models.BooleanField(default=False, verbose_name="استقبال رسائل كل المجموعات")
     sync_full_history = models.BooleanField(default=False, verbose_name="مزامنة التاريخ الكامل")
     wa_current_rate = models.FloatField(null=True, blank=True, verbose_name="سعر الصرف الحالي")
+    wa_post_rate = models.FloatField(null=True, blank=True, verbose_name="سعر البريد الحالي")
     wa_rate_currency = models.CharField(max_length=10, default="ج م", blank=True, verbose_name="عملة السعر الحالي")
     wa_rate_updated = models.DateTimeField(null=True, blank=True, verbose_name="آخر تحديث للسعر")
     wa_outbound_senders = models.TextField(default="", blank=True, verbose_name="أرقام المخرجين (صادر) مفصولة بفاصلة")
     wa_lid_map = models.TextField(default="", blank=True, verbose_name="خريطة معرفات واتساب إلى أرقام (JSON)")
+    gemini_api_key = models.CharField(max_length=300, default="", blank=True, verbose_name="مفتاح Gemini API")
 
     class Meta:
         verbose_name = "إعدادات النظام"

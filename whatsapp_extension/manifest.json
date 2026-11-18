@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "شركة اليمامة المالية - استيراد واتساب",
+  "name": "شركة العربي للحوالات المالية - استيراد واتساب",
   "description": "استيراد الحوالات والأرصدة من واتساب ويب مباشرة للمنظومة",
   "version": "1.0",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://web.whatsapp.com/*", "https://webapp-production-5df54.up.railway.app/*"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "استيراد واتساب - اليمامة المالية",
+    "default_title": "استيراد واتساب - العربي للحوالات المالية",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

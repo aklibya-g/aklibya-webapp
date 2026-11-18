@@ -1,16 +1,15 @@
 [Unit]
-Description=WhatsApp bot (Baileys/Node.js) via pm2
+Description=Webapp3 WhatsApp bot (Node)
 After=network.target
 
 [Service]
-Type=forking
-User=www-data
-WorkingDirectory=/var/www/webapp/whatsapp-bot
-ExecStart=/usr/bin/pm2 resurrect
-ExecReload=/usr/bin/pm2 reload all
-ExecStop=/usr/bin/pm2 dump
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/webapp3/whatsapp-bot
+EnvironmentFile=/home/ubuntu/webapp3/deploy/.env
+ExecStart=/usr/bin/node index.js
 Restart=always
-RestartSec=10
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

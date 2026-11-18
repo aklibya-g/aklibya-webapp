@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرحباً بك - شركة اليمامة المالية</title>
+    <title>مرحباً بك - {{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -51,14 +51,14 @@
     <div class="welcome-container">
         <div class="logo-wrapper">
             <div class="logo-ring">
-                <img src="/static/images/logo.jpeg" alt="شعار شركة اليمامة المالية" class="logo-img">
+                <img src="{{ company_logo_url }}" alt="شعار {{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}" class="logo-img">
             </div>
         </div>
         
         <div class="welcome-text">
             <h1>مرحباً بك</h1>
             <div class="name">{{ username }}</div>
-            <div class="role">{% if is_admin %}مدير النظام{% else %}شركة اليمامة المالية{% endif %}</div>
+            <div class="role">{% if is_admin %}مدير النظام{% else %}{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}{% endif %}</div>
         </div>
         
         <div class="features">

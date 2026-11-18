@@ -83,6 +83,29 @@
         .sidebar .nav-section::after { content: ''; flex: 1; height: 1px; background: var(--card-border); }
         .sidebar .sidebar-footer { border-top: 1px solid var(--card-border); padding: 8px; }
         .sidebar .sidebar-footer .nav-item { margin: 0; }
+        /* تصميم القائمة الجانبية الجديد */
+        .sidebar { width: 272px; background:linear-gradient(180deg,#0b1b33 0%,#102a4a 54%,#0b203b 100%); border-left:0; box-shadow:-8px 0 28px rgba(15,23,42,.16); }
+        .sidebar .brand { padding:18px 16px; min-height:76px; border-bottom:1px solid rgba(255,255,255,.11); background:rgba(255,255,255,.035); }
+        .sidebar .brand .logo { width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#102a4a; box-shadow:0 6px 18px rgba(245,158,11,.28); font-size:20px; }
+        .sidebar .brand .logo img { width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
+        .sidebar .brand span { color:#fff !important; font-size:.91rem; line-height:1.45; text-shadow:none; }
+        .sidebar .nav { padding:12px 10px; }
+        .sidebar .nav-item { min-height:38px; padding:9px 12px; border-radius:11px; color:#b9c9dc; font-size:.82rem; }
+        .sidebar .nav-item i { color:#8fa8c3; }
+        .sidebar .nav-item:hover { background:rgba(255,255,255,.10); color:#fff; transform:none; }
+        .sidebar .nav-item:hover i { color:#fbbf24; transform:scale(1.08); }
+        .sidebar .nav-item.active { background:linear-gradient(90deg,rgba(245,158,11,.22),rgba(245,158,11,.08)); color:#fff; box-shadow:inset 3px 0 0 #f59e0b; }
+        .sidebar .nav-item.active i { color:#fbbf24; }
+        .sidebar .nav-item.active::before { display:none; }
+        .sidebar .nav-section { color:#7891ad !important; padding:12px 10px 6px; font-size:.66rem; letter-spacing:.7px; }
+        .sidebar .nav-section::after { background:rgba(255,255,255,.10); }
+        .sec-box { margin:6px 2px 8px; padding:5px; border-radius:14px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); }
+        .sec-box:hover { background:rgba(255,255,255,.07); box-shadow:none; transform:none; }
+        .sec-box.balances,.sec-box.expenses,.sec-box.profits,.sec-box.internal { background:rgba(255,255,255,.045); border-color:rgba(255,255,255,.08); }
+        .sidebar .sidebar-footer { padding:10px; border-top:1px solid rgba(255,255,255,.11); background:rgba(0,0,0,.10); }
+        .sidebar .sidebar-footer .nav-item { color:#b9c9dc; }
+        .main-area { margin-right:272px; }
+        @media(max-width:768px){ .sidebar { width:280px; } .main-area { margin-right:0; } }
         .sec-box { border-radius: 12px; margin: 4px 6px 6px; padding: 6px 6px 4px; background: var(--sec-transfer); border: 1px solid var(--sec-transfer-border); transition: all .25s ease; }
         .sec-box:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); transform: translateY(-1px); }
         .sec-box.balances { background: var(--sec-balance); border-color: var(--sec-balance-border); }
@@ -183,8 +206,8 @@
     <div class="app-layout">
         <div class="sidebar" id="sidebar">
             <div class="brand">
-                <div class="logo"><i class="bi bi-arrow-left-right"></i></div>
-                <span>شركة اليمامة المالية</span>
+                <div class="logo"><img src="{{ company_logo_url }}" alt="شعار الشركة"></div>
+                <span>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</span>
                 <div style="margin-right:auto;position:relative;cursor:pointer" onclick="window.location.href='{% url 'messages_inbox' %}'" title="الرسائل">
                     <i class="bi bi-bell-fill" style="font-size:1.1rem;color:#f59e0b;animation:none" id="bellIcon"></i>
                     <span id="bellBadge" style="display:none;position:absolute;top:-6px;left:-8px;background:#dc2626;color:#fff;font-size:0.6rem;font-weight:800;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 2px 6px rgba(220,38,38,0.5)"></span>
