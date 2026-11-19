@@ -353,7 +353,10 @@ def _backup_all(label="manual"):
                         elif hasattr(val, 'pk'):
                             val = val.pk if val else ''
                         data[field.name] = val
-                writer.writerow([model_name, obj.pk, json.dumps(data, ensure_ascii=False)])
+                # File/Image fields and a few legacy values are not directly
+                # JSON serializable.  Store their textual representation so
+                # one such field cannot break the complete online backup.
+                writer.writerow([model_name, obj.pk, json.dumps(data, ensure_ascii=False, default=str)])
     return filename
 
 
