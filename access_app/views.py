@@ -730,6 +730,8 @@ def home(request):
             cursor += timedelta(days=1)
     chart_profit_total = round(sum(item["profit"] for item in profit_chart_data), 2)
     chart_profit_average = round(chart_profit_total / len(profit_chart_data), 2) if profit_chart_data else 0
+    peak_profit_day = max(profit_chart_data, key=lambda item: item["profit"]) if profit_chart_data else {"month": "-", "profit": 0}
+    loss_profit_day = min(profit_chart_data, key=lambda item: item["profit"]) if profit_chart_data else {"month": "-", "profit": 0}
 
     latest = list(Database.objects.order_by("-date")[:10])
     latest_capital = list(Capital.objects.select_related("client", "from_source").order_by("-date")[:10])
@@ -755,6 +757,8 @@ def home(request):
         "profit_chart_title": chart_title,
         "chart_profit_total": chart_profit_total,
         "chart_profit_average": chart_profit_average,
+        "peak_profit_day": peak_profit_day,
+        "loss_profit_day": loss_profit_day,
         "profit_from": profit_from_raw,
         "profit_to": profit_to_raw,
         "profit_year": profit_year_raw,
