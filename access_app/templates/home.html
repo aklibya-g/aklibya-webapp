@@ -156,9 +156,19 @@
         <div class="charts-heading">
             <div>
                 <span class="analysis-kicker">قراءة الأداء</span>
-                <h6>حركة الأرباح والسيولة خلال {{ today|date:"Y" }}</h6>
+                <h6>{{ profit_chart_title }}</h6>
             </div>
-            <span class="chart-legend"><i class="legend-profit"></i> الأرباح <i class="legend-flow"></i> التحويلات</span>
+            <div class="chart-tools">
+                <span class="chart-legend"><i class="legend-profit"></i> الأرباح <i class="legend-flow"></i> التحويلات</span>
+                <form method="get" class="profit-filter">
+                    <input type="date" name="profit_from" value="{{ profit_from }}" title="من يوم">
+                    <input type="date" name="profit_to" value="{{ profit_to }}" title="إلى يوم">
+                    <select name="profit_month" title="الشهر"><option value="">الشهر</option>{% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}<option value="{{ m }}" {% if profit_month == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+                    <input type="number" name="profit_year" value="{{ profit_year }}" placeholder="السنة" min="2020" max="2100" title="السنة">
+                    <button type="submit" title="تطبيق الفلتر"><i class="bi bi-funnel"></i></button>
+                    {% if profit_from or profit_to or profit_month or profit_year %}<a href="{% url 'home' %}" title="الفترة الافتراضية">×</a>{% endif %}
+                </form>
+            </div>
         </div>
         <div class="charts-grid">
             <div class="chart-card"><canvas id="profitTrendChart"></canvas></div>
@@ -168,6 +178,7 @@
             <div class="insight-card insight-best"><i class="bi bi-trophy"></i><div><span>أعلى ربح</span><strong>{{ best_month.month }} · {{ best_month.profit|fmt }} LYD</strong></div></div>
             <div class="insight-card insight-low"><i class="bi bi-graph-down-arrow"></i><div><span>أقل أداء</span><strong>{{ worst_month.month }} · {{ worst_month.profit|fmt }} LYD</strong></div></div>
             <div class="insight-card insight-driver"><i class="bi bi-lightbulb"></i><div><span>القراءة الأولية للمحرك</span><strong>{{ profit_driver }}</strong></div></div>
+            <div class="insight-card insight-total"><i class="bi bi-calculator"></i><div><span>إجمالي ربح الفترة / المتوسط اليومي</span><strong>{{ chart_profit_total|fmt }} / {{ chart_profit_average|fmt }} LYD</strong></div></div>
         </div>
     </section>
 
@@ -295,7 +306,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{{ monthly_financial|json_script:"monthlyFinancialData" }}
+{{ profit_chart_data|json_script:"monthlyFinancialData" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -358,10 +369,12 @@ document.addEventListener('DOMContentLoaded', function(){
 .charts-panel{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
 .charts-heading{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--card-border)}
 .charts-heading h6{margin:2px 0 0;color:var(--text);font-size:.95rem;font-weight:800}.chart-legend{font-size:.68rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}.chart-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}.legend-profit{background:#7c3aed}.legend-flow{background:#3b82f6}
+.chart-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.profit-filter{display:flex;align-items:center;gap:4px}.profit-filter input,.profit-filter select{height:28px;border:1px solid var(--card-border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:.66rem;padding:3px 5px}.profit-filter input[type=number]{width:68px}.profit-filter input[type=date]{width:116px}.profit-filter select{width:58px}.profit-filter button,.profit-filter a{height:28px;min-width:28px;border:1px solid var(--primary);border-radius:6px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:.75rem;cursor:pointer}.profit-filter a{background:transparent;color:var(--danger);border-color:var(--danger);font-size:1rem}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chart-card{height:235px;padding:8px 10px;background:var(--bg);border:1px solid var(--card-border);border-radius:10px;position:relative}.chart-card canvas{width:100%!important;height:100%!important}
-.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.insight-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--card-border)}.insight-card i{font-size:1.2rem;color:var(--primary)}.insight-card span{display:block;color:var(--text-muted);font-size:.65rem}.insight-card strong{display:block;color:var(--text);font-size:.78rem;margin-top:3px}.insight-best i{color:#d97706}.insight-low i{color:#dc2626}.insight-driver i{color:#0ea5e9}
+.insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.insight-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--card-border)}.insight-card i{font-size:1.2rem;color:var(--primary)}.insight-card span{display:block;color:var(--text-muted);font-size:.65rem}.insight-card strong{display:block;color:var(--text);font-size:.78rem;margin-top:3px}.insight-best i{color:#d97706}.insight-low i{color:#dc2626}.insight-driver i{color:#0ea5e9}.insight-total i{color:#059669}
 @media(max-width:900px){.analysis-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:700px){.charts-grid,.insight-grid{grid-template-columns:1fr}.charts-heading{align-items:flex-start;gap:8px;flex-direction:column}.chart-card{height:210px}}
+@media(max-width:1000px){.insight-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.charts-grid,.insight-grid{grid-template-columns:1fr}.charts-heading{align-items:flex-start;gap:8px;flex-direction:column}.chart-tools{justify-content:flex-start}.chart-card{height:210px}}
 @media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis .dash-card{height:190px;min-height:190px}.dashboard-kpis .dash-value{font-size:1.12rem}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 </style>

@@ -667,6 +667,70 @@ def home(request):
         driver_bits.append("انخفاض متوسط سعر الصرف")
     profit_driver = " و ".join(driver_bits) if driver_bits else "توازن حجم التحويلات مع سعر الصرف"
 
+    # Profit chart: daily for the last seven days by default, with optional
+    # day-to-day, month, or full-year filtering from the dashboard.
+    profit_from_raw = request.GET.get("profit_from", "").strip()
+    profit_to_raw = request.GET.get("profit_to", "").strip()
+    profit_year_raw = request.GET.get("profit_year", "").strip()
+    profit_month_raw = request.GET.get("profit_month", "").strip()
+    today_date = datetime.now().date()
+    chart_mode = "daily"
+    try:
+        profit_from = datetime.strptime(profit_from_raw, "%Y-%m-%d").date() if profit_from_raw else None
+        profit_to = datetime.strptime(profit_to_raw, "%Y-%m-%d").date() if profit_to_raw else None
+    except ValueError:
+        profit_from, profit_to = None, None
+    try:
+        filter_year = int(profit_year_raw) if profit_year_raw else today_date.year
+        filter_month = int(profit_month_raw) if profit_month_raw else 0
+    except ValueError:
+        filter_year, filter_month = today_date.year, 0
+
+    if profit_from_raw or profit_to_raw:
+        profit_from = profit_from or profit_to or today_date
+        profit_to = profit_to or profit_from
+        if profit_from > profit_to:
+            profit_from, profit_to = profit_to, profit_from
+        chart_title = f"الربح اليومي من {profit_from} إلى {profit_to}"
+    elif filter_month:
+        profit_from = datetime(filter_year, filter_month, 1).date()
+        if filter_month == 12:
+            profit_to = datetime(filter_year + 1, 1, 1).date() - timedelta(days=1)
+        else:
+            profit_to = datetime(filter_year, filter_month + 1, 1).date() - timedelta(days=1)
+        chart_title = f"الربح اليومي لشهر {month_names[filter_month - 1]} {filter_year}"
+    elif profit_year_raw:
+        chart_mode = "monthly"
+        chart_title = f"حركة الأرباح الشهرية لعام {filter_year}"
+    else:
+        profit_from, profit_to = today_date - timedelta(days=6), today_date
+        chart_title = "الربح اليومي — آخر 7 أيام"
+
+    if chart_mode == "monthly":
+        profit_chart_data = monthly_financial
+    else:
+        profit_chart_data = []
+        cursor = profit_from
+        while cursor <= profit_to:
+            tx_day = Database.objects.filter(date=cursor)
+            cap_day = Capital.objects.filter(date=cursor).exclude(in_type="ترحيل")
+            day_db_egp = float(tx_day.aggregate(t=Sum("transfered_amount"))["t"] or 0)
+            day_db_lyd = float(tx_day.aggregate(t=Sum("transfer_amount"))["t"] or 0)
+            day_cap_egp = float(cap_day.aggregate(t=Sum("cash_in"))["t"] or 0)
+            day_cap_lyd = float(cap_day.aggregate(t=Sum("libyan_cash"))["t"] or 0)
+            day_rate = round(day_cap_egp / day_cap_lyd, 3) if day_cap_lyd else 0
+            day_profit = ((day_cap_egp - day_db_egp) / day_rate - (day_cap_lyd - day_db_lyd)) if day_rate else 0
+            profit_chart_data.append({
+                "month": cursor.strftime("%d/%m"),
+                "deposits": round(day_cap_egp, 2),
+                "transfers": round(day_db_egp, 2),
+                "rate": day_rate,
+                "profit": round(day_profit, 2),
+            })
+            cursor += timedelta(days=1)
+    chart_profit_total = round(sum(item["profit"] for item in profit_chart_data), 2)
+    chart_profit_average = round(chart_profit_total / len(profit_chart_data), 2) if profit_chart_data else 0
+
     latest = list(Database.objects.order_by("-date")[:10])
     latest_capital = list(Capital.objects.select_related("client", "from_source").order_by("-date")[:10])
 
@@ -687,6 +751,14 @@ def home(request):
         "best_month": best_month,
         "worst_month": worst_month,
         "profit_driver": profit_driver,
+        "profit_chart_data": profit_chart_data,
+        "profit_chart_title": chart_title,
+        "chart_profit_total": chart_profit_total,
+        "chart_profit_average": chart_profit_average,
+        "profit_from": profit_from_raw,
+        "profit_to": profit_to_raw,
+        "profit_year": profit_year_raw,
+        "profit_month": profit_month_raw,
         "latest": latest,
         "latest_capital": latest_capital,
         "clients": clients,
