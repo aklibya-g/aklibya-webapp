@@ -634,6 +634,39 @@ def home(request):
     coverage_rate = round((db_total_egp / cap_total_egp) * 100, 1) if cap_total_egp else 0
     coverage_rate = min(coverage_rate, 100)
 
+    month_names = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+                   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+    monthly_financial = []
+    for month_number, month_name in enumerate(month_names, 1):
+        tx_month = Database.objects.filter(date__year=datetime.now().year, date__month=month_number)
+        cap_month = Capital.objects.filter(date__year=datetime.now().year, date__month=month_number).exclude(in_type="ترحيل")
+        month_db_egp = float(tx_month.aggregate(t=Sum("transfered_amount"))["t"] or 0)
+        month_db_lyd = float(tx_month.aggregate(t=Sum("transfer_amount"))["t"] or 0)
+        month_cap_egp = float(cap_month.aggregate(t=Sum("cash_in"))["t"] or 0)
+        month_cap_lyd = float(cap_month.aggregate(t=Sum("libyan_cash"))["t"] or 0)
+        month_rate = round(month_cap_egp / month_cap_lyd, 3) if month_cap_lyd else 0
+        month_egp_surplus = month_cap_egp - month_db_egp
+        month_lyd_surplus = month_cap_lyd - month_db_lyd
+        month_profit = (month_egp_surplus / month_rate - month_lyd_surplus) if month_rate else 0
+        monthly_financial.append({
+            "month": month_name,
+            "deposits": round(month_cap_egp, 2),
+            "transfers": round(month_db_egp, 2),
+            "rate": month_rate,
+            "profit": round(month_profit, 2),
+        })
+    active_months = [item for item in monthly_financial if item["deposits"] or item["transfers"]]
+    best_month = max(active_months, key=lambda item: item["profit"]) if active_months else {"month": "-", "profit": 0, "transfers": 0, "rate": 0}
+    worst_month = min(active_months, key=lambda item: item["profit"]) if active_months else {"month": "-", "profit": 0}
+    avg_active_transfers = sum(item["transfers"] for item in active_months) / len(active_months) if active_months else 0
+    avg_active_rate = sum(item["rate"] for item in active_months if item["rate"]) / len([item for item in active_months if item["rate"]]) if any(item["rate"] for item in active_months) else 0
+    driver_bits = []
+    if best_month.get("transfers", 0) > avg_active_transfers * 1.1:
+        driver_bits.append("ارتفاع حجم التحويلات")
+    if avg_active_rate and best_month.get("rate", 0) < avg_active_rate * 0.98:
+        driver_bits.append("انخفاض متوسط سعر الصرف")
+    profit_driver = " و ".join(driver_bits) if driver_bits else "توازن حجم التحويلات مع سعر الصرف"
+
     latest = list(Database.objects.order_by("-date")[:10])
     latest_capital = list(Capital.objects.select_related("client", "from_source").order_by("-date")[:10])
 
@@ -650,6 +683,10 @@ def home(request):
         "cap_avg_rate": cap_avg_rate,
         "remaining_egp": remaining_egp,
         "coverage_rate": coverage_rate,
+        "monthly_financial": monthly_financial,
+        "best_month": best_month,
+        "worst_month": worst_month,
+        "profit_driver": profit_driver,
         "latest": latest,
         "latest_capital": latest_capital,
         "clients": clients,

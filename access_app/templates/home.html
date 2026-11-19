@@ -152,6 +152,25 @@
         </div>
     </section>
 
+    <section class="charts-panel mb-4">
+        <div class="charts-heading">
+            <div>
+                <span class="analysis-kicker">قراءة الأداء</span>
+                <h6>حركة الأرباح والسيولة خلال {{ today|date:"Y" }}</h6>
+            </div>
+            <span class="chart-legend"><i class="legend-profit"></i> الأرباح <i class="legend-flow"></i> التحويلات</span>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card"><canvas id="profitTrendChart"></canvas></div>
+            <div class="chart-card"><canvas id="cashFlowChart"></canvas></div>
+        </div>
+        <div class="insight-grid">
+            <div class="insight-card insight-best"><i class="bi bi-trophy"></i><div><span>أعلى ربح</span><strong>{{ best_month.month }} · {{ best_month.profit|fmt }} LYD</strong></div></div>
+            <div class="insight-card insight-low"><i class="bi bi-graph-down-arrow"></i><div><span>أقل أداء</span><strong>{{ worst_month.month }} · {{ worst_month.profit|fmt }} LYD</strong></div></div>
+            <div class="insight-card insight-driver"><i class="bi bi-lightbulb"></i><div><span>القراءة الأولية للمحرك</span><strong>{{ profit_driver }}</strong></div></div>
+        </div>
+    </section>
+
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-body p-4">
             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -276,6 +295,19 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ monthly_financial|json_script:"monthlyFinancialData" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    var data = JSON.parse(document.getElementById('monthlyFinancialData').textContent || '[]');
+    var labels = data.map(function(x){return x.month;});
+    var common = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{rtl:true,callbacks:{label:function(c){return ' '+Number(c.raw||0).toLocaleString('en-US',{maximumFractionDigits:2});}}}}, scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{family:'Cairo',size:10}}},y:{grid:{color:'rgba(148,163,184,.18)'},ticks:{color:'#64748b',font:{family:'Cairo',size:10},callback:function(v){return Number(v).toLocaleString('en-US');}}}}};
+    var profitCanvas=document.getElementById('profitTrendChart');
+    if(profitCanvas && window.Chart) new Chart(profitCanvas,{type:'line',data:{labels:labels,datasets:[{label:'الأرباح',data:data.map(function(x){return x.profit;}),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.12)',fill:true,tension:.35,pointRadius:3,pointBackgroundColor:'#7c3aed'}]},options:common});
+    var flowCanvas=document.getElementById('cashFlowChart');
+    if(flowCanvas && window.Chart) new Chart(flowCanvas,{type:'bar',data:{labels:labels,datasets:[{label:'الإيداعات',data:data.map(function(x){return x.deposits;}),backgroundColor:'rgba(16,185,129,.72)',borderRadius:5},{label:'الحوالات',data:data.map(function(x){return x.transfers; }),backgroundColor:'rgba(59,130,246,.72)',borderRadius:5}]},options:{...common,plugins:{...common.plugins,legend:{display:true,position:'top',rtl:true,labels:{usePointStyle:true,font:{family:'Cairo',size:10},color:'#64748b'}}}}});
+});
+</script>
 <style>
 .dash-card { border:none; border-radius:14px; transition:all 0.3s; cursor:default; }
 .dash-card:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(0,0,0,0.1); }
@@ -323,7 +355,13 @@
 .analysis-note{display:block;color:var(--text-muted);font-size:.65rem;margin-top:5px}
 .analysis-progress{margin-top:13px;color:var(--text-muted);font-size:.68rem}.analysis-progress b{color:var(--primary)}
 .progress-track{height:6px;background:var(--card-border);border-radius:8px;overflow:hidden}.progress-track span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--success));border-radius:8px}
+.charts-panel{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+.charts-heading{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--card-border)}
+.charts-heading h6{margin:2px 0 0;color:var(--text);font-size:.95rem;font-weight:800}.chart-legend{font-size:.68rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}.chart-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}.legend-profit{background:#7c3aed}.legend-flow{background:#3b82f6}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chart-card{height:235px;padding:8px 10px;background:var(--bg);border:1px solid var(--card-border);border-radius:10px;position:relative}.chart-card canvas{width:100%!important;height:100%!important}
+.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.insight-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--card-border)}.insight-card i{font-size:1.2rem;color:var(--primary)}.insight-card span{display:block;color:var(--text-muted);font-size:.65rem}.insight-card strong{display:block;color:var(--text);font-size:.78rem;margin-top:3px}.insight-best i{color:#d97706}.insight-low i{color:#dc2626}.insight-driver i{color:#0ea5e9}
 @media(max-width:900px){.analysis-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.charts-grid,.insight-grid{grid-template-columns:1fr}.charts-heading{align-items:flex-start;gap:8px;flex-direction:column}.chart-card{height:210px}}
 @media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis .dash-card{height:190px;min-height:190px}.dashboard-kpis .dash-value{font-size:1.12rem}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 </style>
