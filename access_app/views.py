@@ -2114,6 +2114,7 @@ def profits_report(request):
             "db_lyd": db_lyd,
             "cap_egp": cap_egp,
             "cap_lyd": cap_lyd,
+            "egp_surplus": cap_egp - db_egp,
             "avg_rate": avg_rate,
             "db_avg_rate": db_avg_rate,
             "cap_avg_rate": cap_avg_rate,

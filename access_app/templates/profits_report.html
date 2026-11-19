@@ -62,6 +62,7 @@
 .detail-card .dc-row:last-child{border-bottom:none}
 .detail-card .dc-row .dc-label{color:#6b7280}
 .detail-card .dc-row .dc-val{font-weight:600;color:#374151}
+.detail-card .dc-profit-row{border-top:1px solid #d1fae5;padding-top:9px;margin-top:3px}.dc-print{border:1px solid #d1d5db;background:#fff;color:#6b7280;border-radius:7px;width:29px;height:29px;cursor:pointer;font-size:.78rem}.dc-print:hover{background:#059669;color:#fff;border-color:#059669}
 .formula-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:.88rem;color:#1e40af;line-height:2}
 .formula-box strong{color:#1d4ed8}
 .toggle-view{display:flex;gap:8px}
@@ -113,9 +114,9 @@
     </div>
     <div class="s-card red">
         <div class="icon-box"><i class="bi bi-currency-exchange"></i></div>
-        <div class="s-label">الرصيد الحالي</div>
+        <div class="s-label">العجز/الفائض في الأرصدة</div>
         <div class="s-value">{{ total_egp_balance|fmt }}</div>
-        <div class="s-sub">EGP — الفرق بالليبي: {{ total_egp_to_lyd|fmt }}</div>
+        <div class="s-sub">EGP — الفرق بين إجمالي الأرصدة والحوالات</div>
     </div>
 </div>
 
@@ -249,17 +250,17 @@
         <div class="detail-card {% if d.profit < 0 %}loss{% endif %}">
             <div class="dc-header">
                 <span class="dc-month"><i class="bi bi-calendar3"></i> {{ d.month_name }}</span>
-                <span class="dc-profit" style="color:{% if d.profit >= 0 %}#059669{% else %}#dc2626{% endif %}">
+                <span class="dc-profit" style="color:{% if d.profit >= 0 %}#059669{% else %}#dc2626{% endif %}" title="إجمالي الربح">
                     {% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}
                 </span>
+                <button type="button" class="dc-print" onclick="printProfitCard(this)" title="طباعة هذا الشهر"><i class="bi bi-printer"></i></button>
             </div>
-            <div class="dc-row"><span class="dc-label">إيداعات (مصري)</span><span class="dc-val">{{ d.cap_egp|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">حوالات (مصري)</span><span class="dc-val">{{ d.db_egp|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">1 — الفرق ÷ السعر</span><span class="dc-val" style="color:#2563eb">{{ d.egp_to_lyd|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">إيداعات (ليبي)</span><span class="dc-val">{{ d.cap_lyd|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">حوالات (ليبي)</span><span class="dc-val">{{ d.db_lyd|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">2 — الفرق الليبي</span><span class="dc-val" style="color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">إجمالي الأرصدة (مصري)</span><span class="dc-val">{{ d.cap_egp|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">إجمالي الحوالات (مصري)</span><span class="dc-val">{{ d.db_egp|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">الفرق بينهما (مصري)</span><span class="dc-val" style="color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_surplus|fmt }}</span></div>
             <div class="dc-row"><span class="dc-label">متوسط السعر</span><span class="dc-val">{{ d.avg_rate|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">{% if d.lyd_surplus < 0 %}عجز الأرصدة (ليبي){% else %}فائض الأرصدة (ليبي){% endif %}</span><span class="dc-val" style="color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</span></div>
+            <div class="dc-row dc-profit-row"><span class="dc-label">إجمالي الربح (ليبي)</span><span class="dc-val" style="color:{% if d.profit >= 0 %}#059669{% else %}#dc2626{% endif %}">{% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}</span></div>
         </div>
         {% endfor %}
     </div>
@@ -280,6 +281,15 @@ function showView(v){
     document.getElementById('cardsView').style.display = v==='cards'?'block':'none';
     document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
     event.target.closest('.toggle-btn').classList.add('active');
+}
+function printProfitCard(button){
+    var card=button.closest('.detail-card');
+    var printWindow=window.open('','_blank','width=720,height=700');
+    if(!printWindow){ alert('يرجى السماح بالنوافذ المنبثقة للطباعة'); return; }
+    printWindow.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>تقرير الربح</title><style>body{font-family:Cairo,Arial,sans-serif;padding:30px;background:#fff;color:#1f2937}.detail-card{max-width:620px;margin:0 auto;border:1px solid #d1d5db;border-right:4px solid #059669;border-radius:14px;padding:20px;box-shadow:none}.dc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.dc-month{font-weight:800;font-size:1.2rem}.dc-profit{font-weight:800;font-size:1.2rem}.dc-row{display:flex;justify-content:space-between;padding:9px 0;font-size:.95rem;border-bottom:1px dashed #e5e7eb}.dc-val{font-weight:700}.dc-profit-row{border-top:1px solid #d1fae5;padding-top:12px;margin-top:4px}.dc-print{display:none!important}</style></head><body>'+card.outerHTML+'</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload=function(){printWindow.print();printWindow.close();};
 }
 </script>
 {% endblock %}
