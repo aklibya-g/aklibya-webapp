@@ -631,6 +631,8 @@ def home(request):
     # client balances list, so the dashboard summary cannot disagree with
     # the individual balances because of unmatched or carryover records.
     remaining_egp = total_egp_clients
+    coverage_rate = round((db_total_egp / cap_total_egp) * 100, 1) if cap_total_egp else 0
+    coverage_rate = min(coverage_rate, 100)
 
     latest = list(Database.objects.order_by("-date")[:10])
     latest_capital = list(Capital.objects.select_related("client", "from_source").order_by("-date")[:10])
@@ -647,6 +649,7 @@ def home(request):
         "cap_total_lyd": cap_total_lyd,
         "cap_avg_rate": cap_avg_rate,
         "remaining_egp": remaining_egp,
+        "coverage_rate": coverage_rate,
         "latest": latest,
         "latest_capital": latest_capital,
         "clients": clients,

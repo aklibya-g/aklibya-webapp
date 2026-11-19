@@ -58,7 +58,7 @@
     </style>
     {% endif %}
 
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-3 dashboard-kpis">
         <div class="col-md-3">
             <div class="dash-card card-blue p-3">
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -112,6 +112,45 @@
             </div>
         </div>
     </div>
+
+    <!-- Compact financial analysis -->
+    <section class="financial-analysis mb-4">
+        <div class="analysis-heading">
+            <div>
+                <span class="analysis-kicker">التحليل المالي</span>
+                <h6>ملخص حركة السيولة</h6>
+            </div>
+            <span class="analysis-period"><i class="bi bi-calendar3"></i> إجمالي السجلات الحالية</span>
+        </div>
+        <div class="analysis-grid">
+            <div class="analysis-item">
+                <span class="analysis-label"><i class="bi bi-box-arrow-in-down"></i> الأرصدة الداخلة</span>
+                <strong class="analysis-value positive">{{ cap_total_egp|fmt }} <small>EGP</small></strong>
+                <span class="analysis-note">{{ cap_count }} عملية إيداع</span>
+            </div>
+            <div class="analysis-item">
+                <span class="analysis-label"><i class="bi bi-arrow-up-left"></i> الحوالات الخارجة</span>
+                <strong class="analysis-value primary">{{ db_total_egp|fmt }} <small>EGP</small></strong>
+                <span class="analysis-note">{{ db_count }} حوالة مسجلة</span>
+            </div>
+            <div class="analysis-item analysis-net">
+                <span class="analysis-label"><i class="bi bi-wallet2"></i> صافي المركز</span>
+                <strong class="analysis-value {% if remaining_egp < 0 %}negative{% else %}positive{% endif %}">{{ remaining_egp|fmt }} <small>EGP</small></strong>
+                <span class="analysis-note">نسبة الاستخدام {{ coverage_rate|floatformat:"-1" }}%</span>
+            </div>
+            <div class="analysis-item rate-item">
+                <span class="analysis-label"><i class="bi bi-graph-up"></i> متوسط الصرف</span>
+                <strong class="analysis-value primary">{{ avg_rate|floatformat:"-3u" }}</strong>
+                <span class="analysis-note">إيداعات: {{ cap_avg_rate|floatformat:"-3u" }}</span>
+            </div>
+        </div>
+        <div class="analysis-progress">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span>استخدام أرصدة العملاء</span><b>{{ coverage_rate|floatformat:"-1" }}%</b>
+            </div>
+            <div class="progress-track"><span style="width:{{ coverage_rate }}%"></span></div>
+        </div>
+    </section>
 
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-body p-4">
@@ -262,6 +301,30 @@
 .ticker-amount{font-size:1rem;font-weight:900;letter-spacing:-0.5px}
 .ticker-amount.positive{color:#4ade80}
 .ticker-amount.negative{color:#f87171}
+.dashboard-kpis .dash-card{min-height:148px;padding:14px!important;border-radius:12px}
+.dashboard-kpis .dash-icon{width:34px;height:34px;border-radius:9px;font-size:.95rem}
+.dashboard-kpis .dash-title{font-size:.78rem;margin-top:10px}
+.dashboard-kpis .dash-value{font-size:1.28rem;white-space:nowrap}
+.dashboard-kpis .dash-unit{font-size:.62rem}
+.dashboard-kpis .dash-sub{font-size:.7rem}
+.dashboard-kpis .dash-badge{font-size:.65rem;padding:2px 8px}
+.dashboard-kpis [style*="margin-top:10px"]{margin-top:7px!important;padding-top:7px!important}
+.dashboard-kpis [style*="font-size:1rem"]{font-size:.86rem!important;padding:3px 9px!important}
+.financial-analysis{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+.analysis-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--card-border)}
+.analysis-heading h6{margin:2px 0 0;color:var(--text);font-size:.95rem;font-weight:800}
+.analysis-kicker{color:var(--primary);font-size:.68rem;font-weight:800;letter-spacing:.4px}
+.analysis-period{color:var(--text-muted);font-size:.7rem}.analysis-period i{margin-left:4px;color:var(--primary)}
+.analysis-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.analysis-item{min-width:0;padding:11px 12px;background:var(--bg);border:1px solid var(--card-border);border-radius:10px}
+.analysis-label{display:block;color:var(--text-muted);font-size:.72rem;font-weight:700;margin-bottom:7px;white-space:nowrap}
+.analysis-label i{color:var(--primary);margin-left:4px}.analysis-value{display:block;font-size:1.05rem;line-height:1.25;white-space:nowrap}.analysis-value small{font-size:.58rem;font-weight:700;color:var(--text-muted)}
+.analysis-value.positive{color:var(--success)}.analysis-value.negative{color:var(--danger)}.analysis-value.primary{color:var(--primary)}
+.analysis-note{display:block;color:var(--text-muted);font-size:.65rem;margin-top:5px}
+.analysis-progress{margin-top:13px;color:var(--text-muted);font-size:.68rem}.analysis-progress b{color:var(--primary)}
+.progress-track{height:6px;background:var(--card-border);border-radius:8px;overflow:hidden}.progress-track span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--success));border-radius:8px}
+@media(max-width:900px){.analysis-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis .dash-value{font-size:1.12rem}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 </style>
 {% endblock %}
