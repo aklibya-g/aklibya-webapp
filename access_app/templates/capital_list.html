@@ -180,6 +180,7 @@ function printPage() {
     html += 'tbody tr:nth-child(even){background:#f0fdf4}';
      html += '.total-summary{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;background:#d1fae5;font-weight:800;border-top:2px solid #059669;margin-top:0;padding:10px 6px;font-size:9.5pt;text-align:center;break-inside:avoid;page-break-inside:avoid}';
      html += '.total-summary .label{text-align:right;font-size:11pt}.total-summary .egp{color:#059669;font-size:11pt}.total-summary .lyd{color:#1e40af;font-size:11pt}';
+     html += '.top-summary{margin:0 0 12px;border:1px solid #86c9a3;border-radius:8px;border-top:2px solid #059669}.top-summary .label{text-align:center}';
     html += '.footer{margin-top:16px;text-align:center;font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px}';
     html += '.btn-print{display:inline-block;padding:10px 30px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12pt;cursor:pointer;font-weight:700;margin-top:14px}';
     html += '.scroll-nav{position:fixed;z-index:9999;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;font-size:1.2rem;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:all .2s;opacity:.85}';
@@ -190,8 +191,9 @@ function printPage() {
     html += '</style></head><body>';
 
     html += '<div class="header"><img src="' + window.location.origin + '{{ company_logo_url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #059669"><h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1><div class="sub">تقرير الأرصدة' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
-    html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
-    html += '<span>عدد السجلات: ' + displayCount + '</span></div>';
+     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
+     html += '<span>عدد السجلات: ' + displayCount + '</span></div>';
+     html += '<div class="total-summary top-summary"><div class="label">المحصلة</div><div class="egp">' + totalEGPServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + ' EGP</div><div class="lyd">' + totalLYDServer.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + ' LYD</div></div>';
 
      html += '<table><thead><tr><th>#</th><th>التاريخ</th><th>المبلغ مصري</th><th>سعر الصرف</th><th>المبلغ ليبي</th><th>النوع</th><th>العميل</th></tr></thead><tbody>';
 
@@ -216,7 +218,7 @@ function printPage() {
     });
 
      html += '</tbody></table>';
-     html += '<div class="total-summary"><div class="label">الإجمالي</div><div class="egp">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div><div class="lyd">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + '</div></div>';
+      html += '<div class="total-summary"><div class="label">الإجمالي النهائي</div><div class="egp">' + sumEGP.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + ' EGP</div><div class="lyd">' + sumLYD.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:3}) + ' LYD</div></div>';
 
     html += '<div class="footer">{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — طباعة: ' + new Date().toLocaleString('ar-LY') + '</div>';
     html += '<div style="text-align:center" id="printBtnWrap"><button class="btn-print" onclick="window.print()" style="display:none">طباعة</button></div>';
