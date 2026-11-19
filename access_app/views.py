@@ -647,7 +647,7 @@ def home(request):
         month_rate = round(month_cap_egp / month_cap_lyd, 3) if month_cap_lyd else 0
         month_egp_surplus = month_cap_egp - month_db_egp
         month_lyd_surplus = month_cap_lyd - month_db_lyd
-        month_profit = (month_egp_surplus / month_rate - month_lyd_surplus) if month_rate else 0
+        month_profit = (month_lyd_surplus - month_egp_surplus / month_rate) if month_rate else 0
         monthly_financial.append({
             "month": month_name,
             "deposits": round(month_cap_egp, 2),
@@ -719,7 +719,7 @@ def home(request):
             day_cap_egp = float(cap_day.aggregate(t=Sum("cash_in"))["t"] or 0)
             day_cap_lyd = float(cap_day.aggregate(t=Sum("libyan_cash"))["t"] or 0)
             day_rate = round(day_cap_egp / day_cap_lyd, 3) if day_cap_lyd else 0
-            day_profit = ((day_cap_egp - day_db_egp) / day_rate - (day_cap_lyd - day_db_lyd)) if day_rate else 0
+            day_profit = ((day_cap_lyd - day_db_lyd) - (day_cap_egp - day_db_egp) / day_rate) if day_rate else 0
             profit_chart_data.append({
                 "month": cursor.strftime("%d/%m"),
                 "deposits": round(day_cap_egp, 2),
@@ -2094,7 +2094,7 @@ def profits_report(request):
         egypt_surplus_egp = cap_egp - db_egp
         egypt_surplus_lyd = egypt_surplus_egp / avg_rate if avg_rate else 0
         lyd_surplus = cap_lyd - db_lyd
-        profit = egypt_surplus_lyd - lyd_surplus if avg_rate else 0
+        profit = lyd_surplus - egypt_surplus_lyd if avg_rate else 0
 
         total_db_egp += db_egp
         total_db_lyd += db_lyd
@@ -2265,7 +2265,7 @@ def export_profits_report(request):
         egypt_surplus_egp = cap_egp - db_egp
         egypt_surplus_lyd = egypt_surplus_egp / avg_rate if avg_rate else 0
         lyd_surplus = cap_lyd - db_lyd
-        profit = egypt_surplus_lyd - lyd_surplus if avg_rate else 0
+        profit = lyd_surplus - egypt_surplus_lyd if avg_rate else 0
 
         total_db_egp += db_egp
         total_db_lyd += db_lyd

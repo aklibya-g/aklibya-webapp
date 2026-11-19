@@ -160,6 +160,7 @@
             </div>
             <div class="chart-tools">
                 <span class="chart-legend"><i class="legend-profit"></i> الأرباح <i class="legend-flow"></i> التحويلات</span>
+                <button type="button" class="profit-print-btn" onclick="printProfitIndicator()"><i class="bi bi-printer"></i> طباعة المؤشر</button>
                 <form method="get" class="profit-filter">
                     <input type="date" name="profit_from" value="{{ profit_from }}" title="من يوم">
                     <input type="date" name="profit_to" value="{{ profit_to }}" title="إلى يوم">
@@ -318,6 +319,11 @@ document.addEventListener('DOMContentLoaded', function(){
     var flowCanvas=document.getElementById('cashFlowChart');
     if(flowCanvas && window.Chart) new Chart(flowCanvas,{type:'bar',data:{labels:labels,datasets:[{label:'الإيداعات',data:data.map(function(x){return x.deposits;}),backgroundColor:'rgba(16,185,129,.72)',borderRadius:5},{label:'الحوالات',data:data.map(function(x){return x.transfers; }),backgroundColor:'rgba(59,130,246,.72)',borderRadius:5}]},options:{...common,plugins:{...common.plugins,legend:{display:true,position:'top',rtl:true,labels:{usePointStyle:true,font:{family:'Cairo',size:10},color:'#64748b'}}}}});
 });
+function printProfitIndicator(){
+    document.body.classList.add('print-profit-indicator');
+    window.print();
+    window.addEventListener('afterprint',function(){document.body.classList.remove('print-profit-indicator');},{once:true});
+}
 </script>
 <style>
 .dash-card { border:none; border-radius:14px; transition:all 0.3s; cursor:default; }
@@ -370,6 +376,7 @@ document.addEventListener('DOMContentLoaded', function(){
 .charts-heading{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid rgba(125,211,252,.16)}
 .charts-heading h6{margin:2px 0 0;color:#f8fafc;font-size:.95rem;font-weight:800}.charts-heading .analysis-kicker{color:#67e8f9}.chart-legend{font-size:.68rem;color:#cbd5e1;display:flex;align-items:center;gap:5px}.chart-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}.legend-profit{background:#22d3ee;box-shadow:0 0 8px #22d3ee}.legend-flow{background:#34d399;box-shadow:0 0 8px #34d399}
 .chart-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.profit-filter{display:flex;align-items:center;gap:4px}.profit-filter input,.profit-filter select{height:28px;border:1px solid var(--card-border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit;font-size:.66rem;padding:3px 5px}.profit-filter input[type=number]{width:68px}.profit-filter input[type=date]{width:116px}.profit-filter select{width:58px}.profit-filter button,.profit-filter a{height:28px;min-width:28px;border:1px solid var(--primary);border-radius:6px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:.75rem;cursor:pointer}.profit-filter a{background:transparent;color:var(--danger);border-color:var(--danger);font-size:1rem}
+.profit-print-btn{height:28px;border:1px solid rgba(103,232,249,.55);border-radius:6px;background:rgba(8,47,73,.8);color:#cffafe;font-family:inherit;font-size:.68rem;padding:3px 9px;cursor:pointer}.profit-print-btn:hover{background:#0e7490;color:#fff}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chart-card{height:235px;padding:8px 10px;background:rgba(2,8,23,.48);border:1px solid rgba(125,211,252,.15);border-radius:10px;position:relative}.chart-card canvas{width:100%!important;height:100%!important}
 .insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.insight-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--card-border)}.insight-card i{font-size:1.2rem;color:var(--primary)}.insight-card span{display:block;color:var(--text-muted);font-size:.65rem}.insight-card strong{display:block;color:var(--text);font-size:.78rem;margin-top:3px}.insight-best i{color:#d97706}.insight-low i{color:#dc2626}.insight-driver i{color:#0ea5e9}.insight-total i{color:#059669}
 .charts-panel .insight-card{background:rgba(15,35,55,.72);border-color:rgba(125,211,252,.15)}.charts-panel .insight-card span{color:#94a3b8}.charts-panel .insight-card strong{color:#f8fafc}
@@ -377,6 +384,7 @@ document.addEventListener('DOMContentLoaded', function(){
 @media(max-width:1000px){.insight-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.charts-grid,.insight-grid{grid-template-columns:1fr}.charts-heading{align-items:flex-start;gap:8px;flex-direction:column}.chart-tools{justify-content:flex-start}.chart-card{height:210px}}
 @media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis .dash-card{height:190px;min-height:190px}.dashboard-kpis .dash-value{font-size:1.12rem}}
+@media print{body.print-profit-indicator .page-content>*{display:none!important}body.print-profit-indicator .page-content>.container-fluid{display:block!important}body.print-profit-indicator .page-content>.container-fluid>*{display:none!important}body.print-profit-indicator .page-content>.container-fluid .charts-panel{display:block!important;box-shadow:none!important;border:1px solid #64748b!important;background:#07111e!important;color:#fff!important}body.print-profit-indicator .charts-panel .profit-filter,body.print-profit-indicator .charts-panel .profit-print-btn{display:none!important}body.print-profit-indicator .charts-panel .chart-card{height:300px;background:#0b1726!important}body.print-profit-indicator .charts-panel .insight-card{background:#10253a!important;color:#fff!important}@page{size:landscape;margin:10mm}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 </style>
 {% endblock %}
