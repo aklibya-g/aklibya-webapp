@@ -268,7 +268,8 @@
             <div class="dc-row"><span class="dc-label">إجمالي الأرصدة (مصري)</span><span class="dc-val">{{ d.cap_egp|fmt }}</span></div>
             <div class="dc-row"><span class="dc-label">إجمالي الحوالات (مصري)</span><span class="dc-val">{{ d.db_egp|fmt }}</span></div>
             <div class="dc-row"><span class="dc-label">الفرق بينهما (مصري)</span><span class="dc-val" style="color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_surplus|fmt }}</span></div>
-            <div class="dc-row"><span class="dc-label">متوسط السعر</span><span class="dc-val">{{ d.avg_rate|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">متوسط سعر الأرصدة</span><span class="dc-val">{{ d.cap_avg_rate|fmt }}</span></div>
+            <div class="dc-row"><span class="dc-label">متوسط سعر الحوالات</span><span class="dc-val">{{ d.db_avg_rate|fmt }}</span></div>
             <div class="dc-row"><span class="dc-label">{% if d.lyd_surplus < 0 %}عجز الأرصدة (ليبي){% else %}فائض الأرصدة (ليبي){% endif %}</span><span class="dc-val" style="color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</span></div>
             <div class="dc-row dc-profit-row"><span class="dc-label">إجمالي الربح (ليبي)</span><span class="dc-val" style="color:{% if d.profit >= 0 %}#059669{% else %}#dc2626{% endif %}">{% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}</span></div>
         </div>
