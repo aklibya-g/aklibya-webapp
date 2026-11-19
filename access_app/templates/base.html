@@ -246,6 +246,19 @@
          body:not(.dark):not(.soft):not(.green):not(.blue):not(.beige):not(.purple) #sidebar .sidebar-footer .nav-item { color:#111827!important; text-shadow:none; }
          body:not(.dark):not(.soft):not(.green):not(.blue):not(.beige):not(.purple) #sidebar .nav-section { color:#111827!important; font-weight:800!important; text-shadow:none; }
          body:not(.dark):not(.soft):not(.green):not(.blue):not(.beige):not(.purple) #sidebar .nav-item i { color:var(--primary)!important; }
+         /* The themed section cards are light in these themes, so their
+            labels must be dark even though the outer sidebar is dark. */
+         body.soft #sidebar .sec-box .nav-item:not(.active), body.soft #sidebar .sec-box .nav-section,
+         body.green #sidebar .sec-box .nav-item:not(.active), body.green #sidebar .sec-box .nav-section,
+         body.blue #sidebar .sec-box .nav-item:not(.active), body.blue #sidebar .sec-box .nav-section,
+         body.beige #sidebar .sec-box .nav-item:not(.active), body.beige #sidebar .sec-box .nav-section,
+         body.purple #sidebar .sec-box .nav-item:not(.active), body.purple #sidebar .sec-box .nav-section { color:#111827!important; text-shadow:none; }
+         body.soft #sidebar .sec-box .nav-item i, body.green #sidebar .sec-box .nav-item i,
+         body.blue #sidebar .sec-box .nav-item i, body.beige #sidebar .sec-box .nav-item i,
+         body.purple #sidebar .sec-box .nav-item i { color:var(--primary)!important; }
+         body.soft #sidebar .sec-box .nav-item:hover, body.green #sidebar .sec-box .nav-item:hover,
+         body.blue #sidebar .sec-box .nav-item:hover, body.beige #sidebar .sec-box .nav-item:hover,
+         body.purple #sidebar .sec-box .nav-item:hover { background:var(--card-bg)!important; color:#111827!important; }
          body.font-bold .sidebar .nav-item, body.font-bold .sidebar .nav-section, body.font-bold .sidebar .brand span, body.font-bold .sidebar-footer .nav-item { font-weight:800!important; }
          body.font-bold .page-content, body.font-bold .topbar { font-weight:600; }
     </style>
