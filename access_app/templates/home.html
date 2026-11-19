@@ -177,7 +177,7 @@
         </div>
         <div class="daily-extremes">
             <div class="extreme-item extreme-best"><i class="bi bi-arrow-up-circle-fill"></i><div><span>أعلى يوم ربحًا</span><strong>{{ peak_profit_day.month }} <b>{{ peak_profit_day.profit|fmt }} LYD</b></strong></div></div>
-            <div class="extreme-item extreme-loss"><i class="bi bi-arrow-down-circle-fill"></i><div><span>أكبر يوم خسارة</span><strong>{{ loss_profit_day.month }} <b>{{ loss_profit_day.profit|fmt }} LYD</b></strong></div></div>
+            <div class="extreme-item extreme-loss"><i class="bi bi-arrow-down-circle-fill"></i><div><span>أكبر يوم خسارة</span><strong>{% if loss_profit_day.profit < 0 %}{{ loss_profit_day.month }} <b>{{ loss_profit_day.profit|fmt }} LYD</b>{% else %}لا توجد خسارة{% endif %}</strong></div></div>
         </div>
         <div class="insight-grid">
             <div class="insight-card insight-best"><i class="bi bi-trophy"></i><div><span>أعلى ربح</span><strong>{{ best_month.month }} · {{ best_month.profit|fmt }} LYD</strong></div></div>

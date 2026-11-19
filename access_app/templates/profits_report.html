@@ -123,7 +123,7 @@
 
 <div class="report-insights">
     <div class="report-insight best"><i class="bi bi-arrow-up-circle-fill"></i><div><span>أعلى يوم ربحًا</span><strong>{{ peak_profit_day.month_name }} <b>{{ peak_profit_day.profit|fmt }} LYD</b></strong></div></div>
-    <div class="report-insight loss"><i class="bi bi-arrow-down-circle-fill"></i><div><span>أكبر يوم خسارة</span><strong>{{ loss_profit_day.month_name }} <b>{{ loss_profit_day.profit|fmt }} LYD</b></strong></div></div>
+    <div class="report-insight loss"><i class="bi bi-arrow-down-circle-fill"></i><div><span>أكبر يوم خسارة</span><strong>{% if loss_profit_day.profit < 0 %}{{ loss_profit_day.month_name }} <b>{{ loss_profit_day.profit|fmt }} LYD</b>{% else %}لا توجد خسارة{% endif %}</strong></div></div>
     <div class="report-insight top"><i class="bi bi-trophy"></i><div><span>أعلى ربح</span><strong>{{ best_month.month_name }} · {{ best_month.profit|fmt }} LYD</strong></div></div>
     <div class="report-insight low"><i class="bi bi-graph-down-arrow"></i><div><span>أقل أداء</span><strong>{{ worst_month.month_name }} · {{ worst_month.profit|fmt }} LYD</strong></div></div>
     <div class="report-insight driver"><i class="bi bi-lightbulb"></i><div><span>القراءة الأولية للمحرك</span><strong>{{ profit_driver }}</strong></div></div>
