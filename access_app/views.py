@@ -2141,6 +2141,21 @@ def profits_report(request):
     total_db_avg_rate = round(total_db_egp / total_db_lyd, 3) if total_db_lyd else 0
     total_cap_avg_rate = round(total_cap_egp / total_cap_lyd, 3) if total_cap_lyd else 0
     total_egp_balance = total_cap_egp - total_db_egp
+    active_profit_periods = [item for item in data if item["cap_egp"] or item["db_egp"]]
+    best_profit_period = max(active_profit_periods, key=lambda item: item["profit"]) if active_profit_periods else {"month_name": "-", "profit": 0}
+    worst_profit_period = min(active_profit_periods, key=lambda item: item["profit"]) if active_profit_periods else {"month_name": "-", "profit": 0}
+    profit_period_average = round(total_profit / len(active_profit_periods), 2) if active_profit_periods else 0
+    profit_driver = "توازن حجم التحويلات مع سعر الصرف"
+    if active_profit_periods:
+        average_transfers = sum(float(item["db_egp"]) for item in active_profit_periods) / len(active_profit_periods)
+        average_rate = sum(float(item["avg_rate"]) for item in active_profit_periods if item["avg_rate"]) / max(1, len([item for item in active_profit_periods if item["avg_rate"]]))
+        driver_bits = []
+        if float(best_profit_period["db_egp"]) > average_transfers * 1.1:
+            driver_bits.append("ارتفاع حجم التحويلات")
+        if average_rate and float(best_profit_period["avg_rate"]) < average_rate * 0.98:
+            driver_bits.append("انخفاض متوسط سعر الصرف")
+        if driver_bits:
+            profit_driver = " و ".join(driver_bits)
 
     return render(request, "profits_report.html", {
         "title": "تقرير الأرباح",
@@ -2162,6 +2177,12 @@ def profits_report(request):
         "total_db_avg_rate": total_db_avg_rate,
         "total_cap_avg_rate": total_cap_avg_rate,
         "total_profit": total_profit,
+        "peak_profit_day": best_profit_period,
+        "loss_profit_day": worst_profit_period,
+        "best_month": best_profit_period,
+        "worst_month": worst_profit_period,
+        "profit_period_average": profit_period_average,
+        "profit_driver": profit_driver,
     })
 
 

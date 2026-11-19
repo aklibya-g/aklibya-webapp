@@ -69,6 +69,7 @@
 .toggle-btn{padding:7px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
 .toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
 .toggle-btn:hover:not(.active){background:#f3f4f6}
+.report-insights{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 24px}.report-insight{display:flex;align-items:center;gap:10px;padding:12px 15px;border:1px solid #dbe3ec;border-radius:12px;background:#f8fafc}.report-insight i{font-size:1.35rem}.report-insight span{display:block;color:#6b7280;font-size:.7rem}.report-insight strong{display:block;color:#1f2937;font-size:.82rem;margin-top:3px}.report-insight b{margin-right:8px}.report-insight.best i,.report-insight.best b{color:#059669}.report-insight.loss i,.report-insight.loss b{color:#dc2626}.report-insight.top i{color:#d97706}.report-insight.low i{color:#dc2626}.report-insight.driver i{color:#0284c7}.report-insight.total i{color:#059669}
 @media print{@page{size:landscape;margin:8mm}.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-card,.btn-filter,.btn-print,.toggle-view{display:none!important}.main-area{margin-right:0!important}.page-content{padding:8px!important}.profit-header{background:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 20px}.print-logo{display:block!important;text-align:center;margin-bottom:12px}.print-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #fff}.summary-cards{grid-template-columns:repeat(4,1fr);gap:10px}.s-card{box-shadow:none!important;border:1px solid #ccc;padding:10px}.table-card{box-shadow:none!important;border:1px solid #ccc}.monthly-detail{display:none!important}.profit-table{table-layout:auto!important;width:100%!important}.profit-table thead th{background:#f0fdf0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt!important;padding:5px 3px!important}.profit-table tbody td,.profit-table tfoot td{font-size:7pt!important;padding:5px 3px!important;border:1px solid #aeb8c2!important}.profit-table tfoot td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.formula-box{display:none!important}}
 @media(max-width:992px){.summary-cards{grid-template-columns:repeat(2,1fr)}.monthly-detail{grid-template-columns:1fr}}
 @media(max-width:576px){.summary-cards{grid-template-columns:1fr}}
@@ -118,6 +119,15 @@
         <div class="s-value">{{ total_egp_balance|fmt }}</div>
         <div class="s-sub">EGP — الفرق بين إجمالي الأرصدة والحوالات</div>
     </div>
+</div>
+
+<div class="report-insights">
+    <div class="report-insight best"><i class="bi bi-arrow-up-circle-fill"></i><div><span>أعلى يوم ربحًا</span><strong>{{ peak_profit_day.month_name }} <b>{{ peak_profit_day.profit|fmt }} LYD</b></strong></div></div>
+    <div class="report-insight loss"><i class="bi bi-arrow-down-circle-fill"></i><div><span>أكبر يوم خسارة</span><strong>{{ loss_profit_day.month_name }} <b>{{ loss_profit_day.profit|fmt }} LYD</b></strong></div></div>
+    <div class="report-insight top"><i class="bi bi-trophy"></i><div><span>أعلى ربح</span><strong>{{ best_month.month_name }} · {{ best_month.profit|fmt }} LYD</strong></div></div>
+    <div class="report-insight low"><i class="bi bi-graph-down-arrow"></i><div><span>أقل أداء</span><strong>{{ worst_month.month_name }} · {{ worst_month.profit|fmt }} LYD</strong></div></div>
+    <div class="report-insight driver"><i class="bi bi-lightbulb"></i><div><span>القراءة الأولية للمحرك</span><strong>{{ profit_driver }}</strong></div></div>
+    <div class="report-insight total"><i class="bi bi-calculator"></i><div><span>إجمالي ربح الفترة / المتوسط</span><strong>{{ total_profit|fmt }} / {{ profit_period_average|fmt }} LYD</strong></div></div>
 </div>
 
 <div class="filter-card">
