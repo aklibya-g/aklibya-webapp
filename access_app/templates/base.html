@@ -221,6 +221,22 @@
          .sidebar .sidebar-footer { background:var(--card-bg); border-top:1px solid var(--card-border); }
          .sidebar .sidebar-footer .nav-item { color:var(--sidebar-text)!important; }
          .topbar .topbar-actions .btn-icon.active { background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 3px 10px rgba(79,70,229,.25); }
+         /* Strong contrast for dark themes: light text on dark cards. */
+         body.dark .sidebar .nav-item:not(.active), body.dark .sidebar .sidebar-footer .nav-item,
+         body.soft .sidebar .nav-item:not(.active), body.soft .sidebar .sidebar-footer .nav-item,
+         body.green .sidebar .nav-item:not(.active), body.green .sidebar .sidebar-footer .nav-item,
+         body.blue .sidebar .nav-item:not(.active), body.blue .sidebar .sidebar-footer .nav-item,
+         body.beige .sidebar .nav-item:not(.active), body.beige .sidebar .sidebar-footer .nav-item,
+         body.purple .sidebar .nav-item:not(.active), body.purple .sidebar .sidebar-footer .nav-item { color:#f1f5f9!important; text-shadow:0 1px 1px rgba(0,0,0,.22); }
+         body.dark .sidebar .nav-section, body.soft .sidebar .nav-section,
+         body.green .sidebar .nav-section, body.blue .sidebar .nav-section,
+         body.beige .sidebar .nav-section, body.purple .sidebar .nav-section { color:#e2e8f0!important; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+         body.dark .sidebar .nav-item i, body.soft .sidebar .nav-item i,
+         body.green .sidebar .nav-item i, body.blue .sidebar .nav-item i,
+         body.beige .sidebar .nav-item i, body.purple .sidebar .nav-item i { color:#c4b5fd; }
+         body.dark .sidebar .nav-item:hover, body.soft .sidebar .nav-item:hover,
+         body.green .sidebar .nav-item:hover, body.blue .sidebar .nav-item:hover,
+         body.beige .sidebar .nav-item:hover, body.purple .sidebar .nav-item:hover { color:#fff!important; }
          body.font-bold .sidebar .nav-item, body.font-bold .sidebar .nav-section, body.font-bold .sidebar .brand span, body.font-bold .sidebar-footer .nav-item { font-weight:800!important; }
          body.font-bold .page-content, body.font-bold .topbar { font-weight:600; }
     </style>
