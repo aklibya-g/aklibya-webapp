@@ -2023,6 +2023,8 @@ def profits_report(request):
     year = request.GET.get("year", "")
     month_from = request.GET.get("month_from", "")
     month_to = request.GET.get("month_to", "")
+    date_from_raw = request.GET.get("date_from", "").strip()
+    date_to_raw = request.GET.get("date_to", "").strip()
 
     if not year:
         year = datetime.now().year
@@ -2044,6 +2046,29 @@ def profits_report(request):
         9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر",
     }
 
+    try:
+        date_from = datetime.strptime(date_from_raw, "%Y-%m-%d").date() if date_from_raw else None
+        date_to = datetime.strptime(date_to_raw, "%Y-%m-%d").date() if date_to_raw else None
+    except ValueError:
+        date_from, date_to = None, None
+    if date_from and not date_to:
+        date_to = date_from
+    if date_to and not date_from:
+        date_from = date_to
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+    if date_from and date_to:
+        periods = []
+        cursor = date_from.replace(day=1)
+        end_month = date_to.replace(day=1)
+        while cursor <= end_month:
+            periods.append((cursor.year, cursor.month))
+            cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
+        year = date_from.year
+        month_from, month_to = date_from.month, date_to.month
+    else:
+        periods = [(year, m) for m in range(month_from, month_to + 1)]
+
     data = []
     total_profit = 0
     total_db_egp = 0
@@ -2053,9 +2078,12 @@ def profits_report(request):
     total_egp_to_lyd = 0
     total_lyd_surplus = 0
 
-    for m in range(month_from, month_to + 1):
-        tx_qs = Database.objects.filter(date__year=year, date__month=m)
-        cap_qs = Capital.objects.filter(date__year=year, date__month=m)
+    for period_year, m in periods:
+        tx_qs = Database.objects.filter(date__year=period_year, date__month=m)
+        cap_qs = Capital.objects.filter(date__year=period_year, date__month=m)
+        if date_from and date_to:
+            tx_qs = tx_qs.filter(date__gte=date_from, date__lte=date_to)
+            cap_qs = cap_qs.filter(date__gte=date_from, date__lte=date_to)
 
         db_egp = tx_qs.aggregate(t=Sum("transfered_amount"))["t"] or 0
         db_lyd = tx_qs.aggregate(t=Sum("transfer_amount"))["t"] or 0
@@ -2081,7 +2109,7 @@ def profits_report(request):
 
         data.append({
             "month": m,
-            "month_name": month_names[m],
+            "month_name": f"{month_names[m]} {period_year}" if len({p[0] for p in periods}) > 1 else month_names[m],
             "db_egp": db_egp,
             "db_lyd": db_lyd,
             "cap_egp": cap_egp,
@@ -2112,6 +2140,8 @@ def profits_report(request):
         "year": year,
         "month_from": month_from,
         "month_to": month_to,
+        "date_from": date_from_raw,
+        "date_to": date_to_raw,
         "years": years,
         "months": months,
         "total_db_egp": total_db_egp,
@@ -2136,6 +2166,28 @@ def export_profits_report(request):
     year = int(request.GET.get("year", datetime.now().year))
     month_from = int(request.GET.get("month_from", 1))
     month_to = int(request.GET.get("month_to", 12))
+    date_from_raw = request.GET.get("date_from", "").strip()
+    date_to_raw = request.GET.get("date_to", "").strip()
+    try:
+        date_from = datetime.strptime(date_from_raw, "%Y-%m-%d").date() if date_from_raw else None
+        date_to = datetime.strptime(date_to_raw, "%Y-%m-%d").date() if date_to_raw else None
+    except ValueError:
+        date_from, date_to = None, None
+    if date_from and not date_to:
+        date_to = date_from
+    if date_to and not date_from:
+        date_from = date_to
+    if date_from and date_to and date_from > date_to:
+        date_from, date_to = date_to, date_from
+    if date_from and date_to:
+        periods = []
+        cursor = date_from.replace(day=1)
+        end_month = date_to.replace(day=1)
+        while cursor <= end_month:
+            periods.append((cursor.year, cursor.month))
+            cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
+    else:
+        periods = [(year, m) for m in range(month_from, month_to + 1)]
 
     month_names = {
         1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل",
@@ -2152,7 +2204,8 @@ def export_profits_report(request):
     header_font = Font(name="Cairo", size=14, bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="065f46", end_color="065f46", fill_type="solid")
     ws.merge_cells("A1:L1")
-    ws["A1"] = f"تقرير الأرباح — الفترة من {month_from_name} الى {month_to_name} {year}"
+    period_label = f"من {date_from_raw} إلى {date_to_raw}" if date_from and date_to else f"من {month_from_name} الى {month_to_name} {year}"
+    ws["A1"] = f"تقرير الأرباح — الفترة {period_label}"
     ws["A1"].font = header_font
     ws["A1"].fill = header_fill
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
@@ -2196,9 +2249,12 @@ def export_profits_report(request):
     profit_pos_font = Font(name="Cairo", size=10, bold=True, color="059669")
     profit_neg_font = Font(name="Cairo", size=10, bold=True, color="dc2626")
 
-    for m in range(month_from, month_to + 1):
-        tx_qs = Database.objects.filter(date__year=year, date__month=m)
-        cap_qs = Capital.objects.filter(date__year=year, date__month=m)
+    for period_year, m in periods:
+        tx_qs = Database.objects.filter(date__year=period_year, date__month=m)
+        cap_qs = Capital.objects.filter(date__year=period_year, date__month=m)
+        if date_from and date_to:
+            tx_qs = tx_qs.filter(date__gte=date_from, date__lte=date_to)
+            cap_qs = cap_qs.filter(date__gte=date_from, date__lte=date_to)
 
         db_egp = tx_qs.aggregate(t=Sum("transfered_amount"))["t"] or 0
         db_lyd = tx_qs.aggregate(t=Sum("transfer_amount"))["t"] or 0
@@ -2219,7 +2275,8 @@ def export_profits_report(request):
         total_lyd_surplus += lyd_surplus
         total_profit += profit
 
-        row_data = [m, month_names[m], cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), round(db_egp / db_lyd, 3) if db_lyd else 0, round(cap_egp / cap_lyd, 3) if cap_lyd else 0, avg_rate, round(profit, 2)]
+        row_label = f"{month_names[m]} {period_year}" if len({p[0] for p in periods}) > 1 else month_names[m]
+        row_data = [m, row_label, cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), round(db_egp / db_lyd, 3) if db_lyd else 0, round(cap_egp / cap_lyd, 3) if cap_lyd else 0, avg_rate, round(profit, 2)]
         for col_idx, val in enumerate(row_data, 1):
             cell = ws.cell(row=row, column=col_idx, value=val)
             cell.font = data_font

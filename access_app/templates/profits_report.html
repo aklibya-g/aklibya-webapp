@@ -79,8 +79,8 @@
             <i class="bi bi-graph-up-arrow"></i>
         </div>
         <div>
-            <h2>تقرير الأرباح الشهري</h2>
-            <p>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — {{ year }}</p>
+            <h2>{% if date_from or date_to %}تقرير الأرباح للفترة المحددة{% else %}تقرير الأرباح الشهري{% endif %}</h2>
+            <p>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }} — {{ year }}{% if date_from or date_to %} — {{ date_from }} إلى {{ date_to }}{% endif %}</p>
         </div>
     </div>
 </div>
@@ -122,6 +122,14 @@
 <div class="filter-card">
     <form method="get" class="row g-2 align-items-end">
         <div class="col-md-2">
+            <label class="form-label">من تاريخ</label>
+            <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">إلى تاريخ</label>
+            <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+        </div>
+        <div class="col-md-2">
             <label class="form-label">السنة</label>
             <select name="year" class="form-select">
                 {% for y in years %}
@@ -156,7 +164,7 @@
         </div>
         <div class="col-md-2" style="display:flex;gap:8px">
             <button type="button" onclick="window.print()" style="flex:1;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-printer"></i> طباعة</button>
-            <a href="{% url 'export_profits_report' %}?year={{ year }}&month_from={{ month_from }}&month_to={{ month_to }}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
+            <a href="{% url 'export_profits_report' %}?year={{ year }}&month_from={{ month_from }}&month_to={{ month_to }}&date_from={{ date_from }}&date_to={{ date_to }}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
         </div>
     </form>
 </div>
