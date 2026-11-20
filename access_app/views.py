@@ -2257,6 +2257,7 @@ def profits_report(request):
 
 def export_profits_report(request):
     from datetime import datetime
+    from urllib.parse import quote
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     from django.http import HttpResponse
@@ -2401,9 +2402,16 @@ def export_profits_report(request):
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
-    filename = f"تقرير الارباح عن الفترة من {month_from_name} الى {month_to_name} سنة {year}.xlsx"
+    if date_from and date_to:
+        if date_from == date_to:
+            saved_period = date_from.strftime("%Y-%m-%d")
+        else:
+            saved_period = f"{date_from.strftime('%Y-%m-%d')}_الى_{date_to.strftime('%Y-%m-%d')}"
+    else:
+        saved_period = datetime.now().strftime("%Y-%m-%d")
+    filename = f"تقرير-الأرباح-{saved_period}.xlsx"
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response["Content-Disposition"] = f"attachment; filename=profit-report.xlsx; filename*=UTF-8''{quote(filename)}"
     wb.save(response)
     return response
 
