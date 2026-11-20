@@ -2065,6 +2065,13 @@ def profits_report(request):
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
     if date_from and date_to:
+        if date_from == date_to:
+            report_filename_date = date_from.strftime("%Y-%m-%d")
+        else:
+            report_filename_date = f"{date_from.strftime('%Y-%m-%d')}_الى_{date_to.strftime('%Y-%m-%d')}"
+    else:
+        report_filename_date = datetime.now().strftime("%Y-%m-%d")
+    if date_from and date_to:
         periods = []
         cursor = date_from.replace(day=1)
         end_month = date_to.replace(day=1)
@@ -2242,6 +2249,7 @@ def profits_report(request):
         "month_to": month_to,
         "date_from": date_from_raw,
         "date_to": date_to_raw,
+        "report_filename_date": report_filename_date,
         "years": years,
         "months": months,
         "total_db_egp": total_db_egp,
