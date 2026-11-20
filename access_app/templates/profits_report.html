@@ -339,7 +339,7 @@
 <script>
 document.addEventListener('DOMContentLoaded',function(){
     var items=JSON.parse(document.getElementById('weeklyProfitData').textContent||'[]');
-    var labels=items.map(function(x){return x.month_name;});
+    var labels=items.map(function(x){return x.label;});
     var common={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',rtl:true,labels:{usePointStyle:true,font:{family:'Cairo',size:10},color:'#dbeafe'}},tooltip:{rtl:true,backgroundColor:'#07111e',titleColor:'#fff',bodyColor:'#dbeafe',callbacks:{label:function(c){return ' '+Number(c.raw||0).toLocaleString('en-US',{maximumFractionDigits:2});}}}},scales:{x:{grid:{color:'rgba(125,211,252,.10)'},ticks:{color:'#cbd5e1',font:{family:'Cairo',size:10}}},y:{grid:{color:'rgba(125,211,252,.13)'},ticks:{color:'#cbd5e1',font:{family:'Cairo',size:10},callback:function(v){return Number(v).toLocaleString('en-US');}}}}};
     var profitCanvas=document.getElementById('reportProfitChart');
     if(profitCanvas&&window.Chart)new Chart(profitCanvas,{type:'bar',data:{labels:labels,datasets:[{type:'bar',label:'الأرباح',data:items.map(function(x){return x.profit;}),backgroundColor:'rgba(34,211,238,.72)',borderColor:'#67e8f9',borderWidth:1,borderRadius:4,barPercentage:.62},{type:'line',label:'اتجاه الربح',data:items.map(function(x){return x.profit;}),borderColor:'#a7f3d0',backgroundColor:'rgba(167,243,208,.12)',pointBackgroundColor:'#fef08a',pointBorderColor:'#67e8f9',pointRadius:3,borderWidth:2,fill:true,tension:.35}]},options:common});
