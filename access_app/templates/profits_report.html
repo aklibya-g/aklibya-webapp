@@ -71,10 +71,9 @@
 .toggle-btn:hover:not(.active){background:#f3f4f6}
 .report-insights{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 24px}.report-insight{display:flex;align-items:center;gap:10px;padding:12px 15px;border:1px solid #dbe3ec;border-radius:12px;background:#f8fafc}.report-insight i{font-size:1.35rem}.report-insight span{display:block;color:#6b7280;font-size:.7rem}.report-insight strong{display:block;color:#1f2937;font-size:.82rem;margin-top:3px}.report-insight b{margin-right:8px}.report-insight.best i,.report-insight.best b{color:#059669}.report-insight.loss i,.report-insight.loss b{color:#dc2626}.report-insight.top i{color:#d97706}.report-insight.low i{color:#dc2626}.report-insight.driver i{color:#0284c7}.report-insight.total i{color:#059669}
 .report-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 24px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#06101d 0%,#0a1b2b 48%,#071525 100%);border:1px solid rgba(103,232,249,.24);box-shadow:0 10px 30px rgba(2,8,23,.28);color:#e0f2fe}.report-chart{height:235px;padding:8px 10px;background:rgba(2,8,23,.48);border:1px solid rgba(125,211,252,.15);border-radius:10px;position:relative}.report-chart canvas{width:100%!important;height:100%!important}
-.daily-report{margin:0 0 24px}.daily-report .table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb}.daily-report .table-header h3{margin:0;font-size:1.05rem;color:#1a1a2e}.daily-report .table-header span{font-size:.78rem;color:#6b7280}.daily-extremes-report{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.daily-extreme{padding:11px 15px;border:1px solid #dbe3ec;border-radius:11px;background:#f8fafc}.daily-extreme span{display:block;color:#6b7280;font-size:.7rem}.daily-extreme strong{display:block;margin-top:4px;font-size:.88rem}.daily-extreme.best strong{color:#059669}.daily-extreme.loss strong{color:#dc2626}
 @media print{@page{size:landscape;margin:8mm}.sidebar,.topbar,.sidebar-footer,.nav-item,.sec-box,.topbar-actions,.filter-card,.btn-filter,.btn-print,.toggle-view{display:none!important}.main-area{margin-right:0!important}.page-content{padding:8px!important}.profit-header{background:#065f46!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:16px 20px}.print-logo{display:block!important;text-align:center;margin-bottom:12px}.print-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #fff}.summary-cards{grid-template-columns:repeat(4,1fr);gap:10px}.s-card{box-shadow:none!important;border:1px solid #ccc;padding:10px}.table-card{box-shadow:none!important;border:1px solid #ccc}.monthly-detail{display:none!important}.profit-table{table-layout:auto!important;width:100%!important}.profit-table thead th{background:#f0fdf0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt!important;padding:5px 3px!important}.profit-table tbody td,.profit-table tfoot td{font-size:7pt!important;padding:5px 3px!important;border:1px solid #aeb8c2!important}.profit-table tfoot td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.formula-box{display:none!important}}
 @media print{.report-charts{background:linear-gradient(135deg,#06101d 0%,#0a1b2b 48%,#071525 100%)!important;border:1px solid rgba(103,232,249,.55)!important;box-shadow:none!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.report-chart{background:#0b1726!important;border:1px solid rgba(125,211,252,.35)!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.report-charts canvas{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
-@media print{#dailyView{break-before:page;page-break-before:always}.daily-report .table-card{break-inside:auto;page-break-inside:auto}#tableView{display:none!important}.daily-profit-table tfoot{display:table-row-group!important}.daily-profit-table tfoot tr{break-inside:avoid;page-break-inside:avoid}.daily-profit-table thead{display:table-header-group}.daily-extremes-report{break-inside:avoid;page-break-inside:avoid}}
+@media print{#tableView{display:block!important;break-before:page;page-break-before:always}.table-card{break-inside:auto;page-break-inside:auto}.profit-table tfoot{display:table-row-group!important}.profit-table tfoot tr{break-inside:avoid;page-break-inside:avoid}.profit-table thead{display:table-header-group}}
 @media(max-width:992px){.summary-cards{grid-template-columns:repeat(2,1fr)}.monthly-detail{grid-template-columns:1fr}.report-charts{grid-template-columns:1fr}}
 @media(max-width:576px){.summary-cards{grid-template-columns:1fr}}
 </style>
@@ -187,44 +186,6 @@
             <a href="{% url 'export_profits_report' %}?year={{ year }}&month_from={{ month_from }}&month_to={{ month_to }}&date_from={{ date_from }}&date_to={{ date_to }}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
         </div>
     </form>
-</div>
-
-<div class="daily-report table-card" id="dailyView">
-    <div class="table-header">
-        <h3><i class="bi bi-calendar2-week"></i> الأرباح اليومية</h3>
-        <span>{{ daily_data|length }} يوم</span>
-    </div>
-    <div style="overflow-x:auto">
-        <table class="profit-table daily-profit-table">
-            <thead><tr>
-                <th>#</th><th>اليوم</th><th>أرصدة مصري</th><th>حوالات مصري</th><th>عجز/فائض مصري</th>
-                <th>أرصدة ليبي</th><th>حوالات ليبي</th><th>عجز/فائض ليبي</th>
-                <th>سعر الأرصدة</th><th>سعر الحوالات</th><th>الربح</th>
-            </tr></thead>
-            <tbody>
-            {% for d in daily_data %}
-            <tr>
-                <td style="color:#9ca3af">{{ forloop.counter }}</td><td class="month-cell">{{ d.day_name }}</td>
-                <td>{{ d.cap_egp|fmt }}</td><td>{{ d.db_egp|fmt }}</td>
-                <td style="color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_surplus|fmt }}</td>
-                <td>{{ d.cap_lyd|fmt }}</td><td>{{ d.db_lyd|fmt }}</td>
-                <td style="color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</td>
-                <td class="rate-cell" style="color:#7c3aed;font-weight:700">{{ d.cap_avg_rate|fmt }}</td>
-                <td class="rate-cell" style="color:#2563eb;font-weight:700">{{ d.db_avg_rate|fmt }}</td>
-                <td class="{% if d.profit >= 0 %}profit-pos{% else %}profit-neg{% endif %}">{% if d.profit >= 0 %}+{% endif %}{{ d.profit|fmt }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-            <tfoot><tr>
-                <td></td><td>الإجمالي</td><td>{{ total_cap_egp|fmt }}</td><td>{{ total_db_egp|fmt }}</td><td>{{ total_egp_balance|fmt }}</td>
-                <td>{{ total_cap_lyd|fmt }}</td><td>{{ total_db_lyd|fmt }}</td><td>{{ total_lyd_surplus|fmt }}</td><td>{{ total_cap_avg_rate|fmt }}</td><td>{{ total_db_avg_rate|fmt }}</td><td>{% if total_profit >= 0 %}+{% endif %}{{ total_profit|fmt }}</td>
-            </tr></tfoot>
-        </table>
-    </div>
-    <div class="daily-extremes-report">
-        <div class="daily-extreme best"><span>أعلى يوم ربحًا في الفترة</span><strong>{{ daily_best.day_name }} — {{ daily_best.profit|fmt }} LYD</strong></div>
-        <div class="daily-extreme loss"><span>أقل يوم ربحًا / الخسارة</span><strong>{% if daily_worst %}{{ daily_worst.day_name }} — {{ daily_worst.profit|fmt }} LYD{% else %}لا توجد خسارة{% endif %}</strong></div>
-    </div>
 </div>
 
 <div id="tableView">
