@@ -2192,6 +2192,20 @@ def profits_report(request):
     negative_daily = [item for item in active_daily if item["profit"] < 0]
     daily_worst = min(negative_daily, key=lambda item: item["profit"]) if negative_daily else None
     daily_chart_data = daily_data if len(daily_data) <= 62 else active_daily
+    if date_from and date_to and date_from == date_to:
+        flow_chart_data = [{
+            "label": daily_data[0]["day_name"] if daily_data else date_from.strftime("%d/%m"),
+            "deposits": daily_data[0]["cap_egp"] if daily_data else 0,
+            "transfers": daily_data[0]["db_egp"] if daily_data else 0,
+            "difference": daily_data[0]["egp_surplus"] if daily_data else 0,
+        }]
+    else:
+        flow_chart_data = [{
+            "label": item["month_name"],
+            "deposits": float(item["cap_egp"]),
+            "transfers": float(item["db_egp"]),
+            "difference": float(item["egp_surplus"]),
+        } for item in data if item["cap_egp"] or item["db_egp"]]
 
     months = [
         (1, "يناير"), (2, "فبراير"), (3, "مارس"), (4, "أبريل"),
@@ -2252,6 +2266,7 @@ def profits_report(request):
         "daily_lowest": daily_lowest,
         "daily_worst": daily_worst,
         "daily_chart_data": daily_chart_data,
+        "flow_chart_data": flow_chart_data,
     })
 
 
