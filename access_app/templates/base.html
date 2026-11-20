@@ -223,6 +223,9 @@
           .sidebar .sec-box .nav-item:hover { background:transparent!important; color:inherit!important; }
          .sidebar .sidebar-footer { background:var(--card-bg); border-top:1px solid var(--card-border); }
          .sidebar .sidebar-footer .nav-item { color:var(--sidebar-text)!important; }
+         .logout-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:38px;height:34px;padding:0 10px;border:1px solid rgba(220,38,38,.22);border-radius:10px;background:var(--danger-bg);color:var(--danger)!important;text-decoration:none!important;font-size:.78rem;font-weight:800;transition:all .2s ease;}
+         .logout-button i{font-size:1.05rem}.logout-button:hover{background:var(--danger);color:#fff!important;border-color:var(--danger);transform:translateY(-1px);box-shadow:0 5px 14px rgba(220,38,38,.22)}
+         .logout-modal{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,8,23,.58);backdrop-filter:blur(5px)}.logout-modal.open{display:flex}.logout-dialog{width:min(420px,100%);background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;box-shadow:0 20px 60px rgba(2,8,23,.35);padding:24px;text-align:center;animation:logoutModalIn .2s ease}.logout-dialog-icon{width:58px;height:58px;margin:0 auto 14px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--danger-bg);color:var(--danger);font-size:1.7rem}.logout-dialog h3{margin:0 0 8px;color:var(--text);font-size:1.05rem;font-weight:800}.logout-dialog p{margin:0 0 20px;color:var(--text-muted);font-size:.82rem}.logout-dialog-actions{display:flex;gap:10px}.logout-dialog-actions button{flex:1;border:0;border-radius:10px;padding:10px;font-family:inherit;font-weight:800;cursor:pointer}.logout-cancel{background:var(--bg);color:var(--text-muted)}.logout-confirm{background:var(--danger);color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.2)}.logout-confirm:hover{background:#b91c1c}@keyframes logoutModalIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
          .topbar .topbar-actions .btn-icon.active { background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 3px 10px rgba(79,70,229,.25); }
          /* Strong contrast for dark themes: light text on dark cards. */
          body.dark .sidebar .nav-item:not(.active), body.dark .sidebar .sidebar-footer .nav-item,
@@ -406,7 +409,7 @@
                             <div style="font-size:.78rem;font-weight:700;color:var(--text)">{{ current_user.username }}</div>
                             <div style="font-size:.65rem;color:var(--text-muted)">{% if current_user.is_admin %}مدير{% else %}{{ current_user.office_name|default:"مستخدم" }}{% endif %}</div>
                         </div>
-                        <a href="{% url 'logout' %}" style="color:var(--danger);font-size:1rem;text-decoration:none;margin-right:4px" title="تسجيل الخروج"><i class="bi bi-box-arrow-left"></i></a>
+                         <a href="{% url 'logout' %}" class="logout-button" id="logoutButton" title="تسجيل الخروج"><i class="bi bi-box-arrow-left"></i><span>خروج</span></a>
                     </div>
                     {% endif %}
                 </div>
@@ -482,6 +485,17 @@
     </div>
 
     <div id="toastContainer" style="position:fixed;top:16px;left:16px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+    <div class="logout-modal" id="logoutModal" aria-hidden="true">
+        <div class="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+            <div class="logout-dialog-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 id="logoutTitle">هل أنت متأكد من تسجيل الخروج؟</h3>
+            <p>سيتم إنهاء جلستك الحالية والعودة إلى صفحة تسجيل الدخول.</p>
+            <div class="logout-dialog-actions">
+                <button type="button" class="logout-cancel" id="logoutCancel">إلغاء</button>
+                <button type="button" class="logout-confirm" id="logoutConfirm"><i class="bi bi-check2-circle"></i> نعم، تسجيل الخروج</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -594,6 +608,19 @@
                 }
             }
         } catch(e) {}
+    })();
+
+    // ============ LOGOUT CONFIRMATION ============
+    (function(){
+        var button=document.getElementById('logoutButton'), modal=document.getElementById('logoutModal');
+        var cancel=document.getElementById('logoutCancel'), confirmButton=document.getElementById('logoutConfirm');
+        if(!button||!modal) return;
+        function closeLogout(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');}
+        button.addEventListener('click',function(e){e.preventDefault();modal.classList.add('open');modal.setAttribute('aria-hidden','false');if(cancel) cancel.focus();});
+        if(cancel) cancel.addEventListener('click',closeLogout);
+        if(confirmButton) confirmButton.addEventListener('click',function(){window.location.href=button.href;});
+        modal.addEventListener('click',function(e){if(e.target===modal) closeLogout();});
+        document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('open')) closeLogout();});
     })();
 
     // ============ SOUNDS ============
