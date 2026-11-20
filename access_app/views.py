@@ -2183,6 +2183,9 @@ def profits_report(request):
             "deposits": round(sum(item["cap_egp"] for item in week_days), 2),
             "transfers": round(sum(item["db_egp"] for item in week_days), 2),
         })
+    weekly_data = [item for item in weekly_data if item["deposits"] or item["transfers"] or item["profit"]]
+    for item in weekly_data:
+        item["difference"] = round(item["deposits"] - item["transfers"], 2)
     active_daily = [item for item in daily_data if item["cap_egp"] or item["db_egp"]]
     daily_best = max(active_daily, key=lambda item: item["profit"]) if active_daily else {"day_name": "-", "profit": 0}
     negative_daily = [item for item in active_daily if item["profit"] < 0]
