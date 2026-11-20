@@ -2130,6 +2130,64 @@ def profits_report(request):
             "profit": profit,
         })
 
+    # Daily report details and weekly comparison data for the selected period.
+    if date_from and date_to:
+        daily_start, daily_end = date_from, date_to
+    elif periods:
+        first_year, first_month = periods[0]
+        last_year, last_month = periods[-1]
+        daily_start = datetime(first_year, first_month, 1).date()
+        next_month = datetime(last_year + (1 if last_month == 12 else 0), 1 if last_month == 12 else last_month + 1, 1).date()
+        daily_end = next_month - timedelta(days=1)
+    else:
+        daily_start = daily_end = datetime.now().date()
+
+    daily_data = []
+    cursor = daily_start
+    while cursor <= daily_end:
+        day_tx = Database.objects.filter(date=cursor)
+        day_cap = Capital.objects.filter(date=cursor)
+        day_db_egp = float(day_tx.aggregate(t=Sum("transfered_amount"))["t"] or 0)
+        day_db_lyd = float(day_tx.aggregate(t=Sum("transfer_amount"))["t"] or 0)
+        day_cap_egp = float(day_cap.aggregate(t=Sum("cash_in"))["t"] or 0)
+        day_cap_lyd = float(day_cap.aggregate(t=Sum("libyan_cash"))["t"] or 0)
+        day_cap_rate = round(day_cap_egp / day_cap_lyd, 3) if day_cap_lyd else 0
+        day_db_rate = round(day_db_egp / day_db_lyd, 3) if day_db_lyd else 0
+        day_egp_surplus = day_cap_egp - day_db_egp
+        day_lyd_surplus = day_cap_lyd - day_db_lyd
+        day_egp_to_lyd = day_egp_surplus / day_cap_rate if day_cap_rate else 0
+        day_profit = day_egp_to_lyd - day_lyd_surplus if day_cap_rate else 0
+        daily_data.append({
+            "date": cursor.strftime("%Y-%m-%d"),
+            "day_name": cursor.strftime("%d/%m"),
+            "cap_egp": round(day_cap_egp, 2),
+            "db_egp": round(day_db_egp, 2),
+            "egp_surplus": round(day_egp_surplus, 2),
+            "cap_lyd": round(day_cap_lyd, 2),
+            "db_lyd": round(day_db_lyd, 2),
+            "lyd_surplus": round(day_lyd_surplus, 2),
+            "cap_avg_rate": day_cap_rate,
+            "db_avg_rate": day_db_rate,
+            "profit": round(day_profit, 2),
+        })
+        cursor += timedelta(days=1)
+
+    weekly_data = []
+    for week_number in range(1, ((daily_end - daily_start).days // 7) + 2):
+        week_days = daily_data[(week_number - 1) * 7:week_number * 7]
+        if not week_days:
+            break
+        weekly_data.append({
+            "label": f"الأسبوع {week_number}",
+            "profit": round(sum(item["profit"] for item in week_days), 2),
+            "deposits": round(sum(item["cap_egp"] for item in week_days), 2),
+            "transfers": round(sum(item["db_egp"] for item in week_days), 2),
+        })
+    active_daily = [item for item in daily_data if item["cap_egp"] or item["db_egp"]]
+    daily_best = max(active_daily, key=lambda item: item["profit"]) if active_daily else {"day_name": "-", "profit": 0}
+    negative_daily = [item for item in active_daily if item["profit"] < 0]
+    daily_worst = min(negative_daily, key=lambda item: item["profit"]) if negative_daily else None
+
     months = [
         (1, "يناير"), (2, "فبراير"), (3, "مارس"), (4, "أبريل"),
         (5, "مايو"), (6, "يونيو"), (7, "يوليو"), (8, "أغسطس"),
@@ -2183,6 +2241,10 @@ def profits_report(request):
         "worst_month": worst_profit_period,
         "profit_period_average": profit_period_average,
         "profit_driver": profit_driver,
+        "daily_data": daily_data,
+        "weekly_data": weekly_data,
+        "daily_best": daily_best,
+        "daily_worst": daily_worst,
     })
 
 
