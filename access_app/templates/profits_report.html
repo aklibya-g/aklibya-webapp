@@ -116,9 +116,9 @@
         <div class="s-value">{{ total_db_egp|fmt }}</div>
         <div class="s-sub">EGP — متوسط السعر: <strong style="color:#2563eb">{{ total_db_avg_rate }}</strong> — الحوالات بالليبي: {{ total_db_lyd|fmt }}</div>
     </div>
-    <div class="s-card red">
+    <div class="s-card {% if total_egp_balance >= 0 %}green{% else %}red{% endif %}">
         <div class="icon-box"><i class="bi bi-currency-exchange"></i></div>
-        <div class="s-label">العجز/الفائض في الأرصدة</div>
+        <div class="s-label">{% if total_egp_balance >= 0 %}فائض الأرصدة{% else %}عجز الأرصدة{% endif %}</div>
         <div class="s-value">{{ total_egp_balance|fmt }}</div>
         <div class="s-sub">EGP — الفرق بين إجمالي الأرصدة والحوالات</div>
     </div>
@@ -220,7 +220,7 @@
                         <td class="month-cell">{{ d.month_name }}</td>
                         <td>{{ d.cap_egp|fmt }}</td>
                         <td>{{ d.db_egp|fmt }}</td>
-                        <td class="rate-cell">{{ d.egp_to_lyd|fmt }}</td>
+                        <td class="rate-cell" style="font-weight:700;color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_to_lyd|fmt }}</td>
                         <td>{{ d.cap_lyd|fmt }}</td>
                         <td>{{ d.db_lyd|fmt }}</td>
                         <td style="font-weight:600;color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</td>
@@ -239,7 +239,7 @@
                         <td style="font-weight:800;font-size:.82rem">الإجمالي</td>
                         <td>{{ total_cap_egp|fmt }}</td>
                         <td>{{ total_db_egp|fmt }}</td>
-                        <td>{{ total_egp_to_lyd|fmt }}</td>
+                        <td style="font-weight:800;color:{% if total_egp_balance >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_egp_to_lyd|fmt }}</td>
                         <td>{{ total_cap_lyd|fmt }}</td>
                         <td>{{ total_db_lyd|fmt }}</td>
                         <td style="font-weight:800;color:{% if total_lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_lyd_surplus|fmt }}</td>
