@@ -22,7 +22,8 @@
 
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="{% url 'add_transaction' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> تحويل</a>
-    <form method="get" class="d-flex gap-2 align-items-center" id="filterForm">
+    <form method="get" class="d-flex gap-2 align-items-center p-2" id="filterForm" style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;box-shadow:0 3px 10px rgba(79,70,229,.12);">
+        <span style="font-weight:800;color:var(--primary);white-space:nowrap"><i class="bi bi-funnel-fill"></i> استعلام</span>
         <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px;border-radius:8px;">
         <input type="number" name="amount" value="{{ amount_filter }}" class="form-control form-control-sm" placeholder="بحث بالقيمة..." style="width:150px;border-radius:8px;">
         <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="من يوم" style="width:145px;border-radius:8px;">
@@ -49,8 +50,9 @@
         {% if q or date_from or date_to or selected_year or selected_month_from or selected_month_to or amount_filter %}
         <a href="{% url 'transactions' %}?order={{ order }}" class="btn btn-outline-danger btn-sm" title="مسح الفلتر"><i class="bi bi-x-lg"></i></a>
         {% endif %}
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel"></i></button>
+        <button type="submit" class="btn btn-primary btn-sm px-3" style="font-weight:800;box-shadow:0 3px 8px rgba(79,70,229,.3)"><i class="bi bi-search"></i> تطبيق الفلتر</button>
     </form>
+    <a href="{% url 'export_transfers' %}?q={{ q|urlencode }}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}" class="btn btn-success btn-sm" title="حفظ تقرير الحوالات حسب الفلتر"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
     <a href="?q={{ q|urlencode }}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}&order={% if order == 'desc' %}asc{% else %}desc{% endif %}" class="btn btn-outline-secondary btn-sm" style="text-decoration:none">
         <i class="bi bi-sort-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
         {% if order == 'desc' %}تنازلي{% else %}تصاعدي{% endif %}
@@ -174,6 +176,7 @@ function clearAll() {
       .catch(function() { form.submit(); });
 }
 function printPage() {
+    var reportPeriod = '{% if date_from and date_to %}{{ date_from }}_الى_{{ date_to }}{% elif date_from %}{{ date_from }}{% elif date_to %}{{ date_to }}{% else %}{% now "Y-m-d" %}{% endif %}';
     var rows = document.querySelectorAll('.table-app tbody tr');
     var totalCount = {{ total_count|default:"0"|unlocalize }};
     var filteredCount = {{ filtered_count|default:"0"|unlocalize }};
@@ -184,7 +187,7 @@ function printPage() {
     var displayCount = isFiltered ? filteredCount : totalCount;
 
     var html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">';
-    html += '<title>تقرير الحوالات</title>';
+    html += '<title>تقرير-الحوالات-' + reportPeriod + '</title>';
     html += '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">';
     html += '<style>';
     html += '*{margin:0;padding:0;box-sizing:border-box}';
@@ -211,7 +214,7 @@ function printPage() {
     html += '@media print{body{padding:8mm 10mm}.btn-print,.scroll-nav{display:none!important}}';
     html += '</style></head><body>';
 
-    html += '<div class="header"><img src="' + window.location.origin + '{{ company_logo_url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #0f766e"><h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1><div class="sub">تقرير الحوالات' + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
+    html += '<div class="header"><img src="' + window.location.origin + '{{ company_logo_url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:8px;border:2px solid #0f766e"><h1>{{ company_settings.company_name|default:"شركة العربي للحوالات المالية" }}</h1><div class="sub">تقرير الحوالات - ' + reportPeriod + (isFiltered ? ' (نتائج الفلتر)' : '') + '</div></div>';
     html += '<div class="meta"><span>التاريخ: ' + new Date().toLocaleDateString('ar-LY') + '</span>';
     html += '<span>عدد الحوالات: ' + displayCount + '</span></div>';
 

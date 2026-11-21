@@ -41,6 +41,7 @@ def _kill_process(pid):
         pass
 from .whatsapp_parser import parse_whatsapp_text
 import openpyxl
+from urllib.parse import quote
 
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backups")
 
@@ -1799,9 +1800,39 @@ def import_balance(request):
     })
 
 
+def _export_period_label(request):
+    """Return a filesystem/browser-safe period label for exported reports."""
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    if date_from and date_to:
+        if date_from > date_to:
+            date_from, date_to = date_to, date_from
+        return date_from if date_from == date_to else f"{date_from}_الى_{date_to}"
+    return date_from or date_to or datetime.now().strftime("%Y-%m-%d")
+
+
 def export_transfers_excel(request):
+    q = request.GET.get("q", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    year = request.GET.get("year", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
+    amount = request.GET.get("amount", "").strip()
+    rows = Database.objects.select_related("transfer_type", "office_name").order_by("-date", "-id")
+    if q:
+        rows = rows.filter(models.Q(sender_name__icontains=q) | models.Q(receiver_name__icontains=q) | models.Q(order_number__icontains=q) | models.Q(receiver_tele__icontains=q) | models.Q(sender_tele__icontains=q) | models.Q(remarks__icontains=q))
+    if date_from: rows = rows.filter(date__gte=date_from)
+    if date_to: rows = rows.filter(date__lte=date_to)
+    if year: rows = rows.filter(date__year=year)
+    if month_from: rows = rows.filter(date__month__gte=month_from)
+    if month_to: rows = rows.filter(date__month__lte=month_to)
+    if amount:
+        try: rows = rows.filter(transfered_amount=float(amount.replace(",", "")))
+        except ValueError: pass
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="transfers.xlsx"'
+    filename = f"تقرير-الحوالات-{_export_period_label(request)}.xlsx"
+    response["Content-Disposition"] = f"attachment; filename=transfers.xlsx; filename*=UTF-8''{quote(filename)}"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "الحوالات"
@@ -1813,7 +1844,6 @@ def export_transfers_excel(request):
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
-    rows = Database.objects.select_related("transfer_type", "office_name").order_by("-date", "-id")
     for row_idx, t in enumerate(rows, 2):
         ws.cell(row=row_idx, column=1, value=t.order_number or "")
         ws.cell(row=row_idx, column=2, value=str(t.date) if t.date else "")
@@ -1850,8 +1880,25 @@ def export_transfers_excel(request):
 
 
 def export_capital_excel(request):
+    q = request.GET.get("q", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    client_id = request.GET.get("client", "").strip()
+    year = request.GET.get("year", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
+    rows = Capital.objects.select_related("client").order_by("-date", "-id")
+    if q:
+        rows = rows.filter(models.Q(cash_in__icontains=q) | models.Q(libyan_cash__icontains=q) | models.Q(exchange_rate__icontains=q) | models.Q(remarks__icontains=q) | models.Q(client__name__icontains=q))
+    if date_from: rows = rows.filter(date__gte=date_from)
+    if date_to: rows = rows.filter(date__lte=date_to)
+    if client_id: rows = rows.filter(client_id=client_id)
+    if year: rows = rows.filter(date__year=year)
+    if month_from: rows = rows.filter(date__month__gte=month_from)
+    if month_to: rows = rows.filter(date__month__lte=month_to)
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = 'attachment; filename="capital.xlsx"'
+    filename = f"تقرير-الأرصدة-{_export_period_label(request)}.xlsx"
+    response["Content-Disposition"] = f"attachment; filename=capital.xlsx; filename*=UTF-8''{quote(filename)}"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "الأرصدة"
@@ -1863,7 +1910,6 @@ def export_capital_excel(request):
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
-    rows = Capital.objects.select_related("client").order_by("-date", "-id")
     for row_idx, c in enumerate(rows, 2):
         ws.cell(row=row_idx, column=1, value=str(c.date) if c.date else "")
         ws.cell(row=row_idx, column=2, value=c.client.name if c.client else "")
