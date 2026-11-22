@@ -266,8 +266,21 @@
          body.blue #sidebar .sec-box .nav-item:hover, body.beige #sidebar .sec-box .nav-item:hover,
          body.purple #sidebar .sec-box .nav-item:hover { background:var(--card-bg)!important; color:#111827!important; }
          body.font-bold .sidebar .nav-item, body.font-bold .sidebar .nav-section, body.font-bold .sidebar .brand span, body.font-bold .sidebar-footer .nav-item { font-weight:800!important; }
-         body.font-bold .page-content, body.font-bold .topbar { font-weight:600; }
-    </style>
+          body.font-bold .page-content, body.font-bold .topbar { font-weight:600; }
+          /* Keep every sidebar label readable without relying on hover. */
+          .sidebar { width:300px; }
+          .main-area { margin-right:300px; }
+          .sidebar .nav { overflow-x:visible; }
+          .sidebar .nav-item,
+          .sidebar .nav-section { white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+          .sidebar .nav-item { min-width:0; height:auto; min-height:40px; line-height:1.45; }
+          .sidebar .nav-item i { flex:0 0 20px; }
+          .sidebar .sec-box { width:calc(100% - 8px); overflow:visible; }
+          .sidebar .sec-box > div[style*="display:flex"] { min-width:0; }
+          .sidebar .sec-box > div[style*="display:flex"] .nav-item { min-width:0; }
+          .sidebar .nav-item:hover { transform:none!important; }
+          @media(max-width:768px){ .sidebar { width:300px; } .main-area { margin-right:0; } }
+     </style>
 </head>
 <body class="{% if maintenance_mode %}maintenance-active{% endif %}">
     <div class="app-layout">
