@@ -631,10 +631,10 @@ def home(request):
     exp_total = exp_agg["total"] or 0
 
     clients, total_egp_clients = _get_clients_with_remaining()
-    # Use the same client-level calculation shown in the ticker and the
-    # client balances list, so the dashboard summary cannot disagree with
-    # the individual balances because of unmatched or carryover records.
-    remaining_egp = total_egp_clients
+    # The headline net balance must include every recorded transfer,
+    # including manually entered transfers whose sender is not linked to a
+    # ClientBalance record.  The client breakdown remains available below.
+    remaining_egp = cap_total_egp - db_total_egp
     coverage_rate = round((db_total_egp / cap_total_egp) * 100, 1) if cap_total_egp else 0
     coverage_rate = min(coverage_rate, 100)
 
