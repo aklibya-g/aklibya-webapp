@@ -2534,6 +2534,8 @@ def edit_capital(request, id):
         "form": form,
         "submit_label": "تحديث الرصيد",
         "back_url": "capital_list",
+        "edit_mode": True,
+        "capital_obj": obj,
     })
 
 
