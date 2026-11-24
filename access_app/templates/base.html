@@ -359,7 +359,7 @@
                     <a href="{% url 'backups_list' %}" class="nav-item" style="padding:7px 10px;{% if '/backups/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-cloud-arrow-up" style="color:#06b6d4;"></i> النسخ الاحتياطية</a>
                     <a href="{% url 'whatsapp_integration' %}" class="nav-item" style="padding:7px 10px;{% if '/whatsapp/' in request.path %}background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;box-shadow:0 3px 12px rgba(37,211,102,.4);font-weight:800{% endif %}"><i class="bi bi-whatsapp" style="color:{% if '/whatsapp/' in request.path %}#fff{% else %}#25d366{% endif %};"></i> ربط الواتساب</a>
                     {% endif %}
-                    <form id="maintenanceToggleForm" method="POST" action="{% url 'toggle_maintenance' %}" style="margin:0">
+                    <form id="maintenanceToggleForm" method="POST" action="{% url 'toggle_maintenance' %}" style="margin:0" onsubmit="return confirm('{% if maintenance_mode %}هل تريد إيقاف وضع الصيانة؟{% else %}هل تريد تفعيل وضع الصيانة؟ سيُمنع المستخدمون من الدخول.{% endif %}')">
                         {% csrf_token %}
                         <button type="submit" class="nav-item" style="width:100%;border:none;background:none;text-align:right;padding:7px 10px;cursor:pointer;font-family:Cairo,sans-serif;color:{% if maintenance_mode %}#dc2626{% else %}var(--sidebar-text){% endif %}">
                             <i class="bi bi-tools" style="color:{% if maintenance_mode %}#dc2626{% else %}#94a3b8{% endif %};"></i> 
