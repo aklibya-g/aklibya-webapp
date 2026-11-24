@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="stat-card p-4">
-    <form method="POST">
+    <form method="POST" id="depositForm">
         {% csrf_token %}
         {% if form.errors %}
         <div class="alert alert-danger" role="alert" style="border-radius:10px;font-weight:700;">
@@ -98,7 +98,7 @@ function validateDeposit() {
               '💰 الليبي: ' + lydVal + ' LYD';
 
     if (confirm(msg)) {
-        document.querySelector('form').submit();
+        document.getElementById('depositForm').submit();
     }
 }
 </script>
