@@ -2488,13 +2488,47 @@ def export_profits_report(request):
 def edit_capital(request, id):
     obj = get_object_or_404(Capital, id=id)
     if request.method == "POST":
-        form = CapitalForm(request.POST, instance=obj)
+        form = CapitalDepositForm(request.POST)
         if form.is_valid():
-            form.save()
+            new_client = form.cleaned_data["client"]
+            amount_egp = form.cleaned_data["amount_egp"]
+            exchange_rate = form.cleaned_data["exchange_rate"]
+            amount_lyd = round(amount_egp / exchange_rate, 2) if exchange_rate else 0
+            old_client = obj.client
+
+            # Move only the difference when an existing deposit is edited.
+            # This keeps the client balances in sync without double counting.
+            if old_client and old_client.pk == new_client.pk:
+                old_client.egp_balance += amount_egp - (obj.cash_in or 0)
+                old_client.lyd_balance += amount_lyd - (obj.libyan_cash or 0)
+                old_client.save()
+            else:
+                if old_client:
+                    old_client.egp_balance -= obj.cash_in or 0
+                    old_client.lyd_balance -= obj.libyan_cash or 0
+                    old_client.save()
+                new_client.egp_balance += amount_egp
+                new_client.lyd_balance += amount_lyd
+                new_client.save()
+
+            obj.client = new_client
+            obj.cash_in = amount_egp
+            obj.libyan_cash = amount_lyd
+            obj.exchange_rate = exchange_rate
+            obj.date = form.cleaned_data["date"]
+            obj.remarks = form.cleaned_data.get("notes", "")
+            obj.save()
             messages.success(request, "✅ تم تعديل الرصيد بنجاح.")
             return redirect("capital_list")
     else:
-        form = CapitalForm(instance=obj)
+        form = CapitalDepositForm(initial={
+            "client": obj.client,
+            "amount_egp": obj.cash_in,
+            "amount_lyd": obj.libyan_cash,
+            "exchange_rate": obj.exchange_rate,
+            "date": obj.date,
+            "notes": obj.remarks,
+        })
     return render(request, "deposit_form.html", {
         "title": "تعديل رصيد",
         "form": form,
