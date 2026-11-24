@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load app_tags %}
+{% load l10n %}
 {% block title %}{{ title }}{% endblock %}
 {% block page_title %}<i class="bi bi-plus-circle text-primary"></i> {{ title }}{% endblock %}
 
@@ -28,18 +29,18 @@
             <div class="col-md-4">
                 <label class="form-label fw-bold"><i class="bi bi-cash-stack text-success"></i> القيمة بالمصري (EGP)</label>
                 <div class="input-group">
-                    <input type="number" name="amount_egp" class="form-control form-control-lg" id="dep_egp" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.cash_in }}{% else %}{{ form.amount_egp.value|default:'' }}{% endif %}" required style="border-radius:10px 0 0 10px;">
+                    <input type="number" name="amount_egp" class="form-control form-control-lg" id="dep_egp" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.cash_in|unlocalize }}{% else %}{{ form.amount_egp.value|default:''|unlocalize }}{% endif %}" required style="border-radius:10px 0 0 10px;">
                     <span class="input-group-text" style="background:var(--success);color:#fff;border-radius:0 10px 10px 0;font-weight:700;">EGP</span>
                 </div>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold"><i class="bi bi-graph-up text-warning"></i> سعر الصرف</label>
-                    <input type="number" name="exchange_rate" class="form-control form-control-lg" id="dep_rate" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.exchange_rate }}{% else %}{{ form.exchange_rate.value|default:'' }}{% endif %}" required style="border-radius:10px;">
+                    <input type="number" name="exchange_rate" class="form-control form-control-lg" id="dep_rate" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.exchange_rate|unlocalize }}{% else %}{{ form.exchange_rate.value|default:''|unlocalize }}{% endif %}" required style="border-radius:10px;">
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold"><i class="bi bi-coins text-info"></i> المبلغ الليبي (LYD)</label>
                 <div class="input-group">
-                    <input type="number" name="amount_lyd" class="form-control form-control-lg" id="dep_lyd" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.libyan_cash }}{% else %}{{ form.amount_lyd.value|default:'' }}{% endif %}" readonly style="background:var(--primary-bg);font-weight:700;color:var(--primary);border-radius:10px 0 0 10px;">
+                    <input type="number" name="amount_lyd" class="form-control form-control-lg" id="dep_lyd" step="0.01" value="{% if edit_mode and not form.is_bound %}{{ capital_obj.libyan_cash|unlocalize }}{% else %}{{ form.amount_lyd.value|default:''|unlocalize }}{% endif %}" readonly style="background:var(--primary-bg);font-weight:700;color:var(--primary);border-radius:10px 0 0 10px;">
                     <span class="input-group-text" style="background:var(--info);color:#fff;border-radius:0 10px 10px 0;font-weight:700;">LYD</span>
                 </div>
             </div>
