@@ -2879,37 +2879,20 @@ def edit_user(request, id):
         messages.error(request, "ليس لديك صلاحية الوصول لهذه الصفحة")
         return redirect("home")
     user_obj = get_object_or_404(SystemUser, id=id)
-    if user_obj.username == "main":
-        messages.error(request, "لا يمكن تعديل حساب الصيانة من هذه الصفحة")
-        return redirect("users_list")
+    is_maintenance_user = user_obj.username == "main"
     if request.method == "POST":
         user_obj.office_name = request.POST.get("office_name", "").strip()
-        user_obj.is_admin = request.POST.get("is_admin") == "1"
-        user_obj.perm_home = request.POST.get("perm_home") == "1"
-        user_obj.perm_transactions = request.POST.get("perm_transactions") == "1"
-        user_obj.perm_add_transaction = request.POST.get("perm_add_transaction") == "1"
-        user_obj.perm_edit_transaction = request.POST.get("perm_edit_transaction") == "1"
-        user_obj.perm_delete_transaction = request.POST.get("perm_delete_transaction") == "1"
-        user_obj.perm_capital = request.POST.get("perm_capital") == "1"
-        user_obj.perm_add_capital = request.POST.get("perm_add_capital") == "1"
-        user_obj.perm_edit_capital = request.POST.get("perm_edit_capital") == "1"
-        user_obj.perm_delete_capital = request.POST.get("perm_delete_capital") == "1"
-        user_obj.perm_expenses = request.POST.get("perm_expenses") == "1"
-        user_obj.perm_add_expense = request.POST.get("perm_add_expense") == "1"
-        user_obj.perm_edit_expense = request.POST.get("perm_edit_expense") == "1"
-        user_obj.perm_delete_expense = request.POST.get("perm_delete_expense") == "1"
-        user_obj.perm_import_whatsapp = request.POST.get("perm_import_whatsapp") == "1"
-        user_obj.perm_import_balance = request.POST.get("perm_import_balance") == "1"
-        user_obj.perm_internal_transfer = request.POST.get("perm_internal_transfer") == "1"
-        user_obj.perm_profits_report = request.POST.get("perm_profits_report") == "1"
-        user_obj.perm_users = request.POST.get("perm_users") == "1"
+        if not is_maintenance_user:
+            user_obj.is_admin = request.POST.get("is_admin") == "1"
+            for field in ("perm_home", "perm_transactions", "perm_add_transaction", "perm_edit_transaction", "perm_delete_transaction", "perm_capital", "perm_add_capital", "perm_edit_capital", "perm_delete_capital", "perm_expenses", "perm_add_expense", "perm_edit_expense", "perm_delete_expense", "perm_import_whatsapp", "perm_import_balance", "perm_internal_transfer", "perm_profits_report", "perm_users"):
+                setattr(user_obj, field, request.POST.get(field) == "1")
         new_pass = request.POST.get("password", "").strip()
         if new_pass:
             user_obj.set_password(new_pass)
         user_obj.save()
         messages.success(request, f"✅ تم تعديل بيانات المستخدم {user_obj.username} بنجاح")
         return redirect("users_list")
-    return render(request, "user_form.html", {"mode": "edit", "user_obj": user_obj})
+    return render(request, "user_form.html", {"mode": "edit", "user_obj": user_obj, "protected_maintenance_user": is_maintenance_user})
 
 
 @login_required_custom

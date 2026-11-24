@@ -64,7 +64,7 @@
                     <td>
                         <div class="d-flex gap-1">
                             <a href="{% url 'edit_user' u.id %}" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem"><i class="bi bi-pencil"></i></a>
-                             {% if not u.is_admin and u.username != 'main' %}
+                            {% if not u.is_admin and u.username != 'main' %}
                             <form method="POST" action="{% url 'toggle_user_active' u.id %}" style="display:inline">
                                 {% csrf_token %}
                                 <button type="submit" class="exp-btn exp-btn-outline" style="padding:6px 10px;font-size:.78rem;border-color:{% if u.is_active %}#d97706{% else %}#059669{% endif %};color:{% if u.is_active %}#d97706{% else %}#059669{% endif %}" title="{% if u.is_active %}تعطيل{% else %}تفعيل{% endif %}">
