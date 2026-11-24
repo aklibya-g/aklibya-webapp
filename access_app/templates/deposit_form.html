@@ -8,6 +8,12 @@
 <div class="stat-card p-4">
     <form method="POST">
         {% csrf_token %}
+        {% if form.errors %}
+        <div class="alert alert-danger" role="alert" style="border-radius:10px;font-weight:700;">
+            <i class="bi bi-exclamation-triangle"></i> يرجى مراجعة البيانات المدخلة قبل الحفظ.
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
         <div class="row g-3">
             <div class="col-md-6">

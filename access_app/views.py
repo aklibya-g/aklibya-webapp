@@ -2488,7 +2488,14 @@ def export_profits_report(request):
 def edit_capital(request, id):
     obj = get_object_or_404(Capital, id=id)
     if request.method == "POST":
-        form = CapitalDepositForm(request.POST)
+        post_data = request.POST.copy()
+        # Accept values submitted by browsers using Arabic/local decimal
+        # separators as well as standard HTML number values.
+        for field_name in ("amount_egp", "exchange_rate", "amount_lyd"):
+            value = (post_data.get(field_name) or "").strip()
+            if value:
+                post_data[field_name] = _ar_to_western(value).replace(",", ".")
+        form = CapitalDepositForm(post_data)
         if form.is_valid():
             new_client = form.cleaned_data["client"]
             amount_egp = form.cleaned_data["amount_egp"]
@@ -2520,6 +2527,7 @@ def edit_capital(request, id):
             obj.save()
             messages.success(request, "✅ تم تعديل الرصيد بنجاح.")
             return redirect("capital_list")
+        messages.error(request, "❌ لم يتم حفظ التعديل: يرجى التأكد من صحة جميع القيم المدخلة.")
     else:
         form = CapitalDepositForm(initial={
             "client": obj.client,
