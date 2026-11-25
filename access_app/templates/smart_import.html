@@ -9,6 +9,7 @@
 .si-tab:hover{background:var(--primary-bg);color:var(--primary)}
 .si-tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.3)}
 .si-tab .ti{font-size:1.2rem}
+.si-wa-toggle{padding:10px 14px;border:1px solid #f59e0b;border-radius:10px;background:#fff8eb;color:#b45309;cursor:pointer;font-family:Cairo,sans-serif;font-size:.78rem;font-weight:800;white-space:nowrap;transition:all .2s}.si-wa-toggle:hover{background:#fef3c7;color:#92400e}.si-wa-toggle i{font-size:1rem}
 .si-panel{display:none;animation:fadeSlide .3s ease}
 .si-panel.active{display:block}
 @keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -130,8 +131,9 @@
 <div class="si-tabs">
     <button class="si-tab active" onclick="switchTab('export')"><span class="ti">📤</span> تصدير للجهاز</button>
     <button class="si-tab" onclick="switchTab('file')"><span class="ti">📥</span> استيراد من جهاز</button>
-    <button class="si-tab" onclick="switchTab('wa')"><span class="ti">💬</span> استيراد من واتساب</button>
+    <button class="si-tab" id="waTab" style="display:none" onclick="switchTab('wa')"><span class="ti">💬</span> استيراد من واتساب</button>
     <button class="si-tab" onclick="switchTab('alerts')" style="position:relative"><span class="ti">🔔</span> تنبيهات{% if import_alerts_unread %}<span style="position:absolute;top:4px;left:8px;background:#dc2626;color:#fff;font-size:.6rem;padding:2px 6px;border-radius:8px;font-weight:700">{{ import_alerts_unread }}</span>{% endif %}</button>
+    <button type="button" class="si-wa-toggle" id="waToggle" onclick="toggleWhatsAppTab()" title="إظهار استيراد واتساب"><i class="bi bi-eye"></i> إظهار واتساب</button>
 </div>
 
 <!-- TAB 1: Export -->
@@ -366,6 +368,21 @@ function switchTab(tab) {
     document.querySelectorAll('.si-panel').forEach(function(p) { p.classList.remove('active'); });
     event.currentTarget.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function toggleWhatsAppTab() {
+    var tab = document.getElementById('waTab');
+    var toggle = document.getElementById('waToggle');
+    var hidden = tab.style.display === 'none';
+    tab.style.display = hidden ? 'flex' : 'none';
+    toggle.innerHTML = hidden ? '<i class="bi bi-eye-slash"></i> إخفاء واتساب' : '<i class="bi bi-eye"></i> إظهار واتساب';
+    toggle.title = hidden ? 'إخفاء استيراد واتساب' : 'إظهار استيراد واتساب';
+    if (!hidden && document.getElementById('panel-wa').classList.contains('active')) {
+        document.querySelectorAll('.si-tab').forEach(function (item) { item.classList.remove('active'); });
+        document.querySelectorAll('.si-panel').forEach(function (panel) { panel.classList.remove('active'); });
+        document.querySelector('.si-tab[onclick*="export"]').classList.add('active');
+        document.getElementById('panel-export').classList.add('active');
+    }
 }
 
 function updateExportStats() {
