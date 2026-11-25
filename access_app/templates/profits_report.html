@@ -63,8 +63,13 @@
 .detail-card .dc-row .dc-label{color:#6b7280}
 .detail-card .dc-row .dc-val{font-weight:600;color:#374151}
 .detail-card .dc-profit-row{border-top:1px solid #d1fae5;padding-top:9px;margin-top:3px}.dc-print{border:1px solid #d1d5db;background:#fff;color:#6b7280;border-radius:7px;width:29px;height:29px;cursor:pointer;font-size:.78rem}.dc-print:hover{background:#059669;color:#fff;border-color:#059669}
-.formula-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:.88rem;color:#1e40af;line-height:2}
-.formula-box strong{color:#1d4ed8}
+ .formula-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:.88rem;color:#1e40af;line-height:2}
+ .formula-box strong{color:#1d4ed8}
+ .formula-toggle{display:flex;align-items:center;justify-content:center;width:38px;height:38px;margin:0 0 8px auto;border:1px solid #93c5fd;border-radius:50%;background:#eff6ff;color:#2563eb;cursor:pointer;box-shadow:0 0 0 0 rgba(37,99,235,.45);animation:formulaEyePulse 1.8s infinite}
+ .formula-toggle:hover{background:#dbeafe}
+ .formula-box.is-hidden{display:none}
+ @keyframes formulaEyePulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.4)}50%{box-shadow:0 0 0 7px rgba(37,99,235,0)}}
+ .report-actions{display:flex;gap:8px;width:100%}.report-action{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:8px 10px;border:0;border-radius:12px;color:#fff;text-decoration:none;font-family:Cairo,sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:transform .2s,filter .2s}.report-action:hover{transform:translateY(-1px);filter:brightness(.96);color:#fff}.report-action i{font-size:1rem}.report-action-print{background:linear-gradient(135deg,#0f766e,#14b8a6)}.report-action-export{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
 .toggle-view{display:flex;gap:8px}
 .toggle-btn{padding:7px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
 .toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
@@ -91,12 +96,28 @@
     </div>
 </div>
 
-<div class="formula-box">
+<button type="button" class="formula-toggle" id="formulaToggle" title="إظهار صيغة حساب الربح" aria-label="إظهار صيغة حساب الربح" aria-expanded="false"><i class="bi bi-eye"></i></button>
+<div class="formula-box is-hidden" id="profitFormula">
     <i class="bi bi-calculator"></i> <strong>صيغة حساب الربح:</strong>
     1 = (إجمالي الارصدة بالمصري − إجمالي الحوالات بالمصري) ÷ متوسط سعر صرف الارصدة &nbsp;|&nbsp;
     2 = الارصدة بالليبي − الحوالات بالليبي &nbsp;|&nbsp;
     <strong>الربح = 1 − 2</strong>
 </div>
+
+<script>
+(function () {
+    var button = document.getElementById('formulaToggle');
+    var formula = document.getElementById('profitFormula');
+    if (!button || !formula) return;
+    button.addEventListener('click', function () {
+        var hidden = formula.classList.toggle('is-hidden');
+        button.setAttribute('aria-expanded', String(!hidden));
+        button.title = hidden ? 'إظهار صيغة حساب الربح' : 'إخفاء صيغة حساب الربح';
+        button.setAttribute('aria-label', button.title);
+        button.querySelector('i').className = hidden ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+})();
+</script>
 
 <div class="summary-cards">
     <div class="s-card green profit-main">
@@ -184,9 +205,11 @@
                 <button type="button" class="toggle-btn" onclick="showView('cards')"><i class="bi bi-grid"></i></button>
             </div>
         </div>
-        <div class="col-md-2" style="display:flex;gap:8px">
-            <button type="button" onclick="window.print()" style="flex:1;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-printer"></i> طباعة</button>
-            <a href="{% url 'export_profits_report' %}?year={{ year }}{% if month_from %}&month_from={{ month_from }}&month_to={{ month_to }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
+        <div class="col-md-2">
+            <div class="report-actions">
+                <button type="button" class="report-action report-action-print" onclick="window.print()"><i class="bi bi-printer"></i><span>طباعة</span></button>
+                <a class="report-action report-action-export" href="{% url 'export_profits_report' %}?year={{ year }}{% if month_from %}&month_from={{ month_from }}&month_to={{ month_to }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"><i class="bi bi-file-earmark-excel"></i><span>حفظ التقرير</span></a>
+            </div>
         </div>
     </form>
     <script>
