@@ -2074,8 +2074,11 @@ def profits_report(request):
     from datetime import datetime
 
     year = request.GET.get("year", "")
-    month_from = request.GET.get("month_from", "")
-    month_to = request.GET.get("month_to", "")
+    month_from_raw = request.GET.get("month_from", "").strip()
+    month_to_raw = request.GET.get("month_to", "").strip()
+    month_filter_selected = bool(month_from_raw or month_to_raw)
+    month_from = month_from_raw
+    month_to = month_to_raw
     date_from_raw = request.GET.get("date_from", "").strip()
     date_to_raw = request.GET.get("date_to", "").strip()
 
@@ -2086,12 +2089,14 @@ def profits_report(request):
     if month_from:
         month_from = int(month_from)
     else:
-        month_from = 1
+        month_from = 0
 
     if month_to:
         month_to = int(month_to)
     else:
-        month_to = 12
+        month_to = month_from
+    if month_from == 0 and month_to:
+        month_from = month_to
 
     month_names = {
         1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل",
@@ -2104,6 +2109,13 @@ def profits_report(request):
         date_to = datetime.strptime(date_to_raw, "%Y-%m-%d").date() if date_to_raw else None
     except ValueError:
         date_from, date_to = None, None
+    # A selected month takes priority over day filters. Without any filter,
+    # show today's transfers, deposits, and profit instead of the whole year.
+    if month_filter_selected:
+        date_from = date_to = None
+    elif not date_from_raw and not date_to_raw:
+        date_from = date_to = datetime.now().date()
+        date_from_raw = date_to_raw = date_from.strftime("%Y-%m-%d")
     if date_from and not date_to:
         date_to = date_from
     if date_to and not date_from:
@@ -2332,8 +2344,13 @@ def export_profits_report(request):
     from django.http import HttpResponse
 
     year = int(request.GET.get("year", datetime.now().year))
-    month_from = int(request.GET.get("month_from", 1))
-    month_to = int(request.GET.get("month_to", 12))
+    month_from_raw = request.GET.get("month_from", "").strip()
+    month_to_raw = request.GET.get("month_to", "").strip()
+    month_filter_selected = bool(month_from_raw or month_to_raw)
+    month_from = int(month_from_raw) if month_from_raw else 0
+    month_to = int(month_to_raw) if month_to_raw else month_from
+    if month_from == 0 and month_to:
+        month_from = month_to
     date_from_raw = request.GET.get("date_from", "").strip()
     date_to_raw = request.GET.get("date_to", "").strip()
     try:
@@ -2341,6 +2358,10 @@ def export_profits_report(request):
         date_to = datetime.strptime(date_to_raw, "%Y-%m-%d").date() if date_to_raw else None
     except ValueError:
         date_from, date_to = None, None
+    if month_filter_selected:
+        date_from = date_to = None
+    elif not date_from_raw and not date_to_raw:
+        date_from = date_to = datetime.now().date()
     if date_from and not date_to:
         date_to = date_from
     if date_to and not date_from:

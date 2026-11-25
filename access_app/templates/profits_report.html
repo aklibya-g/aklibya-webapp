@@ -164,17 +164,15 @@
         <div class="col-md-2">
             <label class="form-label">من شهر</label>
             <select name="month_from" class="form-select">
-                {% for m in months %}
-                <option value="{{ m.0 }}" {% if m.0 == month_from %}selected{% endif %}>{{ m.1 }}</option>
-                {% endfor %}
+                <option value="">اختر الشهر</option>
+                {% for m in months %}<option value="{{ m.0 }}" {% if m.0 == month_from %}selected{% endif %}>{{ m.1 }}</option>{% endfor %}
             </select>
         </div>
         <div class="col-md-2">
             <label class="form-label">إلى شهر</label>
             <select name="month_to" class="form-select">
-                {% for m in months %}
-                <option value="{{ m.0 }}" {% if m.0 == month_to %}selected{% endif %}>{{ m.1 }}</option>
-                {% endfor %}
+                <option value="">اختر الشهر</option>
+                {% for m in months %}<option value="{{ m.0 }}" {% if m.0 == month_to %}selected{% endif %}>{{ m.1 }}</option>{% endfor %}
             </select>
         </div>
         <div class="col-md-2">
@@ -188,9 +186,20 @@
         </div>
         <div class="col-md-2" style="display:flex;gap:8px">
             <button type="button" onclick="window.print()" style="flex:1;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-printer"></i> طباعة</button>
-            <a href="{% url 'export_profits_report' %}?year={{ year }}&month_from={{ month_from }}&month_to={{ month_to }}&date_from={{ date_from }}&date_to={{ date_to }}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
+            <a href="{% url 'export_profits_report' %}?year={{ year }}{% if month_from %}&month_from={{ month_from }}&month_to={{ month_to }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}" style="flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;padding:10px;border-radius:10px;font-weight:700;font-family:Cairo,sans-serif;cursor:pointer"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
         </div>
     </form>
+    <script>
+    (function () {
+        var monthFields = document.querySelectorAll('select[name="month_from"], select[name="month_to"]');
+        var dateFields = document.querySelectorAll('input[name="date_from"], input[name="date_to"]');
+        monthFields.forEach(function (field) {
+            field.addEventListener('change', function () {
+                if (this.value) dateFields.forEach(function (dateField) { dateField.value = ''; });
+            });
+        });
+    })();
+    </script>
 </div>
 
 <div id="tableView">
