@@ -2380,14 +2380,14 @@ def export_profits_report(request):
     ws.row_dimensions[1].height = 40
 
     sub_font = Font(name="Cairo", size=10, bold=True, color="FFFFFF")
-    ws.merge_cells("A2:L2")
+    ws.merge_cells("A2:M2")
     ws["A2"] = "شركة العربي للحوالات المالية"
     ws["A2"].font = sub_font
     ws["A2"].fill = header_fill
     ws["A2"].alignment = Alignment(horizontal="center")
     ws.row_dimensions[2].height = 28
 
-    headers = ["#", "الشهر", "إيداعات (مصري)", "حوالات (مصري)", "الفرق ÷ السعر", "إيداعات (ليبي)", "حوالات (ليبي)", "الفرق الليبي", "سعر الحوالات", "سعر الارصدة", "متوسط السعر", "صافي الربح"]
+    headers = ["#", "الشهر", "إيداعات (مصري)", "حوالات (مصري)", "فرق مصري", "فرق مصري بالليبي", "إيداعات (ليبي)", "حوالات (ليبي)", "الفرق الليبي", "سعر الحوالات", "سعر الارصدة", "متوسط السعر", "صافي الربح"]
     header_row = 4
     col_header_fill = PatternFill(start_color="f0fdf9", end_color="f0fdf9", fill_type="solid")
     col_header_font = Font(name="Cairo", size=10, bold=True, color="374151")
@@ -2444,22 +2444,22 @@ def export_profits_report(request):
         total_profit += profit
 
         row_label = f"{month_names[m]} {period_year}" if len({p[0] for p in periods}) > 1 else month_names[m]
-        row_data = [m, row_label, cap_egp, db_egp, round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), round(db_egp / db_lyd, 3) if db_lyd else 0, round(cap_egp / cap_lyd, 3) if cap_lyd else 0, avg_rate, round(profit, 2)]
+        row_data = [m, row_label, cap_egp, db_egp, round(egypt_surplus_egp, 2), round(egypt_surplus_lyd, 2), cap_lyd, db_lyd, round(lyd_surplus, 2), round(db_egp / db_lyd, 3) if db_lyd else 0, round(cap_egp / cap_lyd, 3) if cap_lyd else 0, avg_rate, round(profit, 2)]
         for col_idx, val in enumerate(row_data, 1):
             cell = ws.cell(row=row, column=col_idx, value=val)
             cell.font = data_font
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
-            if col_idx == 10:
+            if col_idx == 13:
                 cell.font = profit_pos_font if profit >= 0 else profit_neg_font
-            if col_idx == 9:
+            if col_idx in (10, 11, 12):
                 cell.number_format = "0.000"
         row += 1
 
     total_row = row
     total_fill = PatternFill(start_color="e8f5e9", end_color="e8f5e9", fill_type="solid")
     total_font = Font(name="Cairo", size=10, bold=True)
-    total_data = ["", "الإجمالي", total_cap_egp, total_db_egp, round(total_egp_to_lyd, 2), total_cap_lyd, total_db_lyd, round(total_lyd_surplus, 2), "—", "—", "—", round(total_profit, 2)]
+    total_data = ["", "الإجمالي", total_cap_egp, total_db_egp, round(total_cap_egp - total_db_egp, 2), round(total_egp_to_lyd, 2), total_cap_lyd, total_db_lyd, round(total_lyd_surplus, 2), "—", "—", "—", round(total_profit, 2)]
     for col_idx, val in enumerate(total_data, 1):
         cell = ws.cell(row=total_row, column=col_idx, value=val)
         cell.font = total_font
@@ -2467,7 +2467,7 @@ def export_profits_report(request):
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.border = thin_border
 
-    col_widths = [6, 14, 18, 18, 16, 18, 18, 16, 14, 14, 14, 18]
+    col_widths = [6, 14, 18, 18, 16, 18, 18, 18, 16, 14, 14, 14, 18]
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 

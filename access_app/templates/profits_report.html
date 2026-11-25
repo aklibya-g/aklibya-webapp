@@ -208,7 +208,8 @@
                         <th style="width:70px">الشهر</th>
                         <th>إيداعات مصري</th>
                         <th>حوالات مصري</th>
-                        <th>الفرق</th>
+                        <th>فرق مصري</th>
+                        <th>فرق مصري بالليبي</th>
                         <th>إيداعات ليبي</th>
                         <th>حوالات ليبي</th>
                         <th>فرق ليبي</th>
@@ -225,7 +226,8 @@
                         <td class="month-cell">{{ d.month_name }}</td>
                         <td>{{ d.cap_egp|fmt }}</td>
                         <td>{{ d.db_egp|fmt }}</td>
-                        <td class="rate-cell" style="font-weight:700;color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_to_lyd|fmt }}</td>
+                        <td style="font-weight:700;color:{% if d.egp_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_surplus|fmt }}</td>
+                        <td class="rate-cell" style="font-weight:700;color:{% if d.egp_to_lyd >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.egp_to_lyd|fmt }}</td>
                         <td>{{ d.cap_lyd|fmt }}</td>
                         <td>{{ d.db_lyd|fmt }}</td>
                         <td style="font-weight:600;color:{% if d.lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ d.lyd_surplus|fmt }}</td>
@@ -244,7 +246,8 @@
                         <td style="font-weight:800;font-size:.82rem">الإجمالي</td>
                         <td>{{ total_cap_egp|fmt }}</td>
                         <td>{{ total_db_egp|fmt }}</td>
-                        <td style="font-weight:800;color:{% if total_egp_balance >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_egp_to_lyd|fmt }}</td>
+                        <td style="font-weight:800;color:{% if total_egp_balance >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_egp_balance|fmt }}</td>
+                        <td style="font-weight:800;color:{% if total_egp_to_lyd >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_egp_to_lyd|fmt }}</td>
                         <td>{{ total_cap_lyd|fmt }}</td>
                         <td>{{ total_db_lyd|fmt }}</td>
                         <td style="font-weight:800;color:{% if total_lyd_surplus >= 0 %}#059669{% else %}#dc2626{% endif %}">{{ total_lyd_surplus|fmt }}</td>
