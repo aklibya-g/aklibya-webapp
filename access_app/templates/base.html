@@ -100,6 +100,12 @@
         .sidebar .nav-item.active { background:linear-gradient(90deg,rgba(245,158,11,.22),rgba(245,158,11,.08)); color:#fff; box-shadow:inset 3px 0 0 #f59e0b; }
         .sidebar .nav-item.active i { color:#fbbf24; }
         .sidebar .nav-item.active::before { display:none; }
+        .smart-import-link { color:#f59e0b!important; border:1px solid rgba(245,158,11,.48); background:rgba(245,158,11,.08); font-weight:800!important; }
+        .smart-import-link i { color:#f97316!important; }
+        .smart-import-link:not(.active):not(.smart-import-clicked) { animation:smartImportGlow 1.6s ease-in-out infinite; }
+        .smart-import-link.active,.smart-import-link.smart-import-clicked { background:linear-gradient(135deg,#f59e0b,#ea580c)!important; color:#fff!important; border-color:#f59e0b; box-shadow:0 4px 16px rgba(245,158,11,.38); }
+        .smart-import-link.active i,.smart-import-link.smart-import-clicked i { color:#fff!important; }
+        @keyframes smartImportGlow { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.12)} 50%{box-shadow:0 0 0 6px rgba(249,115,22,.28),0 0 18px rgba(249,115,22,.32)} }
         .sidebar .nav-section { color:#7891ad !important; padding:12px 10px 6px; font-size:.66rem; letter-spacing:.7px; }
         .sidebar .nav-section::after { background:rgba(255,255,255,.10); }
         .sec-box { margin:6px 2px 8px; padding:5px; border-radius:14px; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); }
@@ -377,9 +383,9 @@
                     </a>
                 </div>
 
-                <div class="sec-box" style="margin-top:6px;background:linear-gradient(135deg,rgba(37,211,102,0.15),rgba(18,140,126,0.08));border-color:rgba(37,211,102,0.25)">
-                    <a href="{% url 'smart_import' %}" class="nav-item" style="padding:7px 10px;{% if '/smart-import/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}">
-                        <i class="bi bi-stars" style="color:#25d366;"></i> استيراد ذكي
+                <div class="sec-box" style="margin-top:6px;background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(234,88,12,0.06));border-color:rgba(245,158,11,0.3)">
+                    <a href="{% url 'smart_import' %}" class="nav-item smart-import-link{% if '/smart-import/' in request.path %} active{% endif %}" style="padding:7px 10px;" onclick="this.classList.add('smart-import-clicked')">
+                        <i class="bi bi-stars"></i> استيراد ذكي
                     </a>
                 </div>
             </div>

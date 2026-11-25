@@ -69,7 +69,7 @@
  .formula-toggle:hover{background:#dbeafe}
  .formula-box.is-hidden{display:none}
  @keyframes formulaEyePulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.4)}50%{box-shadow:0 0 0 7px rgba(37,99,235,0)}}
- .report-actions{display:flex;gap:8px;width:100%}.report-action{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:8px 10px;border:0;border-radius:12px;color:#fff;text-decoration:none;font-family:Cairo,sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:transform .2s,filter .2s}.report-action:hover{transform:translateY(-1px);filter:brightness(.96);color:#fff}.report-action i{font-size:1rem}.report-action-print{background:linear-gradient(135deg,#0f766e,#14b8a6)}.report-action-export{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+ .report-actions{display:flex;gap:8px;width:auto;justify-content:flex-start}.report-action{flex:0 1 145px;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:8px 10px;border:0;border-radius:12px;color:#fff;text-decoration:none;font-family:Cairo,sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:transform .2s,filter .2s}.report-action:hover{transform:translateY(-1px);filter:brightness(.96);color:#fff}.report-action i{font-size:1rem}.report-action-print{background:linear-gradient(135deg,#0f766e,#14b8a6)}.report-action-export{background:linear-gradient(135deg,#2563eb,#1d4ed8)}.report-action-filter{background:linear-gradient(135deg,#059669,#047857)}
 .toggle-view{display:flex;gap:8px}
 .toggle-btn{padding:7px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
 .toggle-btn.active{background:#059669;color:#fff;border-color:#059669}
@@ -197,16 +197,14 @@
             </select>
         </div>
         <div class="col-md-2">
-            <button type="submit" class="btn-filter w-100"><i class="bi bi-funnel"></i> تصفية</button>
-        </div>
-        <div class="col-md-2">
             <div class="toggle-view">
                 <button type="button" class="toggle-btn active" onclick="showView('table')"><i class="bi bi-table"></i></button>
                 <button type="button" class="toggle-btn" onclick="showView('cards')"><i class="bi bi-grid"></i></button>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-12">
             <div class="report-actions">
+                <button type="submit" class="report-action report-action-filter"><i class="bi bi-funnel"></i><span>تصفية</span></button>
                 <button type="button" class="report-action report-action-print" onclick="window.print()"><i class="bi bi-printer"></i><span>طباعة</span></button>
                 <a class="report-action report-action-export" href="{% url 'export_profits_report' %}?year={{ year }}{% if month_from %}&month_from={{ month_from }}&month_to={{ month_to }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"><i class="bi bi-file-earmark-excel"></i><span>حفظ التقرير</span></a>
             </div>
