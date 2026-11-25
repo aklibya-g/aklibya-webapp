@@ -1385,6 +1385,8 @@ def import_whatsapp(request):
                             messages.warning(request, f"  {i}. {err}")
                         if len(errors) > 5:
                             messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
+                if request.POST.get("return_to") == "smart_import":
+                    return redirect("smart_import")
                 return render(request, "import_whatsapp.html", {
                     "title": "استيراد حوالات خارجية",
                     "created_records": created_records,
@@ -1774,6 +1776,8 @@ def import_balance(request):
                                 messages.warning(request, f"  {i}. {err}")
                             if len(errors) > 5:
                                 messages.info(request, f"  ... و {len(errors) - 5} أخطاء أخرى. راجع تنبيهات الاستيراد.")
+                    if request.POST.get("return_to") == "smart_import":
+                        return redirect("smart_import")
                     return render(request, "import_balance.html", {
                         "title": "استيراد أرصدة خارجية",
                         "clients": clients,

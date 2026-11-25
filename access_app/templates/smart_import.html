@@ -759,6 +759,7 @@ function doImport() {
     var html = '<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token|unlocalize }}">';
     html += '<input type="hidden" name="filtered_results" value=\'' + JSON.stringify(resultsToSend).replace(/'/g, "&#39;") + '\'>';
     html += '<input type="hidden" name="confirm" value="1">';
+    html += '<input type="hidden" name="return_to" value="smart_import">';
     if (isTr) {
         html += '<input type="hidden" name="use_prev_rate" value="' + (document.getElementById('siPrevRate').checked ? '1' : '0') + '">';
         html += '<input type="hidden" name="import_date" value="' + document.getElementById('siDate').value + '">';
