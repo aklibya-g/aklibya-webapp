@@ -4,6 +4,7 @@ import csv
 import re
 import subprocess
 import uuid
+from calendar import monthrange
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from django.shortcuts import render, redirect, get_object_or_404
@@ -868,6 +869,14 @@ def office_transfers_report(request):
     elif not any((date_from, date_to)):
         date_from = date_to = today.isoformat()
 
+    display_date_from, display_date_to = date_from, date_to
+    if year or month_from or month_to:
+        display_year = int(year or today.year)
+        display_month_from = int(month_from or 1)
+        display_month_to = int(month_to or 12)
+        display_date_from = datetime(display_year, display_month_from, 1).date().isoformat()
+        display_date_to = datetime(display_year, display_month_to, monthrange(display_year, display_month_to)[1]).date().isoformat()
+
     qs = Database.objects.select_related("office_name", "transfer_type").all()
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
@@ -889,7 +898,7 @@ def office_transfers_report(request):
         group["egp"] += transfer.transfered_amount or 0
         group["lyd"] += transfer.transfer_amount or 0
     return render(request, "office_transfers_report.html", {
-        "groups": list(groups.values()), "date_from": date_from, "date_to": date_to,
+        "groups": list(groups.values()), "date_from": display_date_from, "date_to": display_date_to,
         "total_count": sum(len(g["rows"]) for g in groups.values()),
         "total_egp": sum(g["egp"] for g in groups.values()), "total_lyd": sum(g["lyd"] for g in groups.values()),
     })
