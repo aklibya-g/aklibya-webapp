@@ -5,6 +5,25 @@
 {% block page_title %}<i class="bi bi-arrow-left-right text-primary"></i> الحوالات{% endblock %}
 
 {% block content %}
+<style>
+.table-app{font-size:.74rem!important;width:max-content;min-width:100%}
+.transaction-filter{flex:1 1 100%;max-width:100%;box-sizing:border-box;flex-wrap:wrap;overflow:visible}
+.transaction-filter input[name="q"]{flex:1 1 190px;min-width:150px;width:auto!important}
+.transaction-filter input[name="amount"]{width:120px!important}
+.transaction-filter input[type="date"]{width:125px!important}
+.transaction-filter select{max-width:135px}
+.transaction-filter button[type="submit"]{flex:0 0 auto;white-space:nowrap}
+.main-area{min-width:0;overflow-x:hidden}
+.table-responsive{max-width:100%;overflow-x:auto}
+.table-app thead th{font-size:.68rem!important;padding:2px 2px!important;white-space:nowrap}
+.table-app tbody td{padding:1px 2px!important;white-space:nowrap;line-height:1.25}
+.table-app th:first-child,.table-app td:first-child{width:22px;padding:2px!important}
+.table-app td:last-child,.table-app th:last-child{position:sticky;left:0;z-index:2;background:var(--card-bg);box-shadow:2px 0 5px rgba(0,0,0,.06)}
+.table-app th:last-child{z-index:3;background:var(--bg)}
+.table-app td:last-child .btn{padding:1px 4px!important;font-size:.62rem!important;line-height:1.25;border-radius:5px}
+.table-app td:last-child .btn i{font-size:.62rem!important}
+.table-app td:last-child .d-flex{gap:2px!important}
+</style>
 {% if clients %}
 <div class="stat-card p-2 mb-2" style="padding:8px 12px !important;">
     <div class="d-flex align-items-center gap-3 flex-wrap" style="font-size:0.82rem;">
@@ -275,27 +294,6 @@ function printPage() {
     };
 }
 </script>
-<style>
-.table-app { font-size: 0.74rem !important; }
-.transaction-filter { flex:1 1 100%; max-width:100%; box-sizing:border-box; flex-wrap:wrap; overflow:visible; }
-.transaction-filter input[name="q"] { flex:1 1 190px; min-width:150px; width:auto !important; }
-.transaction-filter input[name="amount"] { width:120px !important; }
-.transaction-filter input[type="date"] { width:125px !important; }
-.transaction-filter select { max-width:135px; }
-.transaction-filter button[type="submit"] { flex:0 0 auto; white-space:nowrap; }
-.main-area { min-width:0; overflow-x:hidden; }
-.table-responsive { max-width:100%; overflow-x:auto; }
-.table-app thead th { font-size: 0.68rem !important; padding: 5px 4px !important; white-space: nowrap; }
-.table-app { width:max-content; min-width:100%; }
-.table-app tbody td { padding: 1px 2px !important; white-space: nowrap; line-height:1.25; }
-.table-app thead th { padding: 2px 2px !important; }
-.table-app th:first-child, .table-app td:first-child { width: 22px; padding: 2px !important; }
-.table-app td:last-child, .table-app th:last-child { position: sticky; left: 0; z-index: 2; background: var(--card-bg); box-shadow: 2px 0 5px rgba(0,0,0,.06); }
-.table-app th:last-child { z-index: 3; background: var(--bg); }
-.table-app td:last-child .btn { padding: 1px 4px !important; font-size: .62rem !important; line-height: 1.25; border-radius: 5px; }
-.table-app td:last-child .btn i { font-size: .62rem !important; }
-.table-app td:last-child .d-flex { gap: 2px !important; }
-</style>
 <script>
 window.addEventListener('scroll', function() {
     var btns = document.getElementById('navBtns');
