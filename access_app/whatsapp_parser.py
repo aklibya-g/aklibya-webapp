@@ -8,17 +8,30 @@ ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
 
 
 def detect_beneficiary_office(lines, raw_lines=None):
-    """Read the first non-empty line immediately after a star marker."""
+    """Read the first office line marked by a star, without guessing.
+
+    Exports use both a standalone ``*`` line and a marker directly before the
+    value (``*اوية``).  WhatsApp field labels such as ``*الهاتف*`` are not
+    office markers and are skipped.
+    """
     source = raw_lines or lines
     for index, raw_line in enumerate(source):
         marker = str(raw_line or "").strip()
-        if not re.match(r"^\*+\s*$", marker):
+        marker_match = re.match(r"^\*+\s*(.*?)\s*$", marker)
+        if not marker_match:
             continue
-        candidate = ""
-        for following in source[index + 1:]:
-            candidate = str(following or "").strip()
-            if candidate:
-                break
+        inline = marker_match.group(1).strip().strip("*").strip()
+        field_label = re.match(r"^(الدوله|الهاتف|القيمه|المبلغ|الاسم|رقم|نوع|السعر)\b", inline)
+        if inline and not field_label:
+            candidate = inline
+        elif field_label:
+            continue
+        else:
+            candidate = ""
+            for following in source[index + 1:]:
+                candidate = str(following or "").strip()
+                if candidate:
+                    break
         if not candidate:
             return "", True
         cleaned = clean_emoji(candidate)
