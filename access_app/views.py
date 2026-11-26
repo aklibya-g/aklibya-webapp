@@ -786,6 +786,7 @@ def transactions(request):
     year = request.GET.get("year", "").strip()
     month_from = request.GET.get("month_from", "").strip()
     month_to = request.GET.get("month_to", "").strip()
+    office_id = request.GET.get("office", "").strip()
 
     if q:
         qs = qs.filter(
@@ -809,6 +810,9 @@ def transactions(request):
     if month_to:
         qs = qs.filter(date__month__lte=month_to)
 
+    if office_id:
+        qs = qs.filter(office_name_id=office_id)
+
     amount_filter = request.GET.get("amount", "").strip()
     if amount_filter:
         try:
@@ -830,7 +834,7 @@ def transactions(request):
 
     clients, total_egp_clients = _get_clients_with_remaining()
 
-    is_filtered = bool(q or date_from or date_to or year or month_from or month_to or amount_filter)
+    is_filtered = bool(q or date_from or date_to or year or month_from or month_to or amount_filter or office_id)
 
     return render(request, "transactions_list.html", {
         "title": "الحوالات",
@@ -841,6 +845,9 @@ def transactions(request):
         "selected_year": year,
         "selected_month_from": month_from,
         "selected_month_to": month_to,
+        "selected_office": office_id,
+        "offices": OfficeName.objects.all().order_by("office_name"),
+        "show_office": bool(office_id),
         "total_egp": total_egp_val,
         "total_lyd": total_lyd_val,
         "avg_rate": avg_rate,
@@ -1825,6 +1832,7 @@ def export_transfers_excel(request):
     year = request.GET.get("year", "").strip()
     month_from = request.GET.get("month_from", "").strip()
     month_to = request.GET.get("month_to", "").strip()
+    office_id = request.GET.get("office", "").strip()
     amount = request.GET.get("amount", "").strip()
     rows = Database.objects.select_related("transfer_type", "office_name").order_by("-date", "-id")
     if q:
@@ -1834,6 +1842,7 @@ def export_transfers_excel(request):
     if year: rows = rows.filter(date__year=year)
     if month_from: rows = rows.filter(date__month__gte=month_from)
     if month_to: rows = rows.filter(date__month__lte=month_to)
+    if office_id: rows = rows.filter(office_name_id=office_id)
     if amount:
         try: rows = rows.filter(transfered_amount=float(amount.replace(",", "")))
         except ValueError: pass
@@ -1843,7 +1852,11 @@ def export_transfers_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "الحوالات"
-    headers = ["رقم الطلب", "التاريخ", "الوقت", "المرسل", "هاتف المرسل", "المستلم", "هاتف المستلم", "المبلغ مصري", "سعر الصرف", "المبلغ ليبي", "نوع التحويل", "المكتب", "منطقة المستلم", "ملاحظات"]
+    show_office = bool(office_id)
+    headers = ["رقم الطلب", "التاريخ", "الوقت", "المرسل", "هاتف المرسل", "المستلم", "هاتف المستلم", "المبلغ مصري", "سعر الصرف", "المبلغ ليبي", "نوع التحويل"]
+    if show_office:
+        headers.append("المكتب")
+    headers.extend(["منطقة المستلم", "ملاحظات"])
     header_font = openpyxl.styles.Font(bold=True, color="FFFFFF", size=11)
     header_fill = openpyxl.styles.PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
     for col, h in enumerate(headers, 1):
@@ -1863,9 +1876,12 @@ def export_transfers_excel(request):
         ws.cell(row=row_idx, column=9, value=t.exchange_rate or 0)
         ws.cell(row=row_idx, column=10, value=t.transfer_amount or 0)
         ws.cell(row=row_idx, column=11, value=t.transfer_type.Transfer_type if t.transfer_type else "")
-        ws.cell(row=row_idx, column=12, value=t.office_name.office_name if t.office_name else "")
-        ws.cell(row=row_idx, column=13, value=t.receiver_region or "")
-        ws.cell(row=row_idx, column=14, value=t.remarks or "")
+        next_col = 12
+        if show_office:
+            ws.cell(row=row_idx, column=next_col, value=t.office_name.office_name if t.office_name else "")
+            next_col += 1
+        ws.cell(row=row_idx, column=next_col, value=t.receiver_region or "")
+        ws.cell(row=row_idx, column=next_col + 1, value=t.remarks or "")
         for col in [8, 9, 10]:
             ws.cell(row=row_idx, column=col).number_format = '#,##0.000'
     ws.column_dimensions['A'].width = 12

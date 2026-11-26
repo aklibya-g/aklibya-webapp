@@ -46,13 +46,19 @@
             <option value="{{ m }}" {% if selected_month_to == m %}selected{% endif %}>شهر {{ m }}</option>
             {% endfor %}
         </select>
+        <select name="office" class="form-select form-select-sm" style="width:150px;" title="فلتر المكتب">
+            <option value="">كل المكاتب</option>
+            {% for office in offices %}
+            <option value="{{ office.id }}" {% if selected_office == office.id|stringformat:"s" %}selected{% endif %}>{{ office.office_name }}</option>
+            {% endfor %}
+        </select>
         <input type="hidden" name="order" value="{% if order == 'desc' %}asc{% else %}desc{% endif %}">
-        {% if q or date_from or date_to or selected_year or selected_month_from or selected_month_to or amount_filter %}
+        {% if q or date_from or date_to or selected_year or selected_month_from or selected_month_to or amount_filter or selected_office %}
         <a href="{% url 'transactions' %}?order={{ order }}" class="btn btn-outline-danger btn-sm" title="مسح الفلتر"><i class="bi bi-x-lg"></i></a>
         {% endif %}
         <button type="submit" class="btn btn-primary btn-sm px-3" style="font-weight:800;box-shadow:0 3px 8px rgba(79,70,229,.3)"><i class="bi bi-search"></i> تطبيق الفلتر</button>
     </form>
-    <a href="{% url 'export_transfers' %}?q={{ q|urlencode }}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}" class="btn btn-success btn-sm" title="حفظ تقرير الحوالات حسب الفلتر"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
+    <a href="{% url 'export_transfers' %}?q={{ q|urlencode }}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}{% if selected_office %}&office={{ selected_office }}{% endif %}" class="btn btn-success btn-sm" title="حفظ تقرير الحوالات حسب الفلتر"><i class="bi bi-file-earmark-excel"></i> حفظ التقرير</a>
     <a href="?q={{ q|urlencode }}{% if amount_filter %}&amount={{ amount_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if selected_month_from %}&month_from={{ selected_month_from }}{% endif %}{% if selected_month_to %}&month_to={{ selected_month_to }}{% endif %}&order={% if order == 'desc' %}asc{% else %}desc{% endif %}" class="btn btn-outline-secondary btn-sm" style="text-decoration:none">
         <i class="bi bi-sort-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
         {% if order == 'desc' %}تنازلي{% else %}تصاعدي{% endif %}
@@ -105,6 +111,7 @@
                         <th>السعر</th>
                         <th>ليبي</th>
                         <th>النوع</th>
+                        {% if show_office %}<th>المكتب</th>{% endif %}
                         <th>ملاحظات</th>
                         <th>إجراءات</th>
                     </tr>
@@ -121,6 +128,7 @@
                         <td>{{ t.exchange_rate|floatformat:"-3u" }}</td>
                         <td>{{ t.transfer_amount|fmt }}</td>
                         <td>{{ t.transfer_type.Transfer_type|default:"-" }}</td>
+                        {% if show_office %}<td style="font-weight:700;color:#b45309">{{ t.office_name.office_name|default:"العربي" }}</td>{% endif %}
                         <td>{{ t.remarks|truncatechars:16|default:"" }}</td>
                         <td onclick="event.stopPropagation()">
                             <div class="d-flex gap-1">
@@ -133,7 +141,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="11" class="text-center text-muted">لا توجد حوالات</td></tr>
+                    <tr><td colspan="{% if show_office %}12{% else %}11{% endif %}" class="text-center text-muted">لا توجد حوالات</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
