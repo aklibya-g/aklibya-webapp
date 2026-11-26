@@ -7,13 +7,32 @@ KNOWN_OFFICES = ["الزاجل", "جنزور", "الجروشي"]
 ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
 
 
-def detect_beneficiary_office(lines):
-    """Return the issuing office found in a message, or our office by default."""
-    for line in lines:
-        for office in KNOWN_OFFICES:
-            if office in line:
-                return office
-    return "العربي"
+def detect_beneficiary_office(lines, raw_lines=None):
+    """Read the first non-empty line immediately after a star marker."""
+    source = raw_lines or lines
+    for index, raw_line in enumerate(source):
+        marker = str(raw_line or "").strip()
+        if not re.match(r"^\*+\s*$", marker):
+            continue
+        candidate = ""
+        for following in source[index + 1:]:
+            candidate = str(following or "").strip()
+            if candidate:
+                break
+        if not candidate:
+            return "", True
+        cleaned = clean_emoji(candidate)
+        unreadable = (
+            not re.search(r"[\u0600-\u06ffA-Za-z]", cleaned)
+            or is_header_line(cleaned)
+            or is_phone_line(cleaned)
+            or _is_rate_line(cleaned)
+            or extract_egp_from_line(cleaned)
+            or any(kind in cleaned for kind in TRANSFER_TYPES)
+            or _is_name_line(cleaned)
+        )
+        return ("", True) if unreadable else (candidate, False)
+    return "العربي", False
 
 
 def clean_emoji(text):
@@ -230,7 +249,7 @@ def parse_whatsapp_block(block, block_raw=None):
     transfer_type = None
     rate = None
     amount_egp = None
-    beneficiary_office = detect_beneficiary_office(lines)
+    beneficiary_office, office_unrecognized = detect_beneficiary_office(lines, raw_lines)
 
     for idx, line in enumerate(lines):
         orig = raw_lines[idx] if idx < len(raw_lines) else line
@@ -411,6 +430,7 @@ def parse_whatsapp_block(block, block_raw=None):
                 "exchange_rate": 0,
                 "amount_lyd": 0,
                 "office_name": beneficiary_office,
+                "office_unrecognized": office_unrecognized,
             }
         return None
 
@@ -421,6 +441,7 @@ def parse_whatsapp_block(block, block_raw=None):
         "exchange_rate": rate,
         "amount_lyd": round(amount_egp / rate, 2),
         "office_name": beneficiary_office,
+        "office_unrecognized": office_unrecognized,
     }
 
 

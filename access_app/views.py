@@ -1339,8 +1339,10 @@ def import_whatsapp(request):
 
                         tt_name = item.get("transfer_type", "كاش")
                         tt, _ = TransferType.objects.get_or_create(Transfer_type=tt_name)
-                        office_label = str(item.get("office_name") or "العربي").strip() or "العربي"
-                        office_obj, _ = OfficeName.objects.get_or_create(office_name=office_label)
+                        office_label = str(item.get("office_name") or "").strip()
+                        office_obj = None
+                        if office_label and not item.get("office_unrecognized"):
+                            office_obj, _ = OfficeName.objects.get_or_create(office_name=office_label)
                         rec = Database.objects.create(
                             sender_name="أحمد ياسين",
                             receiver_tele=item.get("receiver_tele") or "",
@@ -3578,6 +3580,7 @@ def api_smart_detect(request):
                 "exchange_rate": item.get("exchange_rate", 0),
                 "amount_lyd": item.get("amount_lyd", 0),
                 "office_name": item.get("office_name", "العربي"),
+                "office_unrecognized": bool(item.get("office_unrecognized")),
             })
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
 
