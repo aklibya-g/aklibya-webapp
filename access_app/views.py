@@ -3731,6 +3731,8 @@ def api_extension_receive(request):
             "amount_egp": i.get("amount_egp",0),
             "exchange_rate": i.get("exchange_rate",0),
             "amount_lyd": i.get("amount_lyd",0),
+            "office_name": i.get("office_name", "العربي"),
+            "office_unrecognized": bool(i.get("office_unrecognized")),
         } for i in parsed]
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
 
