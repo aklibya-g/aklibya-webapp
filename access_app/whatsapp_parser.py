@@ -23,6 +23,11 @@ def detect_beneficiary_office(lines, raw_lines=None):
     # deliberately falls through to the العربي default.
     for raw_line in source:
         first_line = clean_emoji(str(raw_line or "").strip())
+        # WhatsApp text exports keep the date/sender prefix on the first
+        # message line.  The useful part is everything after the final colon:
+        # "... شعبان صرافه: فودافون الزاجل".
+        if is_header_line(first_line) and ":" in first_line:
+            first_line = first_line.rsplit(":", 1)[-1].strip()
         method_match = re.match(
             r"^(فودافون|فادفون|فدفون|انستا\s*باي|تحويل\s*بنكي|كاش|صك)\s*(.*)$",
             first_line,
