@@ -1346,6 +1346,8 @@ def import_whatsapp(request):
 
                         tt_name = item.get("transfer_type", "كاش")
                         tt, _ = TransferType.objects.get_or_create(Transfer_type=tt_name)
+                        office_label = str(item.get("office_name") or "العربي").strip() or "العربي"
+                        office_obj, _ = OfficeName.objects.get_or_create(office_name=office_label)
                         rec = Database.objects.create(
                             sender_name="أحمد ياسين",
                             receiver_tele=item.get("receiver_tele") or "",
@@ -1357,6 +1359,7 @@ def import_whatsapp(request):
                             date=import_date or datetime.now(),
                             time=datetime.now(),
                             from_source=from_whatsapp,
+                            office_name=office_obj,
                         )
                         created_records.append(rec)
                         created += 1
@@ -3572,6 +3575,7 @@ def api_smart_detect(request):
                 "amount_egp": item.get("amount_egp", 0),
                 "exchange_rate": item.get("exchange_rate", 0),
                 "amount_lyd": item.get("amount_lyd", 0),
+                "office_name": item.get("office_name", "العربي"),
             })
         return JsonResponse({"results": results, "type": "transfer", "count": len(results)})
 
@@ -3618,6 +3622,7 @@ def _parse_smart_excel(uploaded_file, requested_type=""):
         "lyd": ["المبلغ ليبي", "المبلغ الليبي", "نقدي ليبي", "amount lyd", "amountlyd", "lyd", "transferamount"],
         "type": ["نوع التحويل", "الطريقة", "نوع", "transfer type", "transfertype"],
         "client": ["العميل", "صاحب الرصيد", "من رصيد", "client", "customer"],
+        "office": ["المكتب", "اسم المكتب", "المستفيد", "office", "beneficiary"],
     }
     alias_keys = {k: {_excel_header_key(v) for v in vals} for k, vals in aliases.items()}
     header_idx = None
@@ -3668,6 +3673,7 @@ def _parse_smart_excel(uploaded_file, requested_type=""):
                 "amount_egp": egp,
                 "exchange_rate": rate,
                 "amount_lyd": lyd or (round(egp / rate, 2) if rate > 0 else 0),
+                "office_name": str(get("office") or "العربي").strip() or "العربي",
             })
     if "rate" not in colmap:
         warnings.append("لم يتم العثور على عمود سعر الصرف")

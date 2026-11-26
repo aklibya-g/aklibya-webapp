@@ -571,7 +571,7 @@ function showPreview() {
     var body = document.getElementById('previewBody');
 
     if (isTr) {
-        head.innerHTML = '<tr><th class="num-col">#</th><th class="phone-col">رقم المحمول</th><th class="type-col">نوع</th><th class="egp-col">مصري</th><th class="rate-col">السعر</th><th class="lyd-col">ليبي</th><th class="actions-col"></th></tr>';
+        head.innerHTML = '<tr><th class="num-col">#</th><th class="phone-col">رقم المحمول</th><th class="type-col">نوع</th><th class="office-col">المكتب</th><th class="egp-col">مصري</th><th class="rate-col">السعر</th><th class="lyd-col">ليبي</th><th class="actions-col"></th></tr>';
     } else {
         head.innerHTML = '<tr><th class="num-col">#</th><th class="egp-col">مصري</th><th class="rate-col">السعر</th><th class="lyd-col">ليبي</th><th class="actions-col"></th></tr>';
     }
@@ -584,6 +584,7 @@ function showPreview() {
         if (isTr) {
             html += '<td class="phone-col" dir="ltr" style="font-weight:700">' + (r.receiver_tele || '-') + '</td>';
             html += '<td class="type-col">' + (r.transfer_type || 'كاش') + '</td>';
+            html += '<td class="office-col" style="font-weight:700;color:#d97706">' + (r.office_name || 'العربي') + '</td>';
             html += '<td class="egp-col" style="color:var(--primary)">' + fmt(r.amount_egp) + '</td>';
             if (r._rateFilled) {
                 html += '<td class="rate-col" style="color:#991b1b;font-weight:800;background:#fecdd3;border-radius:4px" title="سعر من الحوالة السابقة">⚡ ' + (r.exchange_rate || 0) + '</td>';
@@ -641,6 +642,7 @@ function editRow(idx) {
     if (isTr) {
         fields += '<div class="mb-3"><label class="si-label">رقم المحمول</label><input type="text" id="sePhone" value="' + (r.receiver_tele || '') + '" dir="ltr" class="si-input"></div>';
         fields += '<div class="mb-3"><label class="si-label">نوع التحويل</label><select id="seType" class="si-select"><option' + (r.transfer_type === 'كاش' ? ' selected' : '') + '>كاش</option><option' + (r.transfer_type === 'فودافون كاش' ? ' selected' : '') + '>فودافون كاش</option><option' + (r.transfer_type === 'انستا باي' ? ' selected' : '') + '>انستا باي</option><option' + (r.transfer_type === 'تحويل بنكي' ? ' selected' : '') + '>تحويل بنكي</option><option' + (r.transfer_type === 'صك' ? ' selected' : '') + '>صك</option></select></div>';
+        fields += '<div class="mb-3"><label class="si-label">المكتب</label><input type="text" id="seOffice" value="' + (r.office_name || 'العربي') + '" class="si-input"></div>';
         fields += '<div class="mb-3"><label class="si-label">المبلغ مصري</label><input type="number" id="seEgp" value="' + (r.amount_egp || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
         fields += '<div class="mb-3"><label class="si-label">سعر الصرف</label><input type="number" id="seRate" value="' + (r.exchange_rate || '') + '" step="0.01" class="si-input" oninput="calcLyd()"></div>';
         fields += '<div class="mb-0"><label class="si-label">المبلغ ليبي</label><input type="number" id="seLyd" value="' + (r.amount_lyd || '') + '" step="0.01" readonly class="si-input" style="background:#f0f0f0"></div>';
@@ -669,6 +671,7 @@ function saveEdit() {
     if (isTr) {
         smartResults[idx].receiver_tele = document.getElementById('sePhone').value;
         smartResults[idx].transfer_type = document.getElementById('seType').value;
+        smartResults[idx].office_name = document.getElementById('seOffice').value.trim() || 'العربي';
         smartResults[idx].amount_egp = parseFloat(document.getElementById('seEgp').value) || 0;
         smartResults[idx].exchange_rate = parseFloat(document.getElementById('seRate').value) || 0;
         smartResults[idx].amount_lyd = parseFloat(document.getElementById('seLyd').value) || 0;

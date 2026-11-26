@@ -2,8 +2,18 @@ import re
 
 TRANSFER_TYPES = ["كاش", "فودافون كاش", "فادفون كاش", "فدفون كاش", "انستا باي", "تحويل بنكي", "صك"]
 RATE_KEYWORDS = ["سعر", "السعر", "سعر الصرف", "سعرالصرف"]
+KNOWN_OFFICES = ["الزاجل", "جنزور", "الجروشي"]
 
 ARABIC_DIGITS = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
+
+
+def detect_beneficiary_office(lines):
+    """Return the issuing office found in a message, or our office by default."""
+    for line in lines:
+        for office in KNOWN_OFFICES:
+            if office in line:
+                return office
+    return "العربي"
 
 
 def clean_emoji(text):
@@ -220,6 +230,7 @@ def parse_whatsapp_block(block, block_raw=None):
     transfer_type = None
     rate = None
     amount_egp = None
+    beneficiary_office = detect_beneficiary_office(lines)
 
     for idx, line in enumerate(lines):
         orig = raw_lines[idx] if idx < len(raw_lines) else line
@@ -399,6 +410,7 @@ def parse_whatsapp_block(block, block_raw=None):
                 "amount_egp": amount_egp,
                 "exchange_rate": 0,
                 "amount_lyd": 0,
+                "office_name": beneficiary_office,
             }
         return None
 
@@ -408,6 +420,7 @@ def parse_whatsapp_block(block, block_raw=None):
         "amount_egp": amount_egp,
         "exchange_rate": rate,
         "amount_lyd": round(amount_egp / rate, 2),
+        "office_name": beneficiary_office,
     }
 
 
