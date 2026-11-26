@@ -503,10 +503,10 @@ function analyzeWa() {
 
 function analyzeAndRender(text, source) {
     smartType = document.querySelector('.si-type-pill.active').dataset.type;
-    // WhatsApp balance files often mention Vodafone/cash as the delivery
-    // channel. Prefer balances when repeated "استلام" records contain EGP.
-    var receiptCount = (text.match(/استلام/g) || []).length;
-    if (receiptCount >= 2 && /(ج\s*م|جنيه|مصري)/.test(text)) {
+    // Any receipt marker means this is a balance file, not a transfer file.
+    // Switch the selected button before sending the analysis request.
+    var receiptCount = (text.match(/استلام|استلاام/g) || []).length;
+    if (receiptCount > 0) {
         smartType = 'balance';
         setType('balance');
     }

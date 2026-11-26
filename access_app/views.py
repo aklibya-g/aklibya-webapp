@@ -1531,7 +1531,9 @@ def _extract_egp(ln):
     # Otherwise 🇾🇪 just means "via Yemen channel", not currency - ignore it
 
     # Pattern 1: "استلام XXX" or "دخول XXX" - extract the EGP amount.
-    m = re.search(r'(?:استلام|دخول)\s*(\d[\d,\.]*)', ln)
+    # WhatsApp messages sometimes put quotation marks between the label and
+    # amount: استلام " 1500 ج.م
+    m = re.search(r'(?:استلام|دخول)\s*["«»“”]??\s*(\d[\d,\.]*)', ln)
     if m:
         try:
             v = _clean_number(m.group(1))
