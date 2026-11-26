@@ -67,21 +67,21 @@ body.transactions-loading .main-area{visibility:hidden}
         <span style="font-weight:800;color:var(--primary);white-space:nowrap"><i class="bi bi-funnel-fill"></i> استعلام</span>
         <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px;border-radius:8px;">
         <input type="number" name="amount" value="{{ amount_filter }}" class="form-control form-control-sm" placeholder="بحث بالقيمة..." style="width:150px;border-radius:8px;">
-        <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="من يوم" style="width:145px;border-radius:8px;">
-        <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm" title="إلى يوم" style="width:145px;border-radius:8px;">
-        <select name="year" class="form-select form-select-sm" style="width:auto;">
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="من يوم" style="width:145px;border-radius:8px;" onchange="clearMonthFilters()">
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm" title="إلى يوم" style="width:145px;border-radius:8px;" onchange="clearMonthFilters()">
+        <select name="year" class="form-select form-select-sm" style="width:auto;" onchange="clearDateFilters()">
             <option value="">كل السنوات</option>
             {% for y in "2024,2025,2026,2027,2028"|split %}
             <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
-        <select name="month_from" class="form-select form-select-sm" style="width:auto;">
+        <select name="month_from" class="form-select form-select-sm" style="width:auto;" onchange="clearDateFilters()">
             <option value="">من شهر</option>
             {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
             <option value="{{ m }}" {% if selected_month_from == m %}selected{% endif %}>شهر {{ m }}</option>
             {% endfor %}
         </select>
-        <select name="month_to" class="form-select form-select-sm" style="width:auto;">
+        <select name="month_to" class="form-select form-select-sm" style="width:auto;" onchange="clearDateFilters()">
             <option value="">إلى شهر</option>
             {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
             <option value="{{ m }}" {% if selected_month_to == m %}selected{% endif %}>شهر {{ m }}</option>
@@ -202,6 +202,20 @@ body.transactions-loading .main-area{visibility:hidden}
 </form>
 
 <script>
+function clearDateFilters() {
+    var from = document.querySelector('input[name="date_from"]');
+    var to = document.querySelector('input[name="date_to"]');
+    if (from) from.value = '';
+    if (to) to.value = '';
+}
+function clearMonthFilters() {
+    var year = document.querySelector('select[name="year"]');
+    var from = document.querySelector('select[name="month_from"]');
+    var to = document.querySelector('select[name="month_to"]');
+    if (year) year.value = '';
+    if (from) from.value = '';
+    if (to) to.value = '';
+}
 function toggleAll(master) {
     document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
     document.getElementById('selectAllTh').checked = master.checked;

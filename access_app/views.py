@@ -773,6 +773,10 @@ def transactions(request):
     month_from = request.GET.get("month_from", "").strip()
     month_to = request.GET.get("month_to", "").strip()
     office_id = request.GET.get("office", "").strip()
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not date_from and not date_to:
+        date_from = date_to = datetime.now().date().isoformat()
 
     if q:
         qs = qs.filter(
@@ -850,7 +854,7 @@ def transactions(request):
 @login_required_custom
 def office_transfers_report(request):
     """Show transfer totals grouped by office for the selected period."""
-    today = timezone.localdate()
+    today = datetime.now().date()
     date_from = request.GET.get("date_from", "").strip()
     date_to = request.GET.get("date_to", "").strip()
     year = request.GET.get("year", "").strip()
@@ -859,7 +863,9 @@ def office_transfers_report(request):
     q = request.GET.get("q", "").strip()
     amount_filter = request.GET.get("amount", "").strip()
     office_id = request.GET.get("office", "").strip()
-    if not any((date_from, date_to, year, month_from, month_to)):
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not any((date_from, date_to)):
         date_from = date_to = today.isoformat()
 
     qs = Database.objects.select_related("office_name", "transfer_type").all()
