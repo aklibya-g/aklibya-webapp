@@ -539,7 +539,14 @@ def parse_whatsapp_text(text):
             should_split = bool(current_clean)
         elif not has_headers and len(current_clean) > 0:
             prev = current_clean[-1]
-            if _is_transfer_start(line, prev):
+            # The first line may be "فودافون الزاجل" and the next line the
+            # recipient phone. Keep them in one block so office extraction
+            # sees both lines together.
+            prev_is_method_office = bool(re.match(
+                r"^(فودافون|فادفون|فدفون|انستا\s*باي|تحويل\s*بنكي|كاش|صك)\s+.+$",
+                prev,
+            ))
+            if _is_transfer_start(line, prev) and not prev_is_method_office:
                 should_split = True
         if should_split:
             blocks_raw.append("\n".join(current_raw))
