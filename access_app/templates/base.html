@@ -63,6 +63,7 @@
         body.size-2 { font-size: 16px; }
         body.size-3 { font-size: 18px; }
         * { box-sizing: border-box; }
+        html, body { overflow-x:hidden; }
         body { background: var(--bg); font-family: 'Cairo', sans-serif; color: var(--text); transition: background .3s, color .3s; margin: 0; min-height: 100vh; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -283,6 +284,22 @@
     </style>
 </head>
 <body class="{% if maintenance_mode %}maintenance-active{% endif %}">
+<script>
+(function () {
+    try {
+        var ls = window.localStorage;
+        var theme = ls.getItem('darkMode') || 'light';
+        if (theme === '1') theme = 'dark';
+        if (['light','soft','green','blue','beige','purple','dark'].indexOf(theme) < 0) theme = 'light';
+        if (theme !== 'light') document.body.classList.add(theme);
+        var fs = parseInt(ls.getItem('fontSize') || '2', 10);
+        if (fs < 1 || fs > 3) fs = 2;
+        document.body.classList.add('size-' + fs);
+        if (ls.getItem('boldText') === '1') document.body.classList.add('font-bold');
+        if (ls.getItem('sidebarHidden') === '1') document.body.classList.add('sidebar-hidden');
+    } catch (e) {}
+})();
+</script>
     <div class="app-layout">
         <div class="sidebar" id="sidebar">
             <div class="brand">
