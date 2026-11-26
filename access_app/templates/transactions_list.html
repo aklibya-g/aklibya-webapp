@@ -22,7 +22,7 @@
 
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="{% url 'add_transaction' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> تحويل</a>
-    <form method="get" class="d-flex gap-2 align-items-center p-2" id="filterForm" style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;box-shadow:0 3px 10px rgba(79,70,229,.12);">
+    <form method="get" class="transaction-filter d-flex gap-2 align-items-center p-2" id="filterForm" style="background:var(--primary-bg);border:1px solid var(--primary);border-radius:12px;box-shadow:0 3px 10px rgba(79,70,229,.12);">
         <span style="font-weight:800;color:var(--primary);white-space:nowrap"><i class="bi bi-funnel-fill"></i> استعلام</span>
         <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="بحث بالاسم أو رقم الهاتف..." style="width:220px;border-radius:8px;">
         <input type="number" name="amount" value="{{ amount_filter }}" class="form-control form-control-sm" placeholder="بحث بالقيمة..." style="width:150px;border-radius:8px;">
@@ -277,8 +277,16 @@ function printPage() {
 </script>
 <style>
 .table-app { font-size: 0.74rem !important; }
+.transaction-filter { flex:1 1 100%; max-width:100%; box-sizing:border-box; flex-wrap:wrap; overflow:visible; }
+.transaction-filter input[name="q"] { flex:1 1 190px; min-width:150px; width:auto !important; }
+.transaction-filter input[name="amount"] { width:120px !important; }
+.transaction-filter input[type="date"] { width:125px !important; }
+.transaction-filter select { max-width:135px; }
+.transaction-filter button[type="submit"] { flex:0 0 auto; white-space:nowrap; }
 .table-app thead th { font-size: 0.68rem !important; padding: 5px 4px !important; white-space: nowrap; }
-.table-app tbody td { padding: 4px 4px !important; white-space: nowrap; }
+.table-app { width:max-content; min-width:100%; }
+.table-app tbody td { padding: 2px 3px !important; white-space: nowrap; }
+.table-app thead th { padding: 3px 3px !important; }
 .table-app th:first-child, .table-app td:first-child { width: 22px; padding: 2px !important; }
 .table-app td:last-child, .table-app th:last-child { position: sticky; left: 0; z-index: 2; background: var(--card-bg); box-shadow: 2px 0 5px rgba(0,0,0,.06); }
 .table-app th:last-child { z-index: 3; background: var(--bg); }
