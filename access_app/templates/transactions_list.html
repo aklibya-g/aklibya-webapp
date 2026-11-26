@@ -283,10 +283,12 @@ function printPage() {
 .transaction-filter input[type="date"] { width:125px !important; }
 .transaction-filter select { max-width:135px; }
 .transaction-filter button[type="submit"] { flex:0 0 auto; white-space:nowrap; }
+.main-area { min-width:0; overflow-x:hidden; }
+.table-responsive { max-width:100%; overflow-x:auto; }
 .table-app thead th { font-size: 0.68rem !important; padding: 5px 4px !important; white-space: nowrap; }
 .table-app { width:max-content; min-width:100%; }
-.table-app tbody td { padding: 2px 3px !important; white-space: nowrap; }
-.table-app thead th { padding: 3px 3px !important; }
+.table-app tbody td { padding: 1px 2px !important; white-space: nowrap; line-height:1.25; }
+.table-app thead th { padding: 2px 2px !important; }
 .table-app th:first-child, .table-app td:first-child { width: 22px; padding: 2px !important; }
 .table-app td:last-child, .table-app th:last-child { position: sticky; left: 0; z-index: 2; background: var(--card-bg); box-shadow: 2px 0 5px rgba(0,0,0,.06); }
 .table-app th:last-child { z-index: 3; background: var(--bg); }
