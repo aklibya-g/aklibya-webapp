@@ -6,7 +6,7 @@
 
 {% block content %}
 <style>
-.table-app{font-size:.74rem!important;width:max-content;min-width:100%}
+.table-app{font-size:.74rem!important;width:1120px;min-width:1120px;table-layout:fixed}
 .transaction-filter{flex:1 1 100%;max-width:100%;box-sizing:border-box;flex-wrap:wrap;overflow:visible}
 .transaction-filter input[name="q"]{flex:1 1 190px;min-width:150px;width:auto!important}
 .transaction-filter input[name="amount"]{width:120px!important}
@@ -18,6 +18,16 @@
 .table-app thead th{font-size:.68rem!important;padding:2px 2px!important;white-space:nowrap}
 .table-app tbody td{padding:1px 2px!important;white-space:nowrap;line-height:1.25}
 .table-app th:first-child,.table-app td:first-child{width:22px;padding:2px!important}
+.table-app th:nth-child(2),.table-app td:nth-child(2){width:145px}
+.table-app th:nth-child(3),.table-app td:nth-child(3){width:94px}
+.table-app th:nth-child(4),.table-app td:nth-child(4){width:115px}
+.table-app th:nth-child(5),.table-app td:nth-child(5){width:115px}
+.table-app th:nth-child(6),.table-app td:nth-child(6){width:92px}
+.table-app th:nth-child(7),.table-app td:nth-child(7){width:68px}
+.table-app th:nth-child(8),.table-app td:nth-child(8){width:92px}
+.table-app th:nth-child(9),.table-app td:nth-child(9){width:76px}
+.table-app th:nth-last-child(2),.table-app td:nth-last-child(2){width:110px}
+.table-app th:last-child,.table-app td:last-child{width:180px}
 .table-app td:last-child,.table-app th:last-child{position:sticky;left:0;z-index:2;background:var(--card-bg);box-shadow:2px 0 5px rgba(0,0,0,.06)}
 .table-app th:last-child{z-index:3;background:var(--bg)}
 .table-app td:last-child .btn{padding:1px 4px!important;font-size:.62rem!important;line-height:1.25;border-radius:5px}
