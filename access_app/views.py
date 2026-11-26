@@ -861,6 +861,11 @@ def office_transfers_report(request):
     year = request.GET.get("year", "").strip()
     month_from = request.GET.get("month_from", "").strip()
     month_to = request.GET.get("month_to", "").strip()
+
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not date_from and not date_to:
+        date_from = date_to = datetime.now().date().isoformat()
     q = request.GET.get("q", "").strip()
     amount_filter = request.GET.get("amount", "").strip()
     office_id = request.GET.get("office", "").strip()
@@ -1010,6 +1015,11 @@ def capital_list(request):
     year = request.GET.get("year", "").strip()
     month_from = request.GET.get("month_from", "").strip()
     month_to = request.GET.get("month_to", "").strip()
+
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not date_from and not date_to:
+        date_from = date_to = datetime.now().date().isoformat()
 
     if q:
         qs = qs.filter(

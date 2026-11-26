@@ -5,25 +5,33 @@
 {% block page_title %}<i class="bi bi-wallet2 text-success"></i> الأرصدة{% endblock %}
 
 {% block content %}
+<script>
+function clearBalanceDates(){
+  document.querySelectorAll('input[name="date_from"],input[name="date_to"]').forEach(function(e){e.value='';});
+}
+function clearBalanceMonths(){
+  document.querySelectorAll('select[name="year"],select[name="month_from"],select[name="month_to"]').forEach(function(e){e.value='';});
+}
+</script>
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <a href="{% url 'add_capital' %}" class="btn btn-success btn-sm"><i class="bi bi-plus-circle"></i> إضافة رصيد</a>
     <form method="get" class="d-flex gap-2 align-items-center p-2" id="filterForm" style="background:#ecfdf5;border:1px solid #059669;border-radius:12px;box-shadow:0 3px 10px rgba(5,150,105,.12);">
         <span style="font-weight:800;color:#059669;white-space:nowrap"><i class="bi bi-funnel-fill"></i> استعلام</span>
-        <select name="year" class="form-select form-select-sm" style="width:auto;">
+        <select name="year" class="form-select form-select-sm" style="width:auto;" onchange="clearBalanceDates()">
             <option value="">كل السنوات</option>
             {% for y in "2024,2025,2026,2027,2028"|split %}
             <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
         </select>
-        <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="من يوم" style="width:145px;border-radius:8px;">
-        <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm" title="إلى يوم" style="width:145px;border-radius:8px;">
-        <select name="month_from" class="form-select form-select-sm" style="width:auto;">
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm" title="من يوم" style="width:145px;border-radius:8px;" onchange="clearBalanceMonths()">
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm" title="إلى يوم" style="width:145px;border-radius:8px;" onchange="clearBalanceMonths()">
+        <select name="month_from" class="form-select form-select-sm" style="width:auto;" onchange="clearBalanceDates()">
             <option value="">من شهر</option>
             {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
             <option value="{{ m }}" {% if selected_month_from == m %}selected{% endif %}>شهر {{ m }}</option>
             {% endfor %}
         </select>
-        <select name="month_to" class="form-select form-select-sm" style="width:auto;">
+        <select name="month_to" class="form-select form-select-sm" style="width:auto;" onchange="clearBalanceDates()">
             <option value="">إلى شهر</option>
             {% for m in "1,2,3,4,5,6,7,8,9,10,11,12"|split %}
             <option value="{{ m }}" {% if selected_month_to == m %}selected{% endif %}>شهر {{ m }}</option>
