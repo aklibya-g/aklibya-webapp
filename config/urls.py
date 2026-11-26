@@ -12,6 +12,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('', views.home, name='home'),
     path('transactions/', views.transactions, name='transactions'),
+    path('transactions/office-report/', views.office_transfers_report, name='office_transfers_report'),
     path('transactions/delete/<int:id>/', views.delete_transaction, name='delete_transaction'),
     path('transactions/bulk-delete/', views.bulk_delete_transactions, name='bulk_delete_transactions'),
     path('transactions/clear-all/', views.clear_all_transactions, name='clear_transactions'),

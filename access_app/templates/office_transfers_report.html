@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load app_tags %}
+{% block title %}تقرير الحوالات حسب المكاتب{% endblock %}
+{% block page_title %}<i class="bi bi-building text-primary"></i> تقرير الحوالات حسب المكاتب{% endblock %}
+{% block content %}
+<style>
+.office-report{max-width:1100px;margin:auto}.office-box{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;margin:16px 0;overflow:hidden}.office-head{display:flex;justify-content:space-between;padding:10px 14px;background:var(--primary-bg);font-weight:800}.office-head strong{color:var(--primary);font-size:1.05rem}.office-report table{width:100%;border-collapse:collapse;font-size:.82rem}.office-report th,.office-report td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}.office-report th{color:var(--text-muted);background:var(--bg)}
+@media print{.sidebar,.topbar,.no-print{display:none!important}.main-area{margin:0!important}.office-box{break-inside:avoid;box-shadow:none}}
+</style>
+<div class="office-report">
+ <div class="d-flex justify-content-between mb-3 no-print"><a href="{% url 'transactions' %}" class="btn btn-outline-secondary btn-sm">العودة للحوالات</a><button class="btn btn-success btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> طباعة التقرير</button></div>
+ <div class="stat-card p-3 mb-3"><h4>تقرير الحوالات حسب المكتب</h4><div>الفترة: <strong>{{ date_from }}</strong> إلى <strong>{{ date_to }}</strong></div><div class="mt-2">إجمالي الحوالات: <strong>{{ total_count }}</strong> — المصري: <strong>{{ total_egp|fmt }}</strong> — الليبي: <strong>{{ total_lyd|fmt }}</strong></div></div>
+ {% for group in groups %}<section class="office-box"><div class="office-head"><strong>{{ group.name }}</strong><span>{{ group.rows|length }} حوالة — {{ group.egp|fmt }} EGP</span></div><table><thead><tr><th>الكود</th><th>التاريخ</th><th>المرسل</th><th>المستلم</th><th>مصري</th><th>السعر</th><th>ليبي</th><th>النوع</th></tr></thead><tbody>{% for t in group.rows %}<tr><td>{{ t.order_number|default:t.id }}</td><td>{{ t.date|date:"Y-m-d" }}</td><td>{{ t.sender_name|default:"-" }}</td><td>{{ t.receiver_name|default:"-" }}</td><td>{{ t.transfered_amount|fmt }}</td><td>{{ t.exchange_rate|floatformat:"-3u" }}</td><td>{{ t.transfer_amount|fmt }}</td><td>{{ t.transfer_type.Transfer_type|default:"-" }}</td></tr>{% endfor %}</tbody></table></section>{% empty %}<div class="alert alert-warning">لا توجد حوالات في الفترة المحددة.</div>{% endfor %}
+</div>
+{% endblock %}

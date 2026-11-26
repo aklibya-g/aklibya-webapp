@@ -847,6 +847,48 @@ def transactions(request):
     })
 
 
+@login_required_custom
+def office_transfers_report(request):
+    """Show transfer totals grouped by office for the selected period."""
+    today = timezone.localdate()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    year = request.GET.get("year", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
+    q = request.GET.get("q", "").strip()
+    amount_filter = request.GET.get("amount", "").strip()
+    office_id = request.GET.get("office", "").strip()
+    if not any((date_from, date_to, year, month_from, month_to)):
+        date_from = date_to = today.isoformat()
+
+    qs = Database.objects.select_related("office_name", "transfer_type").all()
+    if date_from: qs = qs.filter(date__gte=date_from)
+    if date_to: qs = qs.filter(date__lte=date_to)
+    if year: qs = qs.filter(date__year=year)
+    if month_from: qs = qs.filter(date__month__gte=month_from)
+    if month_to: qs = qs.filter(date__month__lte=month_to)
+    if q:
+        qs = qs.filter(models.Q(sender_name__icontains=q) | models.Q(receiver_name__icontains=q) | models.Q(order_number__icontains=q) | models.Q(receiver_tele__icontains=q) | models.Q(remarks__icontains=q))
+    if office_id: qs = qs.filter(office_name_id=office_id)
+    if amount_filter:
+        try: qs = qs.filter(transfered_amount=float(amount_filter.replace(",", "")))
+        except ValueError: pass
+
+    groups = {}
+    for transfer in qs.order_by("office_name__office_name", "date", "id"):
+        name = transfer.office_name.office_name if transfer.office_name else "العربي"
+        group = groups.setdefault(name, {"name": name, "rows": [], "egp": 0, "lyd": 0})
+        group["rows"].append(transfer)
+        group["egp"] += transfer.transfered_amount or 0
+        group["lyd"] += transfer.transfer_amount or 0
+    return render(request, "office_transfers_report.html", {
+        "groups": list(groups.values()), "date_from": date_from, "date_to": date_to,
+        "total_count": sum(len(g["rows"]) for g in groups.values()),
+        "total_egp": sum(g["egp"] for g in groups.values()), "total_lyd": sum(g["lyd"] for g in groups.values()),
+    })
+
+
 def _reverse_transaction_balance(obj):
     if "أحمد ياسين" in (obj.sender_name or ""):
         egp = obj.transfered_amount or 0
