@@ -23,7 +23,19 @@
 .table-app td:last-child .btn{padding:1px 4px!important;font-size:.62rem!important;line-height:1.25;border-radius:5px}
 .table-app td:last-child .btn i{font-size:.62rem!important}
 .table-app td:last-child .d-flex{gap:2px!important}
+body.transactions-loading .main-area{visibility:hidden}
 </style>
+<script>
+(function () {
+    document.body.classList.add('transactions-loading');
+    var reveal = function () { document.body.classList.remove('transactions-loading'); };
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(reveal, reveal);
+    } else {
+        reveal();
+    }
+})();
+</script>
 {% if clients %}
 <div class="stat-card p-2 mb-2" style="padding:8px 12px !important;">
     <div class="d-flex align-items-center gap-3 flex-wrap" style="font-size:0.82rem;">
