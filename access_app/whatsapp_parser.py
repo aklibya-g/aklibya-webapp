@@ -15,6 +15,26 @@ def detect_beneficiary_office(lines, raw_lines=None):
     office markers and are skipped.
     """
     source = raw_lines or lines
+
+    # WhatsApp forwards commonly export the first line as, for example,
+    # "فودافون الزاجل" or "فودافون الجروشي".  The decorative star/diamond
+    # symbols are removed by clean_emoji, so read the office suffix from this
+    # first payment-method line.  "فودافون كاش" has no office and therefore
+    # deliberately falls through to the العربي default.
+    for raw_line in source:
+        first_line = clean_emoji(str(raw_line or "").strip())
+        method_match = re.match(
+            r"^(فودافون|فادفون|فدفون|انستا\s*باي|تحويل\s*بنكي|كاش|صك)\s*(.*)$",
+            first_line,
+        )
+        if not method_match:
+            continue
+        suffix = method_match.group(2).strip()
+        suffix = re.sub(r"^كاش\s*", "", suffix).strip()
+        if suffix and re.search(r"[\u0600-\u06ffA-Za-z]", suffix):
+            return suffix, False
+        return "العربي", False
+
     for index, raw_line in enumerate(source):
         marker = str(raw_line or "").strip()
         marker_match = re.match(r"^\*+\s*(.*?)\s*$", marker)
