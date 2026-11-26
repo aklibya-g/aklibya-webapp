@@ -571,29 +571,15 @@ def has_perm(request, perm_name):
     return False
 
 
-def _normalize_arabic(s):
-    if not s:
-        return ""
-    replacements = {'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ة': 'ه', 'ى': 'ي', 'ؤ': 'و', 'ئ': 'ي'}
-    for old, new in replacements.items():
-        s = s.replace(old, new)
-    return s.strip()
-
 def _get_clients_with_remaining():
     clients_qs = ClientBalance.objects.all().order_by("name")
-    all_transfers = list(Database.objects.values_list("sender_name", "transfered_amount"))
-    transfer_map = {}
-    for sn, amt in all_transfers:
-        norm = _normalize_arabic(sn or "")
-        transfer_map[norm] = transfer_map.get(norm, 0) + (amt or 0)
-
     clients = []
     total_egp = 0
     for c in clients_qs:
-        deposited = Capital.objects.filter(client=c).exclude(in_type="ترحيل").aggregate(total=Sum("cash_in"))["total"] or 0
-        norm_name = _normalize_arabic(c.name)
-        transferred = transfer_map.get(norm_name, 0)
-        remaining = deposited - transferred
+        # ClientBalance is the source of truth for the current balance. It
+        # includes opening/manual amounts that are not represented by a
+        # Capital deposit row, so the ticker and dashboard use the same value.
+        remaining = c.egp_balance or 0
         c.remaining_egp = remaining
         total_egp += remaining
         clients.append(c)
@@ -634,7 +620,7 @@ def home(request):
     # The headline net balance must include every recorded transfer,
     # including manually entered transfers whose sender is not linked to a
     # ClientBalance record.  The client breakdown remains available below.
-    remaining_egp = cap_total_egp - db_total_egp
+    remaining_egp = total_egp_clients
     coverage_rate = round((db_total_egp / cap_total_egp) * 100, 1) if cap_total_egp else 0
     coverage_rate = min(coverage_rate, 100)
 

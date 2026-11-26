@@ -20,7 +20,7 @@
             <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite"></div>
             <span style="color:#64748b;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">أرصدة العملاء</span>
             <div style="flex:1"></div>
-            <span style="color:#475569;font-size:.7rem">الإجمالي: <span style="color:#22c55e;font-weight:800">{{ total_egp_clients|fmt }}</span> EGP</span>
+        <span style="color:#475569;font-size:.7rem">الإجمالي: <span style="{% if total_egp_clients < 0 %}color:#ef4444{% else %}color:#22c55e{% endif %};font-weight:800">{% if total_egp_clients >= 0 %}+{% endif %}{{ total_egp_clients|fmt }}</span> EGP</span>
         </div>
         <div style="position:relative">
             <div style="position:absolute;right:0;top:0;bottom:0;width:80px;background:linear-gradient(to left,#0a0f1a,transparent);z-index:2"></div>
@@ -96,7 +96,7 @@
                     <span class="dash-badge" style="background:#ede9fe;color:#7c3aed;">{{ client_count }}</span>
                 </div>
                 <div class="dash-title">صافي الرصيد الحالي</div>
-                <div class="dash-value" style="color:#7c3aed;">{{ remaining_egp|fmt }} <span class="dash-unit">EGP</span></div>
+                <div class="dash-value" style="color:{% if remaining_egp < 0 %}#dc2626{% else %}#059669{% endif %};">{% if remaining_egp >= 0 %}+{% endif %}{{ remaining_egp|fmt }} <span class="dash-unit">EGP</span></div>
                 <div class="dash-sub">إجمالي الأرصدة - الحوالات المرسلة</div>
             </div>
         </div>
