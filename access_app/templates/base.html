@@ -375,7 +375,6 @@
                     <div class="nav-section" style="color:#ec4899">الأرباح</div>
                     <div style="display:flex;gap:4px;padding:0 4px;">
                     <a href="{% url 'profits_report' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/profits/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-graph-up-arrow"></i> التقرير</a>
-                    <a href="{% url 'settings_page' %}" class="nav-item" style="flex:1;justify-content:center;padding:7px 8px;{% if '/settings/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-gear"></i> الإعدادات</a>
                     </div>
                 </div>
                 {% endif %}
@@ -383,6 +382,9 @@
                 {% if current_user.perm_users or current_user.is_admin %}
                 <div class="sec-box" style="margin-top:6px">
                     <div class="nav-section" style="color:#8b5cf6">إدارة النظام</div>
+                    {% if current_user.is_admin %}
+                    <a href="{% url 'settings_page' %}" class="nav-item" style="padding:7px 10px;{% if '/settings/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-gear-fill settings-gear-alert"></i> الإعدادات</a>
+                    {% endif %}
                     <a href="{% url 'users_list' %}" class="nav-item" style="padding:7px 10px;{% if '/users/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-people-fill" style="color:#8b5cf6;"></i> إدارة المستخدمين</a>
                     {% if current_user.is_admin %}
                     <a href="{% url 'backups_list' %}" class="nav-item" style="padding:7px 10px;{% if '/backups/' in request.path %}background:var(--sidebar-active);color:#fff;{% endif %}"><i class="bi bi-cloud-arrow-up" style="color:#06b6d4;"></i> النسخ الاحتياطية</a>
@@ -802,7 +804,9 @@
     @keyframes toastOut { from { opacity:1; transform:translateX(0) scale(1); } to { opacity:0; transform:translateX(-40px) scale(0.95); } }
     @keyframes toastBar { from { width:100%; } to { width:0%; } }
     @keyframes bellRing { 0%{transform:rotate(0)} 15%{transform:rotate(20deg)} 30%{transform:rotate(-18deg)} 45%{transform:rotate(14deg)} 60%{transform:rotate(-10deg)} 75%{transform:rotate(6deg)} 100%{transform:rotate(0)} }
-    @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.5)} 50%{box-shadow:0 0 0 6px rgba(220,38,38,0)} }
+     @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.5)} 50%{box-shadow:0 0 0 6px rgba(220,38,38,0)} }
+     @keyframes settingsGearAlert { 0%,100%{color:#dc2626;transform:rotate(0) scale(1);opacity:1} 50%{color:#ef4444;transform:rotate(18deg) scale(1.16);opacity:.55} }
+     .settings-gear-alert{color:#dc2626!important;animation:settingsGearAlert 1s ease-in-out infinite;}
     #bellBadge { animation: pulseGlow 2s ease infinite; }
     </style>
     <script>
