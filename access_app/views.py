@@ -1,9 +1,12 @@
 import json
 import os
 import csv
+import io
 import re
 import subprocess
 import uuid
+import zipfile
+from urllib.parse import urlencode
 from calendar import monthrange
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -1959,6 +1962,148 @@ def export_transfers_excel(request):
     return response
 
 
+@login_required_custom
+def export_office_transfer_reports(request):
+    """Download one Excel report per office in a single ZIP archive."""
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    year = request.GET.get("year", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not date_from and not date_to:
+        date_from = date_to = datetime.now().date().isoformat()
+    elif date_from and not date_to:
+        date_to = date_from
+    elif date_to and not date_from:
+        date_from = date_to
+
+    rows = Database.objects.select_related("office_name", "transfer_type").all()
+    if date_from: rows = rows.filter(date__gte=date_from)
+    if date_to: rows = rows.filter(date__lte=date_to)
+    if year: rows = rows.filter(date__year=year)
+    if month_from: rows = rows.filter(date__month__gte=month_from)
+    if month_to: rows = rows.filter(date__month__lte=month_to)
+    grouped = {}
+    for row in rows.order_by("office_name__office_name", "date", "id"):
+        name = row.office_name.office_name if row.office_name else "العربي"
+        grouped.setdefault(name, []).append(row)
+
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+        for office, office_rows in grouped.items():
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
+            sheet.title = "الحوالات"
+            sheet.append(["المكتب", "الكود", "التاريخ", "المرسل", "المستلم", "مصري", "السعر", "ليبي", "النوع"])
+            for row in office_rows:
+                sheet.append([office, row.order_number or row.id, row.date, row.sender_name or "", row.receiver_name or "", row.transfered_amount or 0, row.exchange_rate or 0, row.transfer_amount or 0, row.transfer_type.Transfer_type if row.transfer_type else ""])
+            sheet.append([])
+            sheet.append(["الإجمالي", "عدد الحوالات", len(office_rows), "مصري", sum(r.transfered_amount or 0 for r in office_rows), "ليبي", sum(r.transfer_amount or 0 for r in office_rows)])
+            for column in sheet.columns:
+                sheet.column_dimensions[column[0].column_letter].width = min(max(len(str(cell.value or "")) for cell in column) + 2, 28)
+            file_data = io.BytesIO()
+            workbook.save(file_data)
+            safe_name = re.sub(r'[\\/:*?"<>|]+', "_", office).strip() or "العربي"
+            bundle.writestr(f"{safe_name}.xlsx", file_data.getvalue())
+        if not grouped:
+            bundle.writestr("لا توجد حوالات.txt", "لا توجد حوالات في الفترة المحددة.")
+    archive.seek(0)
+    period = _export_period_label(request)
+    response = HttpResponse(archive.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = f'attachment; filename="office_reports_{period}.zip"'
+    return response
+
+
+def _office_pdf_rows(request):
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    year = request.GET.get("year", "").strip()
+    month_from = request.GET.get("month_from", "").strip()
+    month_to = request.GET.get("month_to", "").strip()
+    if year or month_from or month_to:
+        date_from = date_to = ""
+    elif not date_from and not date_to:
+        date_from = date_to = datetime.now().date().isoformat()
+    elif date_from and not date_to:
+        date_to = date_from
+    elif date_to and not date_from:
+        date_from = date_to
+    rows = Database.objects.select_related("office_name", "transfer_type").all()
+    if date_from: rows = rows.filter(date__gte=date_from)
+    if date_to: rows = rows.filter(date__lte=date_to)
+    if year: rows = rows.filter(date__year=year)
+    if month_from: rows = rows.filter(date__month__gte=month_from)
+    if month_to: rows = rows.filter(date__month__lte=month_to)
+    grouped = {}
+    for row in rows.order_by("office_name__office_name", "date", "id"):
+        key = row.office_name.id if row.office_name else 0
+        grouped.setdefault(key, {"name": row.office_name.office_name if row.office_name else "العربي", "rows": []})["rows"].append(row)
+    return grouped, date_from, date_to
+
+
+@login_required_custom
+def office_pdf_batch(request):
+    grouped, date_from, date_to = _office_pdf_rows(request)
+    params = {k: request.GET.get(k, "") for k in ("date_from", "date_to", "year", "month_from", "month_to") if request.GET.get(k, "")}
+    links = []
+    for office_id, group in grouped.items():
+        query = dict(params)
+        query["office_id" if office_id else "unassigned"] = office_id or "1"
+        links.append({"name": group["name"], "count": len(group["rows"]), "url": reverse("export_office_pdf") + "?" + urlencode(query)})
+    return render(request, "office_pdf_batch.html", {"links": links, "date_from": date_from, "date_to": date_to})
+
+
+@login_required_custom
+def export_office_pdf(request):
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_RIGHT
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+
+    grouped, date_from, date_to = _office_pdf_rows(request)
+    office_id = int(request.GET.get("office_id", "0") or 0)
+    if office_id:
+        group = grouped.get(office_id)
+    else:
+        group = grouped.get(0)
+    if not group:
+        return HttpResponse("لا توجد حوالات لهذا المكتب في الفترة المحددة.", status=404, content_type="text/plain; charset=utf-8")
+    font_path = next((p for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "C:/Windows/Fonts/arial.ttf") if os.path.exists(p)), None)
+    font_name = "Helvetica"
+    if font_path:
+        font_name = "OfficeArabic"
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+    def ar(value):
+        text = str(value or "")
+        return get_display(arabic_reshaper.reshape(text)) if font_path else text
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=12*mm, leftMargin=12*mm, topMargin=12*mm, bottomMargin=12*mm)
+    styles = getSampleStyleSheet()
+    title = ParagraphStyle("officeTitle", parent=styles["Title"], fontName=font_name, alignment=TA_RIGHT, fontSize=16, leading=22)
+    normal = ParagraphStyle("officeNormal", parent=styles["Normal"], fontName=font_name, alignment=TA_RIGHT, fontSize=9, leading=13)
+    story = [Paragraph(ar(f"تقرير حوالات مكتب {group['name']}"), title), Paragraph(ar(f"من تاريخ: {date_from}    إلى تاريخ: {date_to}"), normal), Spacer(1, 7*mm)]
+    data = [[ar("الكود"), ar("التاريخ"), ar("المرسل"), ar("المستلم"), ar("مصري"), ar("السعر"), ar("ليبي"), ar("النوع")]]
+    for row in group["rows"]:
+        data.append([ar(row.order_number or row.id), ar(row.date), ar(row.sender_name or "-"), ar(row.receiver_name or "-"), f"{row.transfered_amount or 0:,.3f}", f"{row.exchange_rate or 0:,.3f}", f"{row.transfer_amount or 0:,.3f}", ar(row.transfer_type.Transfer_type if row.transfer_type else "-")])
+    data.append([ar("الإجمالي"), ar(f"عدد الحوالات: {len(group['rows'])}"), "", "", f"{sum(r.transfered_amount or 0 for r in group['rows']):,.3f}", "", f"{sum(r.transfer_amount or 0 for r in group['rows']):,.3f}", ""])
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([("FONTNAME", (0,0), (-1,-1), font_name), ("FONTSIZE", (0,0), (-1,-1), 8), ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dbeafe")), ("BACKGROUND", (0,-1), (-1,-1), colors.HexColor("#dcfce7")), ("GRID", (0,0), (-1,-1), .35, colors.HexColor("#cbd5e1")), ("ALIGN", (0,0), (-1,-1), "CENTER"), ("VALIGN", (0,0), (-1,-1), "MIDDLE"), ("RIGHTPADDING", (0,0), (-1,-1), 6), ("LEFTPADDING", (0,0), (-1,-1), 6)]))
+    story.append(table)
+    doc.build(story)
+    safe_name = re.sub(r'[\\/:*?"<>|]+', "_", group["name"]).strip() or "العربي"
+    response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}_{date_from}_الى_{date_to}.pdf"'
+    return response
+
+
 def export_capital_excel(request):
     q = request.GET.get("q", "").strip()
     date_from = request.GET.get("date_from", "").strip()
@@ -3438,6 +3583,18 @@ def settings_page(request):
                 messages.success(request, "تم حذف المكتب")
             except Exception as e:
                 messages.error(request, f"خطأ: {e}")
+
+        elif action == "update_office":
+            office = OfficeName.objects.filter(id=request.POST.get("item_id")).first()
+            name = request.POST.get("name", "").strip()
+            code = request.POST.get("code", "").strip()
+            if office and name:
+                office.office_name = name
+                office.code = code
+                office.save()
+                messages.success(request, f"تم تحديث اسم المكتب إلى: {name}")
+            else:
+                messages.error(request, "اسم المكتب مطلوب")
 
         elif action == "add_source":
             name = request.POST.get("name", "").strip()

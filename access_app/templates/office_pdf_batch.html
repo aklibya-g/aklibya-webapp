@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}تحميل تقارير المكاتب{% endblock %}
+{% block page_title %}<i class="bi bi-file-earmark-pdf text-danger"></i> تقارير المكاتب{% endblock %}
+{% block content %}
+<div class="stat-card p-4" style="max-width:800px;margin:auto;text-align:center">
+ <h5>تقارير PDF مستقلة لكل مكتب</h5>
+ <p class="text-muted">الفترة: <strong>{{ date_from }}</strong> إلى <strong>{{ date_to }}</strong></p>
+ <p>سيبدأ تحميل ملف PDF مستقل لكل مكتب تلقائيًا. إذا منع المتصفح التنزيلات المتعددة، اختر «السماح».</p>
+ <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">{% for item in links %}<a class="btn btn-outline-danger btn-sm" href="{{ item.url }}"><i class="bi bi-file-earmark-pdf"></i> {{ item.name }} ({{ item.count }})</a>{% empty %}<span>لا توجد حوالات في الفترة المحددة.</span>{% endfor %}</div>
+ <a class="btn btn-outline-secondary btn-sm" href="{% url 'transactions' %}">العودة للحوالات</a>
+</div>
+<script>
+(function(){var links=[{% for item in links %}'{{ item.url|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}]; links.forEach(function(url,i){setTimeout(function(){var a=document.createElement('a');a.href=url;a.download='';document.body.appendChild(a);a.click();a.remove();},700*i);});})();
+</script>
+{% endblock %}

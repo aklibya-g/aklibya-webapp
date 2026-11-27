@@ -170,6 +170,7 @@
                     {% for o in offices %}
                     <li>
                         <span class="item-name"><i class="bi bi-building"></i> {{ o.office_name }}{% if o.code %} <span style="color:var(--text-muted);font-size:.75rem">({{ o.code }})</span>{% endif %}</span>
+                        <form method="POST" style="display:flex;gap:3px;margin:0"><input type="hidden" name="action" value="update_office"><input type="hidden" name="item_id" value="{{ o.id }}"><input type="text" name="name" value="{{ o.office_name }}" style="width:100px;padding:2px 4px;font-size:.7rem"><input type="text" name="code" value="{{ o.code|default:'' }}" style="width:45px;padding:2px 4px;font-size:.7rem"><button type="submit" class="del-btn" title="تعديل"><i class="bi bi-check2"></i></button>{% csrf_token %}</form>
                         <form method="POST" style="margin:0"><input type="hidden" name="action" value="delete_office"><input type="hidden" name="item_id" value="{{ o.id }}">{% csrf_token %}<button type="submit" class="del-btn" onclick="return confirm('حذف {{ o.office_name }}?')"><i class="bi bi-trash3"></i></button></form>
                     </li>
                     {% endfor %}
