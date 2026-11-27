@@ -2038,8 +2038,12 @@ def _office_pdf_rows(request):
     if month_to: rows = rows.filter(date__month__lte=month_to)
     grouped = {}
     for row in rows.order_by("office_name__office_name", "date", "id"):
-        key = row.office_name.id if row.office_name else 0
-        grouped.setdefault(key, {"name": row.office_name.office_name if row.office_name else "العربي", "rows": []})["rows"].append(row)
+        name = row.office_name.office_name if row.office_name else "العربي"
+        key = name.strip() or "العربي"
+        group = grouped.setdefault(key, {"name": key, "rows": [], "office_ids": set()})
+        if row.office_name:
+            group["office_ids"].add(row.office_name.id)
+        group["rows"].append(row)
     return grouped, date_from, date_to
 
 
@@ -2048,9 +2052,9 @@ def office_pdf_batch(request):
     grouped, date_from, date_to = _office_pdf_rows(request)
     params = {k: request.GET.get(k, "") for k in ("date_from", "date_to", "year", "month_from", "month_to") if request.GET.get(k, "")}
     links = []
-    for office_id, group in grouped.items():
+    for office_name, group in grouped.items():
         query = dict(params)
-        query["office_id" if office_id else "unassigned"] = office_id or "1"
+        query["office_name"] = office_name
         links.append({"name": group["name"], "count": len(group["rows"]), "url": reverse("export_office_pdf") + "?" + urlencode(query)})
     return render(request, "office_pdf_batch.html", {"links": links, "date_from": date_from, "date_to": date_to})
 
@@ -2069,11 +2073,8 @@ def export_office_pdf(request):
     from bidi.algorithm import get_display
 
     grouped, date_from, date_to = _office_pdf_rows(request)
-    office_id = int(request.GET.get("office_id", "0") or 0)
-    if office_id:
-        group = grouped.get(office_id)
-    else:
-        group = grouped.get(0)
+    office_name = request.GET.get("office_name", "").strip()
+    group = grouped.get(office_name)
     if not group:
         return HttpResponse("لا توجد حوالات لهذا المكتب في الفترة المحددة.", status=404, content_type="text/plain; charset=utf-8")
     font_path = next((p for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "C:/Windows/Fonts/arial.ttf") if os.path.exists(p)), None)
@@ -2087,15 +2088,19 @@ def export_office_pdf(request):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=12*mm, leftMargin=12*mm, topMargin=12*mm, bottomMargin=12*mm)
     styles = getSampleStyleSheet()
-    title = ParagraphStyle("officeTitle", parent=styles["Title"], fontName=font_name, alignment=TA_RIGHT, fontSize=16, leading=22)
-    normal = ParagraphStyle("officeNormal", parent=styles["Normal"], fontName=font_name, alignment=TA_RIGHT, fontSize=9, leading=13)
+    title = ParagraphStyle("officeTitle", parent=styles["Title"], fontName=font_name, alignment=TA_RIGHT, fontSize=20, leading=27, textColor=colors.HexColor("#12355b"))
+    normal = ParagraphStyle("officeNormal", parent=styles["Normal"], fontName=font_name, alignment=TA_RIGHT, fontSize=11, leading=17, textColor=colors.HexColor("#334155"))
+    head_style = ParagraphStyle("officeHead", parent=normal, alignment=TA_CENTER, fontSize=10, leading=14, textColor=colors.white)
+    cell_style = ParagraphStyle("officeCell", parent=normal, alignment=TA_RIGHT, fontSize=9.5, leading=14)
+    num_style = ParagraphStyle("officeNum", parent=cell_style, alignment=TA_CENTER)
     story = [Paragraph(ar(f"تقرير حوالات مكتب {group['name']}"), title), Paragraph(ar(f"من تاريخ: {date_from}    إلى تاريخ: {date_to}"), normal), Spacer(1, 7*mm)]
-    data = [[ar("الكود"), ar("التاريخ"), ar("المرسل"), ar("المستلم"), ar("مصري"), ar("السعر"), ar("ليبي"), ar("النوع")]]
+    p = lambda value, style=cell_style: Paragraph(ar(value), style)
+    data = [[p("النوع", head_style), p("ليبي", head_style), p("السعر", head_style), p("مصري", head_style), p("المستلم", head_style), p("المرسل", head_style), p("التاريخ", head_style), p("الكود", head_style)]]
     for row in group["rows"]:
-        data.append([ar(row.order_number or row.id), ar(row.date), ar(row.sender_name or "-"), ar(row.receiver_name or "-"), f"{row.transfered_amount or 0:,.3f}", f"{row.exchange_rate or 0:,.3f}", f"{row.transfer_amount or 0:,.3f}", ar(row.transfer_type.Transfer_type if row.transfer_type else "-")])
-    data.append([ar("الإجمالي"), ar(f"عدد الحوالات: {len(group['rows'])}"), "", "", f"{sum(r.transfered_amount or 0 for r in group['rows']):,.3f}", "", f"{sum(r.transfer_amount or 0 for r in group['rows']):,.3f}", ""])
-    table = Table(data, repeatRows=1)
-    table.setStyle(TableStyle([("FONTNAME", (0,0), (-1,-1), font_name), ("FONTSIZE", (0,0), (-1,-1), 8), ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dbeafe")), ("BACKGROUND", (0,-1), (-1,-1), colors.HexColor("#dcfce7")), ("GRID", (0,0), (-1,-1), .35, colors.HexColor("#cbd5e1")), ("ALIGN", (0,0), (-1,-1), "CENTER"), ("VALIGN", (0,0), (-1,-1), "MIDDLE"), ("RIGHTPADDING", (0,0), (-1,-1), 6), ("LEFTPADDING", (0,0), (-1,-1), 6)]))
+        data.append([p(row.transfer_type.Transfer_type if row.transfer_type else "-"), p(f"{row.transfer_amount or 0:,.3f}", num_style), p(f"{row.exchange_rate or 0:,.3f}", num_style), p(f"{row.transfered_amount or 0:,.3f}", num_style), p(row.receiver_name or "-"), p(row.sender_name or "-"), p(row.date, num_style), p(row.order_number or row.id, num_style)])
+    data.append([p("الإجمالي", head_style), p(f"{sum(r.transfer_amount or 0 for r in group['rows']):,.3f}", head_style), p("", head_style), p(f"{sum(r.transfered_amount or 0 for r in group['rows']):,.3f}", head_style), p(f"عدد الحوالات: {len(group['rows'])}", head_style), p("", head_style), p("", head_style), p("", head_style)])
+    table = Table(data, repeatRows=1, colWidths=[25*mm, 28*mm, 22*mm, 30*mm, 45*mm, 45*mm, 28*mm, 30*mm])
+    table.setStyle(TableStyle([("BACKGROUND", (0,0), (-1,0), colors.HexColor("#2563eb")), ("BACKGROUND", (0,-1), (-1,-1), colors.HexColor("#059669")), ("GRID", (0,0), (-1,-1), .5, colors.HexColor("#cbd5e1")), ("VALIGN", (0,0), (-1,-1), "MIDDLE"), ("ROWBACKGROUNDS", (0,1), (-1,-2), [colors.white, colors.HexColor("#f8fafc")]), ("TOPPADDING", (0,0), (-1,-1), 8), ("BOTTOMPADDING", (0,0), (-1,-1), 8)]))
     story.append(table)
     doc.build(story)
     safe_name = re.sub(r'[\\/:*?"<>|]+', "_", group["name"]).strip() or "العربي"
