@@ -17,6 +17,15 @@
     .set-list li .item-name i{color:var(--text-muted);font-size:.8rem}
     .set-list li .del-btn{background:none;border:none;color:#dc2626;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:.8rem;opacity:0;transition:all .15s}
     .set-list li:hover .del-btn{opacity:1}
+    .office-list li{display:grid;grid-template-columns:minmax(150px,1fr) auto;align-items:center;gap:10px;padding:8px 10px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:10px;margin-bottom:6px}
+    .office-list li:hover{background:var(--primary-bg)}
+    .office-edit{display:flex;align-items:center;gap:4px;margin:0}
+    .office-list li>.office-edit:first-of-type{width:100%}
+    .office-edit input{height:30px;padding:3px 8px;border:1px solid var(--input-border);border-radius:6px;background:var(--card-bg);font-family:inherit;font-size:.78rem;color:var(--text)}
+    .office-edit input[name="name"]{width:150px}.office-edit input[name="code"]{width:58px;direction:ltr;text-align:center}
+    .office-edit .save-office{height:30px;width:30px;border:0;border-radius:6px;background:#dc2626;color:#fff;cursor:pointer}
+    .office-delete{height:30px;width:30px;border:0;border-radius:6px;background:#fee2e2;color:#dc2626;cursor:pointer}
+    @media(max-width:600px){.office-list li{grid-template-columns:1fr}.office-edit{justify-content:flex-start}}
     .set-list li .del-btn:hover{background:#fef2f2}
     .add-row{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--card-border)}
     .add-row input,.add-row select{flex:1;padding:8px 12px;border:1px solid var(--input-border);border-radius:var(--radius-sm);background:var(--input-bg);font-family:Cairo,sans-serif;font-size:.85rem;transition:all .15s}
@@ -166,12 +175,11 @@
             </div>
             <div class="set-body">
                 {% if offices %}
-                <ul class="set-list">
-                    {% for o in offices %}
-                    <li>
-                        <span class="item-name"><i class="bi bi-building"></i> {{ o.office_name }}{% if o.code %} <span style="color:var(--text-muted);font-size:.75rem">({{ o.code }})</span>{% endif %}</span>
-                        <form method="POST" style="display:flex;gap:3px;margin:0"><input type="hidden" name="action" value="update_office"><input type="hidden" name="item_id" value="{{ o.id }}"><input type="text" name="name" value="{{ o.office_name }}" style="width:100px;padding:2px 4px;font-size:.7rem"><input type="text" name="code" value="{{ o.code|default:'' }}" style="width:45px;padding:2px 4px;font-size:.7rem"><button type="submit" class="del-btn" title="تعديل"><i class="bi bi-check2"></i></button>{% csrf_token %}</form>
-                        <form method="POST" style="margin:0"><input type="hidden" name="action" value="delete_office"><input type="hidden" name="item_id" value="{{ o.id }}">{% csrf_token %}<button type="submit" class="del-btn" onclick="return confirm('حذف {{ o.office_name }}?')"><i class="bi bi-trash3"></i></button></form>
+                 <ul class="set-list office-list">
+                     {% for o in offices %}
+                     <li>
+                         <form method="POST" class="office-edit"><input type="hidden" name="action" value="update_office"><input type="hidden" name="item_id" value="{{ o.id }}"><input type="text" name="name" value="{{ o.office_name }}" aria-label="اسم المكتب"><input type="text" name="code" value="{{ o.code|default:'' }}" placeholder="كود" aria-label="كود المكتب"><button type="submit" class="save-office" title="حفظ التعديل"><i class="bi bi-check2"></i></button>{% csrf_token %}</form>
+                         <form method="POST" class="office-edit"><input type="hidden" name="action" value="delete_office"><input type="hidden" name="item_id" value="{{ o.id }}">{% csrf_token %}<button type="submit" class="office-delete" onclick="return confirm('حذف {{ o.office_name }}?')" title="حذف المكتب"><i class="bi bi-trash3"></i></button></form>
                     </li>
                     {% endfor %}
                 </ul>
