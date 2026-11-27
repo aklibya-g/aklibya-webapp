@@ -6,7 +6,7 @@ import re
 import subprocess
 import uuid
 import zipfile
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from calendar import monthrange
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -2104,8 +2104,9 @@ def export_office_pdf(request):
     story.append(table)
     doc.build(story)
     safe_name = re.sub(r'[\\/:*?"<>|]+', "_", group["name"]).strip() or "العربي"
+    filename = f"تقرير_{safe_name}_من_{date_from}_الى_{date_to}.pdf"
     response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="{safe_name}_{date_from}_الى_{date_to}.pdf"'
+    response["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
     return response
 
 
