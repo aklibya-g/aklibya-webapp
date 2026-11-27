@@ -2383,8 +2383,11 @@ def profits_report(request):
         "title": "تقرير الأرباح",
         "data": data,
         "year": year,
-        "month_from": month_from,
-        "month_to": month_to,
+        # Keep month controls empty when the active filter is a day range.
+        # The internal month values above are only used to build the report
+        # periods and must not be sent back by the form.
+        "month_from": month_from_raw if month_filter_selected else "",
+        "month_to": month_to_raw if month_filter_selected else "",
         "date_from": date_from_raw,
         "date_to": date_to_raw,
         "report_filename_date": report_filename_date,

@@ -219,6 +219,11 @@
                 if (this.value) dateFields.forEach(function (dateField) { dateField.value = ''; });
             });
         });
+        dateFields.forEach(function (field) {
+            field.addEventListener('change', function () {
+                if (this.value) monthFields.forEach(function (monthField) { monthField.value = ''; });
+            });
+        });
     })();
     </script>
 </div>
