@@ -354,7 +354,9 @@ function printProfitIndicator(){
 .ticker-amount{font-size:1rem;font-weight:900;letter-spacing:-0.5px}
 .ticker-amount.positive{color:#4ade80}
 .ticker-amount.negative{color:#f87171}
-.dashboard-kpis .dash-card{height:205px;min-height:205px;padding:12px!important;border-radius:12px;display:flex;flex-direction:column}
+     .dashboard-kpis{display:flex!important;flex-wrap:nowrap!important;align-items:stretch;overflow-x:auto;padding:0 2px 8px;margin-left:0!important;margin-right:0!important}
+     .dashboard-kpis>[class*="col-"]{flex:1 1 0!important;width:auto!important;max-width:none!important;min-width:0}
+     .dashboard-kpis .dash-card{height:205px;min-height:205px;padding:12px!important;border-radius:12px;display:flex;flex-direction:column}
 .dashboard-kpis .dash-icon{width:34px;height:34px;border-radius:9px;font-size:.95rem}
 .dashboard-kpis .dash-title{font-size:.78rem;margin-top:10px}
 .dashboard-kpis .dash-value{font-size:1.28rem;white-space:nowrap}
@@ -388,7 +390,7 @@ function printProfitIndicator(){
 @media(max-width:900px){.analysis-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1000px){.insight-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.charts-grid,.insight-grid,.daily-extremes{grid-template-columns:1fr}.charts-heading{align-items:flex-start;gap:8px;flex-direction:column}.chart-tools{justify-content:flex-start}.chart-card{height:210px}}
-@media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis .dash-card{height:190px;min-height:190px}.dashboard-kpis .dash-value{font-size:1.12rem}}
+     @media(max-width:540px){.analysis-grid{grid-template-columns:1fr}.analysis-heading{align-items:flex-start;gap:8px;flex-direction:column}.dashboard-kpis>[class*="col-"]{min-width:220px}.dashboard-kpis .dash-card{height:190px;min-height:190px}.dashboard-kpis .dash-value{font-size:1.12rem}}
 @media print{body.print-profit-indicator .page-content>*{display:none!important}body.print-profit-indicator .page-content>.container-fluid{display:block!important}body.print-profit-indicator .page-content>.container-fluid>*{display:none!important}body.print-profit-indicator .page-content>.container-fluid .charts-panel{display:block!important;box-shadow:none!important;border:1px solid #64748b!important;background:#07111e!important;color:#fff!important}body.print-profit-indicator .charts-panel .profit-filter,body.print-profit-indicator .charts-panel .profit-print-btn{display:none!important}body.print-profit-indicator .charts-panel .chart-card{height:300px;background:#0b1726!important}body.print-profit-indicator .charts-panel .insight-card{background:#10253a!important;color:#fff!important}@page{size:landscape;margin:10mm}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 </style>
