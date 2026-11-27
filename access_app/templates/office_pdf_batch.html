@@ -2,14 +2,18 @@
 {% block title %}تحميل تقارير المكاتب{% endblock %}
 {% block page_title %}<i class="bi bi-file-earmark-pdf text-danger"></i> تقارير المكاتب{% endblock %}
 {% block content %}
+<style>
+.office-pdf-card{max-width:900px;margin:auto;text-align:center}
+.office-pdf-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:22px 0}
+.office-pdf-link{border:1px solid #dc2626;color:#dc2626;background:#fff;padding:9px 15px;border-radius:9px;text-decoration:none;font-weight:800;transition:all .2s;cursor:pointer}
+.office-pdf-link:hover{background:#fff1f2;transform:translateY(-1px)}
+.office-pdf-link.is-downloading{background:#059669;border-color:#059669;color:#fff;box-shadow:0 0 0 3px rgba(5,150,105,.18)}
+</style>
 <div class="stat-card p-4" style="max-width:800px;margin:auto;text-align:center">
  <h5>تقارير PDF مستقلة لكل مكتب</h5>
  <p class="text-muted">الفترة: <strong>{{ date_from }}</strong> إلى <strong>{{ date_to }}</strong></p>
- <p>سيبدأ تحميل ملف PDF مستقل لكل مكتب تلقائيًا. إذا منع المتصفح التنزيلات المتعددة، اختر «السماح».</p>
- <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">{% for item in links %}<a class="btn btn-outline-danger btn-sm" href="{{ item.url }}"><i class="bi bi-file-earmark-pdf"></i> {{ item.name }} ({{ item.count }})</a>{% empty %}<span>لا توجد حوالات في الفترة المحددة.</span>{% endfor %}</div>
+ <p>اضغط على اسم المكتب لتنزيل تقرير PDF الخاص به.</p>
+ <div class="office-pdf-links">{% for item in links %}<a class="office-pdf-link" href="{{ item.url }}" onclick="this.classList.add('is-downloading');this.innerHTML='<i class=\'bi bi-check2-circle\'></i> جاري التنزيل {{ item.name }}';" title="تنزيل تقرير {{ item.name }}"><i class="bi bi-file-earmark-pdf"></i> {{ item.name }} ({{ item.count }})</a>{% empty %}<span>لا توجد حوالات في الفترة المحددة.</span>{% endfor %}</div>
  <a class="btn btn-outline-secondary btn-sm" href="{% url 'transactions' %}">العودة للحوالات</a>
 </div>
-<script>
-(function(){var links=[{% for item in links %}'{{ item.url|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}]; links.forEach(function(url,i){setTimeout(function(){var a=document.createElement('a');a.href=url;a.download='';document.body.appendChild(a);a.click();a.remove();},700*i);});})();
-</script>
 {% endblock %}
